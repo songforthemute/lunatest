@@ -1,6 +1,6 @@
 # Ethers Setup
 
-`createEthersAdapter`로 EIP-1193 provider를 ethers-like `send` 인터페이스로 연결합니다.
+`createEthersAdapter`를 사용해 EIP-1193 provider를 ethers 스타일 `send` 인터페이스에 연결합니다.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";

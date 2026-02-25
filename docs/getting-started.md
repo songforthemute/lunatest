@@ -14,7 +14,7 @@ pnpm add @lunatest/mcp
 pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
-상세 예제는 [Library Consumption Guide](./guides/library-consumption.md)를 참고하세요.
+실사용 예제는 [Library Consumption Guide](./guides/library-consumption.md)에서 확인할 수 있습니다.
 
 ## 3. Run Checks
 
