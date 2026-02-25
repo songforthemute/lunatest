@@ -1,7 +1,8 @@
 # LunaTest
 
 > Deterministic testing SDK for Web3 frontend applications.
-> No chain. No fork. No flaky tests. Just Lua scripts and millisecond execution.
+> No chain. No fork. No flaky tests. Deterministic Web3 UI testing in milliseconds.
+> Korean version: [README.ko.md](./README.ko.md)
 
 **LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI — all under 1ms per test. Flaky? Zero. If a test fails, it's a bug. Period.
 
@@ -19,6 +20,67 @@ scenario {
   then_ui = { warning = true, severity = "high", slippage_label = "> 10%" },
 }
 ```
+
+## Quick Start
+
+```bash
+pnpm install --frozen-lockfile
+pnpm -r build
+pnpm -r lint
+pnpm -r test
+pnpm test:e2e:smoke
+```
+
+For nightly-scale checks:
+
+```bash
+pnpm test:e2e:extended
+node scripts/check-performance.mjs --mode=absolute --threshold=5
+```
+
+## Usage Guide
+
+1. Run workspace quality and E2E gates:
+
+```bash
+pnpm -r build
+pnpm -r lint
+pnpm -r test
+pnpm test:e2e:smoke
+```
+
+2. Run docs locally:
+
+```bash
+pnpm docs:dev
+```
+
+3. Publish by channel:
+
+```bash
+pnpm release:publish:stable
+pnpm release:publish:next
+```
+
+4. Explore API and guides:
+- docs index: `docs/index.md`
+- getting started: `docs/getting-started.md`
+- CI and gates: `docs/guides/ci-integration.md`
+
+## Repository Structure
+
+| Path | Purpose |
+| ---- | ------- |
+| `packages/core` | Runtime, scenario engine, mock provider, runner |
+| `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen`) |
+| `packages/react` | React provider/hooks + adapters |
+| `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
+| `packages/vitest-plugin` | Vitest plugin/matchers |
+| `packages/playwright-plugin` | Playwright fixtures and routing helpers |
+| `e2e-tests` | Smoke/extended end-to-end test suite |
+| `docs` | VitePress documentation site |
+| `examples` | Example apps and scenario files |
+| `scripts` | Performance gate runner and utilities |
 
 ## Why
 
@@ -57,39 +119,57 @@ scenario {
 
 ## Packages
 
-| Package           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `@lunatest/core`  | Lua runtime, mock provider, scenario engine, test runner |
-| `@lunatest/cli`   | CLI interface (`lunatest run`, `lunatest gen --ai`)      |
-| `@lunatest/react` | React hooks and test utilities                           |
-| `@lunatest/mcp`   | MCP server for AI agent integration                      |
-| `@lunatest/vitest-plugin` | Vitest integration plugin                        |
-| `@lunatest/playwright-plugin` | Playwright fixture and routing plugin       |
+| Package                         | Description                                              |
+| ------------------------------- | -------------------------------------------------------- |
+| `@lunatest/core`                | Lua runtime, mock provider, scenario engine, test runner |
+| `@lunatest/cli`                 | CLI interface (`lunatest run`, `lunatest gen --ai`)      |
+| `@lunatest/react`               | React hooks and test utilities                           |
+| `@lunatest/mcp`                 | MCP server for AI agent integration                      |
+| `@lunatest/vitest-plugin`       | Vitest integration plugin                                |
+| `@lunatest/playwright-plugin`   | Playwright fixture and routing plugin                    |
 
 ### Release Channels
 
 - `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
 - `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
-## Performance Gates
+## Documentation
+
+- Local: `pnpm docs:dev`, `pnpm docs:build`, `pnpm docs:preview`
+- GitHub Pages: repository-name-aware base path is resolved in `.github/workflows/docs.yml`
+  - project page: `/${repo}/`
+  - user/org page: `/`
+
+## Quality and Gates
+
+- Workspace quality: `pnpm -r build`, `pnpm -r lint`, `pnpm -r test`
+- E2E smoke (PR): `pnpm test:e2e:smoke`
+- E2E extended (nightly): `pnpm test:e2e:extended`
+- Performance regression: `node scripts/check-performance.mjs --mode=regression`
+- Performance absolute: `node scripts/check-performance.mjs --mode=absolute --threshold=5`
+
+## Performance Policy
 
 - PR: p95 regression gate (baseline 대비 +10% 초과 시 실패)
 - Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
-- Runner: `node scripts/check-performance.mjs --mode=regression`
 
 ## CI/CD
 
 - PR/Push quality gate: `.github/workflows/ci.yml`
 - Nightly absolute benchmark: `.github/workflows/benchmark.yml`
+- Docs build/deploy: `.github/workflows/docs.yml`
 - Changesets release pipeline: `.github/workflows/release.yml`
 - Versioning commands:
   - `pnpm changeset`
   - `pnpm version-packages`
+  - `pnpm release:publish:stable`
+  - `pnpm release:publish:next`
   - `pnpm release:publish`
+  - `pnpm release:publish:dry-run`
 
 ## Status
 
-Yet.
+Active development. Core, MCP, plugins, docs, CI, E2E, and release gates are integrated.
 
 ## License
 
