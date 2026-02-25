@@ -1,6 +1,6 @@
 export function createMockTools(initialState: Record<string, unknown> = {}) {
   let state: Record<string, unknown> = { ...initialState };
-  const presets = ["uniswap_v2", "uniswap_v3", "curve"];
+  const presets = ["uniswap_v2", "uniswap_v3", "curve", "aave"];
 
   return {
     async getState() {

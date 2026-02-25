@@ -45,6 +45,8 @@ importers:
 
   packages/mcp: {}
 
+  packages/playwright-plugin: {}
+
   packages/react:
     dependencies:
       '@lunatest/core':
@@ -63,6 +65,8 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.1
         version: 18.3.7(@types/react@18.3.28)
+
+  packages/vitest-plugin: {}
 
 packages:
 

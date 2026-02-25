@@ -47,15 +47,16 @@ export function createMcpServer(options: McpServerOptions) {
 
   const getResources = async () => {
     const scenarios = await scenarioTools.list();
-    const coverage = await coverageTools.report();
-    const components = await componentTools.tree();
-    return createResourceCatalog({
-      scenarios,
-      coverage,
-      components,
-      protocols: options.protocols ?? ["uniswap_v2", "uniswap_v3", "curve"],
-    });
-  };
+      const coverage = await coverageTools.report();
+      const components = await componentTools.tree();
+      return createResourceCatalog({
+        scenarios,
+        coverage,
+        components,
+        protocols:
+          options.protocols ?? ["uniswap_v2", "uniswap_v3", "curve", "aave"],
+      });
+    };
 
   return {
     async handleRequest(request: JsonRpcRequest): Promise<JsonRpcResponse> {

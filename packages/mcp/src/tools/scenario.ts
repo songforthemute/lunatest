@@ -1,3 +1,5 @@
+import { mutateScenarioVariants } from "../generation/mutator";
+
 export type ScenarioDescriptor = {
   id: string;
   name: string;
@@ -76,16 +78,9 @@ export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
       }
 
       const count = Math.max(1, Math.trunc(input.count ?? 1));
-      const variants: ScenarioDescriptor[] = [];
-
-      for (let index = 1; index <= count; index += 1) {
-        const variant: ScenarioDescriptor = {
-          ...source,
-          id: `${source.id}-mut-${index}`,
-          name: `${source.name} mutation ${index}`,
-        };
+      const variants = mutateScenarioVariants(source, count);
+      for (const variant of variants) {
         store.set(variant.id, variant);
-        variants.push(variant);
       }
 
       return variants;
