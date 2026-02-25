@@ -7,3 +7,4 @@ export { generate } from "./generation/combinatorial";
 export { mutateMocks, mutateScenarioVariants, mutateStages, mutateValues } from "./generation/mutator";
 export { createResourceCatalog } from "./resources";
 export { createPromptCatalog } from "./prompts";
+export { parseJsonRpcLine, processJsonRpcLine, runStdioServer } from "./transport/stdio";
