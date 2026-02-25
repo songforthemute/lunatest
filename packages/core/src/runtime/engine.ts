@@ -1,14 +1,23 @@
-import { createSandbox } from "./sandbox.js";
+import { createSandbox } from "./sandbox";
+import { RuntimeOptionsSchema, type Runtime, type RuntimeOptions } from "./types";
 
-const LUA_FUNCTION_RE = /function\s+([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*return\s+([^\n]+?)\s*end/g;
+const LUA_FUNCTION_RE =
+  /function\s+([A-Za-z_][A-Za-z0-9_]*)\(([^)]*)\)\s*return\s+([^\n]+?)\s*end/g;
 const LUA_ASSIGNMENT_RE = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/;
 
-function evaluateExpression(expression, scope) {
-  const evaluator = new Function("scope", `with (scope) { return (${expression}); }`);
+function evaluateExpression(
+  expression: string,
+  scope: Record<string, unknown>,
+): unknown {
+  const evaluator = new Function(
+    "scope",
+    `with (scope) { return (${expression}); }`,
+  ) as (scope: Record<string, unknown>) => unknown;
+
   return evaluator(scope);
 }
 
-function registerFunctions(code, functions) {
+function registerFunctions(code: string, functions: Map<string, FunctionSpec>): string {
   LUA_FUNCTION_RE.lastIndex = 0;
 
   let cleanedCode = code;
@@ -21,7 +30,11 @@ function registerFunctions(code, functions) {
       .map((value) => value.trim())
       .filter(Boolean);
 
-    const jsFunction = new Function(...paramNames, `return ${body};`);
+    const jsFunction = new Function(
+      ...paramNames,
+      `return ${body};`,
+    ) as (...args: unknown[]) => unknown;
+
     functions.set(name, { paramNames, jsFunction });
 
     cleanedCode = cleanedCode.replace(fullSource, "");
@@ -31,7 +44,11 @@ function registerFunctions(code, functions) {
   return cleanedCode;
 }
 
-function applyAssignments(code, sandbox, state) {
+function applyAssignments(
+  code: string,
+  sandbox: Record<string, unknown>,
+  state: Record<string, unknown>,
+): void {
   const statements = code
     .split(/[;\n]+/g)
     .map((line) => line.trim())
@@ -49,18 +66,24 @@ function applyAssignments(code, sandbox, state) {
   }
 }
 
-export async function createRuntime(options = {}) {
-  const functions = new Map();
-  const sandbox = createSandbox(options);
-  const state = Object.create(null);
+type FunctionSpec = {
+  paramNames: string[];
+  jsFunction: (...args: unknown[]) => unknown;
+};
+
+export async function createRuntime(rawOptions: RuntimeOptions = {}): Promise<Runtime> {
+  const options = RuntimeOptionsSchema.parse(rawOptions);
+  const functions = new Map<string, FunctionSpec>();
+  const sandbox = createSandbox(options) as Record<string, unknown>;
+  const state: Record<string, unknown> = Object.create(null);
 
   return {
-    async eval(code) {
+    async eval(code: string): Promise<void> {
       const codeWithoutFunctions = registerFunctions(code, functions);
       applyAssignments(codeWithoutFunctions, sandbox, state);
     },
 
-    async call(name, args = {}) {
+    async call(name: string, args: Record<string, unknown> = {}): Promise<unknown> {
       const registered = functions.get(name);
       if (!registered) {
         throw new Error(`Function not found: ${name}`);
@@ -70,15 +93,16 @@ export async function createRuntime(options = {}) {
       return registered.jsFunction(...orderedArgs);
     },
 
-    async getState(keys) {
-      if (!Array.isArray(keys) || keys.length === 0) {
+    async getState(keys: string[] = []): Promise<Record<string, unknown>> {
+      if (keys.length === 0) {
         return { ...state };
       }
 
-      const snapshot = {};
+      const snapshot: Record<string, unknown> = {};
       for (const key of keys) {
         snapshot[key] = state[key];
       }
+
       return snapshot;
     },
   };

@@ -1,4 +1,19 @@
-function createDeterministicRandom(seed) {
+import type { RuntimeOptions } from "./types";
+
+type SandboxShape = {
+  math: {
+    random: () => number;
+  };
+  os: {
+    time: () => number;
+    execute: () => never;
+  };
+  io: {
+    open: () => never;
+  };
+};
+
+function createDeterministicRandom(seed: number): () => number {
   let cursor = seed;
 
   return () => {
@@ -8,9 +23,9 @@ function createDeterministicRandom(seed) {
   };
 }
 
-export function createSandbox(options = {}) {
-  const seed = Number.isFinite(options.seed) ? options.seed : 1;
-  const now = Number.isFinite(options.now) ? options.now : 0;
+export function createSandbox(options: RuntimeOptions = {}): SandboxShape {
+  const seed = options.seed ?? 1;
+  const now = options.now ?? 0;
 
   return {
     math: {
