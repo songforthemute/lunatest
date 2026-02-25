@@ -5,12 +5,25 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
-    "lint": "pnpm -r --if-present run lint"
+    "lint": "pnpm -r --if-present run lint",
+    "docs:dev": "vitepress dev docs --host",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "test:e2e:smoke": "pnpm --filter @lunatest/e2e-tests test:smoke",
+    "test:e2e:extended": "pnpm --filter @lunatest/e2e-tests test:extended",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release:publish:stable": "pnpm --filter @lunatest/core --filter @lunatest/cli --filter @lunatest/react --filter @lunatest/mcp publish --access public --no-git-checks --tag latest",
+    "release:publish:next": "pnpm --filter @lunatest/vitest-plugin --filter @lunatest/playwright-plugin publish --access public --no-git-checks --tag next",
+    "release:publish": "pnpm run release:publish:stable && pnpm run release:publish:next",
+    "release:publish:dry-run": "pnpm run release:publish:stable --dry-run && pnpm run release:publish:next --dry-run"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@types/node": "^24.3.0",
     "turbo": "^2.5.8",
     "typescript": "^5.9.2",
+    "vitepress": "^1.6.4",
     "vitest": "^3.2.4"
   }
 }

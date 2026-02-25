@@ -63,12 +63,29 @@ scenario {
 | `@lunatest/cli`   | CLI interface (`lunatest run`, `lunatest gen --ai`)      |
 | `@lunatest/react` | React hooks and test utilities                           |
 | `@lunatest/mcp`   | MCP server for AI agent integration                      |
+| `@lunatest/vitest-plugin` | Vitest integration plugin                        |
+| `@lunatest/playwright-plugin` | Playwright fixture and routing plugin       |
+
+### Release Channels
+
+- `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
+- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
 ## Performance Gates
 
 - PR: p95 regression gate (baseline 대비 +10% 초과 시 실패)
 - Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
 - Runner: `node scripts/check-performance.mjs --mode=regression`
+
+## CI/CD
+
+- PR/Push quality gate: `.github/workflows/ci.yml`
+- Nightly absolute benchmark: `.github/workflows/benchmark.yml`
+- Changesets release pipeline: `.github/workflows/release.yml`
+- Versioning commands:
+  - `pnpm changeset`
+  - `pnpm version-packages`
+  - `pnpm release:publish`
 
 ## Status
 

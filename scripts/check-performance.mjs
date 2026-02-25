@@ -83,18 +83,29 @@ function percentile(values, ratio) {
   return sorted[index] ?? 0;
 }
 
-async function runScenario(resolveUi, expectedUi) {
-  const actualUi = await resolveUi();
-  return JSON.stringify(actualUi) === JSON.stringify(expectedUi);
+async function loadCoreRunner() {
+  const runnerPath = resolve(
+    process.cwd(),
+    "packages/core/dist/runner/runner.js",
+  );
+  return import(runnerPath);
 }
 
-async function measureIterations(iterations, resolveUi, expectedUi) {
+async function runScenarioThroughCore(runScenarioFn, scenario, resolveUi) {
+  const result = await runScenarioFn({
+    scenario,
+    resolveUi,
+  });
+  return result.pass;
+}
+
+async function measureIterations(iterations, runScenarioFn, scenario, resolveUi) {
   const samplesMs = [];
   const totalStart = performance.now();
 
   for (let index = 0; index < iterations; index += 1) {
     const started = performance.now();
-    await runScenario(resolveUi, expectedUi);
+    await runScenarioThroughCore(runScenarioFn, scenario, resolveUi);
     samplesMs.push(performance.now() - started);
   }
 
@@ -108,13 +119,19 @@ async function measureIterations(iterations, resolveUi, expectedUi) {
 }
 
 async function collectMetrics() {
-  const expectedUi = { warning: false };
+  const { runScenario } = await loadCoreRunner();
+  const scenario = {
+    name: "perf-gate",
+    given: {},
+    when: { action: "swap" },
+    then_ui: { warning: false },
+  };
   const resolveUi = async () => ({ warning: false });
 
-  await measureIterations(20, resolveUi, expectedUi);
+  await measureIterations(20, runScenario, scenario, resolveUi);
 
-  const sample = await measureIterations(200, resolveUi, expectedUi);
-  const thousand = await measureIterations(1000, resolveUi, expectedUi);
+  const sample = await measureIterations(200, runScenario, scenario, resolveUi);
+  const thousand = await measureIterations(1000, runScenario, scenario, resolveUi);
 
   return {
     measuredAt: new Date().toISOString(),

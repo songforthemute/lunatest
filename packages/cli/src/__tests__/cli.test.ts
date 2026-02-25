@@ -8,6 +8,7 @@ describe("cli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("Scenario Summary");
+    expect(result.output).toContain("filter=all");
   });
 
   it("runs watch command", () => {
@@ -21,6 +22,27 @@ describe("cli", () => {
     const result = executeCommand(["coverage"]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain("Coverage report");
+    expect(result.output).toContain("\"ratio\": 1");
+  });
+
+  it("runs gen command with --ai", () => {
+    const result = executeCommand(["gen", "--ai"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain("AI generation complete");
+  });
+
+  it("fails gen command without --ai", () => {
+    const result = executeCommand(["gen"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("requires --ai");
+  });
+
+  it("fails unknown command", () => {
+    const result = executeCommand(["unknown-command"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("unknown command");
   });
 });

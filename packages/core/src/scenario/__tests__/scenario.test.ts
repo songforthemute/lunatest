@@ -21,9 +21,12 @@ describe("scenario dsl", () => {
       },
       when: { action: "swap" },
       then_ui: { warning: false },
+      then_state: { stage: "complete" },
+      stages: [{ name: "ready" }, { name: "complete" }],
     });
 
     expect(parsed.name).toBe("happy-path");
     expect(parsed.when.action).toBe("swap");
+    expect(parsed.stages).toHaveLength(2);
   });
 });

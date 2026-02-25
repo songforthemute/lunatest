@@ -1,0 +1,23 @@
+{
+  "name": "@lunatest/e2e-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm test:smoke",
+    "test:smoke": "vitest run mcp-flow.smoke.test.ts playwright-routing.smoke.test.ts cli-gen.smoke.test.ts",
+    "test:extended": "vitest run"
+  },
+  "dependencies": {
+    "@lunatest/cli": "workspace:*",
+    "@lunatest/mcp": "workspace:*",
+    "@lunatest/playwright-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
