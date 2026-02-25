@@ -1,129 +1,125 @@
-# E2E 0→1 워크스루
+# E2E 0→1 워크스루 (라이브러리 설치 사용자용)
 
-이 문서는 "처음 붙여보는 사람" 기준으로 작성했습니다.
-핵심은 세 가지입니다.
+이 문서는 "LunaTest를 처음 설치해서 써보는 사용자"를 기준으로 작성했습니다.
 
-1. 이렇게 작성한다.
-2. 이렇게 실행한다.
-3. 결과는 이렇게 읽는다.
+읽는 흐름은 단순합니다.
 
-아래 흐름을 끝까지 따라가면 `MCP -> Playwright 라우팅 -> CLI`까지 한 번에 감을 잡을 수 있습니다.
+1. 프로젝트를 만든다.
+2. 패키지를 설치한다.
+3. 테스트 파일을 만든다.
+4. 실행 결과를 보고 정상 동작을 확인한다.
 
-## 0) 준비
+## 목표
+
+아래 두 가지가 확인되면 0→1은 성공입니다.
+
+- Playwright 테스트에서 네트워크 모킹이 실제로 동작한다.
+- CLI/MCP 명령 실행 결과를 눈으로 확인할 수 있다.
+
+## 0) 새 프로젝트 생성
 
 ```bash
-pnpm install --frozen-lockfile
-pnpm -r build
+pnpm create vite lunatest-hello --template react-ts
+cd lunatest-hello
 ```
 
-## 1) 가장 빠른 전체 확인: 스모크 E2E 실행
+## 1) 패키지 설치
 
 ```bash
-pnpm test:e2e:smoke
+pnpm add @lunatest/core@latest @lunatest/react@latest @lunatest/mcp@latest @lunatest/cli@latest
+pnpm add -D @lunatest/playwright-plugin@next @lunatest/vitest-plugin@next @playwright/test vitest
+pnpm exec playwright install
+```
+
+설치가 끝나면 "core/react/mcp/cli + e2e plugin" 최소 조합이 준비된 상태입니다.
+
+## 2) Playwright E2E 테스트 파일 작성
+
+`tests/luna.e2e.spec.ts` 파일을 만들고 아래 내용을 넣습니다.
+
+```ts
+import { test, expect } from "@playwright/test";
+import { createLunaFixture } from "@lunatest/playwright-plugin";
+
+test("0to1: quote api is mocked", async ({ page }) => {
+  const luna = createLunaFixture({
+    routing: {
+      mode: "strict",
+      httpEndpoints: [
+        {
+          urlPattern: "https://api.luna.local/quote",
+          method: "GET",
+          responseKey: "quote",
+        },
+      ],
+    },
+    mockResponses: {
+      quote: {
+        status: 200,
+        headers: {
+          "access-control-allow-origin": "*",
+        },
+        body: {
+          amountOut: "123.45",
+          priceImpactBps: 12,
+        },
+      },
+    },
+  });
+
+  await luna.injectProvider(page);
+  await luna.installRouting(page);
+
+  await page.goto("https://example.com");
+
+  const quote = await page.evaluate(async () => {
+    const response = await fetch("https://api.luna.local/quote", {
+      method: "GET",
+    });
+    return response.json();
+  });
+
+  expect(quote).toEqual({
+    amountOut: "123.45",
+    priceImpactBps: 12,
+  });
+});
+```
+
+## 3) E2E 실행
+
+```bash
+pnpm exec playwright test tests/luna.e2e.spec.ts
 ```
 
 기대 출력(요약):
 
 ```text
-✓ cli-gen.smoke.test.ts (1 test)
-✓ playwright-routing.smoke.test.ts (1 test)
-✓ mcp-flow.smoke.test.ts (1 test)
-
-Test Files  3 passed (3)
-Tests       3 passed (3)
+Running 1 test using 1 worker
+  ✓  tests/luna.e2e.spec.ts:3:1 › 0to1: quote api is mocked
+  1 passed
 ```
 
-어떻게 보면 되나:
+결과를 이렇게 읽으면 됩니다.
 
-- 세 파일이 모두 `✓`면 기본 E2E 체인은 정상입니다.
-- 여기서 하나라도 깨지면, 아래 2~4단계에서 원인을 좁혀 들어가면 됩니다.
+- `1 passed`면 라우팅 모킹이 실제 브라우저 컨텍스트에서 정상 동작합니다.
+- 여기서 실패하면 endpoint 패턴(`urlPattern`)이나 `mode: "strict"` 매핑 누락을 먼저 확인하면 됩니다.
 
-## 2) MCP 흐름을 직접 써보기 (create -> run)
-
-아래처럼 테스트를 작성하면 시나리오 생성과 실행 결과를 한 번에 확인할 수 있습니다.
-
-```ts
-import { describe, expect, it } from "vitest";
-import { createMcpServer } from "@lunatest/mcp";
-
-describe("mcp 0to1", () => {
-  it("creates and runs a scenario", async () => {
-    const server = createMcpServer({ scenarios: [] });
-
-    const created = await server.handleRequest({
-      id: "1",
-      method: "scenario.create",
-      params: { id: "swap-1", name: "swap happy path" },
-    });
-
-    const run = await server.handleRequest({
-      id: "2",
-      method: "scenario.run",
-      params: { id: "swap-1" },
-    });
-
-    expect(created).toEqual({
-      id: "1",
-      result: { id: "swap-1", name: "swap happy path" },
-    });
-
-    expect(run).toEqual({
-      id: "2",
-      result: { id: "swap-1", pass: true },
-    });
-  });
-});
-```
-
-핵심 포인트:
-
-- `scenario.create`의 `result.id`가 생성 식별자입니다.
-- `scenario.run` 결과에서 `pass: true`면 시나리오 실행이 정상입니다.
-
-## 3) Playwright 라우팅을 직접 써보기 (strict 모드)
-
-아래 예제는 매핑된 RPC 요청은 응답하고, 모르는 요청은 막는 흐름입니다.
-
-```ts
-import { describe, expect, it } from "vitest";
-import { createLunaFixture } from "@lunatest/playwright-plugin";
-
-describe("playwright routing 0to1", () => {
-  it("fulfills known rpc and blocks unknown route", async () => {
-    const fixture = createLunaFixture({
-      routing: {
-        mode: "strict",
-        rpcEndpoints: [
-          {
-            urlPattern: "https://rpc.test",
-            methods: ["eth_chainId"],
-            responseKey: "chain",
-          },
-        ],
-      },
-      mockResponses: {
-        chain: { result: "0x1" },
-      },
-    });
-
-    // installRouting 이후, known RPC는 fulfill / unknown은 abort 되는지 검증
-    // (실제 프로젝트에서는 page.route 기반으로 연결)
-  });
-});
-```
-
-결과를 이렇게 읽으면 됩니다:
-
-- known RPC 응답에서 `result: "0x1"`이면 매핑이 정상
-- strict 모드에서 unknown 요청이 차단되면 라우팅 누락을 빠르게 발견 가능
-
-## 4) CLI 생성 플로우 확인 (`gen --ai`)
+## 4) CLI 실행 확인
 
 ```bash
-node packages/cli/dist/index.js gen --ai
+pnpm exec lunatest run
+pnpm exec lunatest gen --ai
 ```
 
 기대 출력:
+
+```text
+Scenario Summary
+filter=all
+passed=1
+failed=0
+```
 
 ```text
 AI generation complete
@@ -131,16 +127,38 @@ created=1
 executed=1
 ```
 
-결과를 이렇게 읽으면 됩니다:
+결과를 이렇게 읽으면 됩니다.
 
-- `created`는 생성된 시나리오 수
-- `executed`는 즉시 검증까지 돌린 수
+- `run` 출력은 시나리오 실행 요약입니다.
+- `gen --ai` 출력의 `created`, `executed` 값으로 생성/실행 여부를 바로 확인할 수 있습니다.
 
-## 5) “지금 제대로 붙었는지” 최종 체크리스트
+## 5) MCP stdio 실행 확인
 
-- `pnpm test:e2e:smoke`가 3/3 PASS인지
-- MCP `scenario.create -> scenario.run`에서 `pass: true`가 나오는지
-- Playwright strict 모드에서 unknown 요청이 차단되는지
-- CLI `gen --ai` 출력에 `created`, `executed`가 보이는지
+```bash
+printf '%s\n' \
+  '{"id":"1","method":"scenario.create","params":{"id":"swap-smoke","name":"Swap Smoke"}}' \
+  '{"id":"2","method":"scenario.run","params":{"id":"swap-smoke"}}' \
+  | pnpm exec lunatest-mcp
+```
 
-이 네 가지가 맞으면 0→1 단계는 통과입니다. 이제부터는 시나리오를 늘리면서 coverage와 확장 E2E로 넘어가면 됩니다.
+기대 출력(줄별):
+
+```json
+{"id":"1","result":{"id":"swap-smoke","name":"Swap Smoke"}}
+{"id":"2","result":{"id":"swap-smoke","pass":true}}
+```
+
+결과를 이렇게 읽으면 됩니다.
+
+- 첫 줄은 시나리오 생성 성공 여부
+- 둘째 줄은 실행 결과(`pass`) 확인
+
+## 6) 최종 체크리스트
+
+- Playwright 테스트가 `1 passed`로 끝나는가
+- `lunatest run` 결과에 `passed`/`failed` 요약이 보이는가
+- `lunatest gen --ai`에 `created`, `executed`가 찍히는가
+- `lunatest-mcp` 응답에서 `scenario.create -> scenario.run` 흐름이 보이는가
+
+여기까지 확인되면 "설치해서 처음 붙여보는 단계"는 통과입니다.
+이후에는 프로젝트 도메인 시나리오를 추가하고, CI 게이트에 연결하면 됩니다.
