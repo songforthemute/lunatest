@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "node -e \"console.log('build placeholder')\"",
-    "test": "node --test src/__tests__/*.test.mjs",
+    "test": "node --test src/__tests__/*.test.mjs src/runtime/__tests__/*.test.mjs",
     "lint": "node -e \"console.log('lint placeholder')\""
   }
 }
