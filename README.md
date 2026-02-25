@@ -70,6 +70,16 @@ scenario {
 - Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
 - Runner: `node scripts/check-performance.mjs --mode=regression`
 
+## CI/CD
+
+- PR/Push quality gate: `.github/workflows/ci.yml`
+- Nightly absolute benchmark: `.github/workflows/benchmark.yml`
+- Changesets release pipeline: `.github/workflows/release.yml`
+- Versioning commands:
+  - `pnpm changeset`
+  - `pnpm version-packages`
+  - `pnpm release:publish`
+
 ## Status
 
 Yet.

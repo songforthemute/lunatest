@@ -1,0 +1,26 @@
+name: Benchmark
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly-performance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lunatest/core build
+      - run: node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perf-current-absolute
+          path: scripts/perf-current-absolute.json

@@ -6,9 +6,6 @@ on:
     branches:
       - main
       - codex/**
-  schedule:
-    - cron: "0 0 * * *"
-  workflow_dispatch:
 
 jobs:
   quality:
@@ -23,18 +20,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @lunatest/core lint
-      - run: pnpm --filter @lunatest/core build
-      - run: pnpm --filter @lunatest/core test
-      - run: pnpm --filter @lunatest/cli lint
-      - run: pnpm --filter @lunatest/cli build
-      - run: pnpm --filter @lunatest/cli test
-      - run: pnpm --filter @lunatest/react lint
-      - run: pnpm --filter @lunatest/react build
-      - run: pnpm --filter @lunatest/react test
-      - run: pnpm --filter @lunatest/mcp lint
-      - run: pnpm --filter @lunatest/mcp build
-      - run: pnpm --filter @lunatest/mcp test
+      - run: pnpm -r lint
+      - run: pnpm -r build
+      - run: pnpm -r test
 
   performance-regression:
     if: github.event_name == 'pull_request' || github.event_name == 'push'
@@ -52,20 +40,3 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @lunatest/core build
       - run: node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
-
-  nightly-performance:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    needs: quality
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.30.2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @lunatest/core build
-      - run: node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current.json
