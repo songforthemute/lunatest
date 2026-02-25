@@ -27,6 +27,28 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.10.13)
 
+  e2e-tests:
+    dependencies:
+      '@lunatest/cli':
+        specifier: workspace:*
+        version: link:../packages/cli
+      '@lunatest/mcp':
+        specifier: workspace:*
+        version: link:../packages/mcp
+      '@lunatest/playwright-plugin':
+        specifier: workspace:*
+        version: link:../packages/playwright-plugin
+    devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.10.13
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.10.13)
+
   packages/cli:
     dependencies:
       commander:

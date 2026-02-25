@@ -41,7 +41,12 @@ function cloneSupported(value: unknown): unknown {
         throw new Error(`Unsupported value type at ${key}: undefined`);
       }
 
-      cloned[key] = cloneSupported(nested);
+      Object.defineProperty(cloned, key, {
+        value: cloneSupported(nested),
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
     }
 
     return cloned;

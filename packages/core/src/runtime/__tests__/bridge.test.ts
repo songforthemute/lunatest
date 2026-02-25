@@ -21,4 +21,13 @@ describe("bridge", () => {
   it("rejects unsupported values", () => {
     expect(() => toLuaArgs({ fn: () => 1 })).toThrow(/Unsupported value type/);
   });
+
+  it("preserves __proto__ as data key", () => {
+    const input = JSON.parse(`{"__proto__":""}`) as Record<string, unknown>;
+
+    const roundTrip = fromLuaValue(toLuaArgs(input)) as Record<string, unknown>;
+
+    expect(Object.prototype.hasOwnProperty.call(roundTrip, "__proto__")).toBe(true);
+    expect(roundTrip.__proto__).toBe("");
+  });
 });
