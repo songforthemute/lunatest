@@ -5,7 +5,7 @@ import {
   assertTransition,
   assertUI,
   type AssertionResult,
-} from "./assert";
+} from "./assert.js";
 
 type ScenarioLike = {
   name: string;
