@@ -15,6 +15,8 @@
 - `mutateMocks`, `mutateScenarioVariants`, `mutateStages`, `mutateValues`
 - `parseJsonRpcLine`, `processJsonRpcLine`, `runStdioServer`
 
+보통은 `createMcpServer`로 서버를 만든 뒤 `runStdioServer`로 연결해 사용합니다.
+
 ## stdio 서버 예시
 
 ```ts

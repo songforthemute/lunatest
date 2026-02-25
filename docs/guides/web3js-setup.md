@@ -1,6 +1,6 @@
 # Web3.js Setup
 
-`createWeb3JsAdapter`로 Web3.js 스타일 `request` 인터페이스를 제공합니다.
+`createWeb3JsAdapter`를 사용하면 Web3.js 스타일 `request` 인터페이스로 바로 연결할 수 있습니다.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";

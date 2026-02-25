@@ -1,6 +1,6 @@
 # React 통합 가이드
 
-이 문서는 React 앱에서 LunaTest provider를 붙이고, wagmi/ethers/web3.js와 연결하는 최소 단계를 정리합니다.
+이 문서는 React 앱에서 LunaTest provider를 연결하고, wagmi/ethers/web3.js와 연동하는 최소 단계를 정리합니다.
 
 ## 1) Provider 연결
 

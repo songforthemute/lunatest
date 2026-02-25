@@ -36,6 +36,7 @@ export default defineConfig({
           { text: "빠른 시작", link: "/ko/getting-started" },
           { text: "라이브러리 소비자 가이드", link: "/ko/guides/library-consumption" },
           { text: "시나리오 예제", link: "/ko/guides/scenario-examples" },
+          { text: "E2E 0→1 워크스루", link: "/ko/guides/e2e-0to1" },
           { text: "React 통합", link: "/ko/guides/react-integration" },
           { text: "MCP stdio", link: "/ko/guides/mcp-stdio" },
           { text: "Playwright 라우팅", link: "/ko/guides/playwright-routing" },

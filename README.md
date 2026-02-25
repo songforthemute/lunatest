@@ -262,7 +262,7 @@ expect({ pass: true }).toLunaPass();
 
 ## Performance Policy
 
-- PR: p95 regression gate (baseline 대비 +10% 초과 시 실패)
+- PR: p95 regression gate (baseline 대비 10% 초과 시 실패)
 - Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
 
 ## CI/CD

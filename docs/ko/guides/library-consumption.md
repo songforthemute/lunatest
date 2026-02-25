@@ -1,7 +1,7 @@
 # 라이브러리 소비자 가이드
 
-이 문서는 LunaTest를 "라이브러리로 가져다 쓰는 팀" 기준으로 작성했습니다.
-필요한 패키지만 설치해도 동작하도록 구성했습니다.
+이 문서는 LunaTest를 "라이브러리로 가져다 쓰는 팀" 관점에서 정리했습니다.
+필요한 패키지만 선택해도 바로 사용할 수 있습니다.
 
 ## 패키지 선택 기준
 
@@ -105,5 +105,6 @@ await runStdioServer({
 ## 다음으로 보면 좋은 문서
 
 - [시나리오 예제 모음](./scenario-examples.md)
+- [E2E 0→1 워크스루](./e2e-0to1.md)
 - [React 통합 가이드](./react-integration.md)
 - [Playwright 라우팅 모킹](./playwright-routing.md)

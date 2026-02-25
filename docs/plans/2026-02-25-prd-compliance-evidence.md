@@ -138,7 +138,7 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=script
 
 ## Behavioral Gap Closure
 
-이전 문서의 4개 behavioral gap은 모두 해소됨:
+이전 문서에서 지적한 4개 behavioral gap은 모두 해소됐습니다:
 
 1. Vitest plugin 실동작 통합: `@lunatest/vitest-plugin` 테스트 및 패키지 통합으로 해소
 2. Playwright plugin 자동 주입/라우팅 통합: fixture/commands + routing smoke 테스트로 해소

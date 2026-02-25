@@ -35,7 +35,7 @@ await provider.request({
 });
 ```
 
-## 지원 메서드(요약)
+## 지원 메서드 (요약)
 
 - `eth_chainId`
 - `eth_accounts`

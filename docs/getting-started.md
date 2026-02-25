@@ -6,7 +6,7 @@
 pnpm install
 ```
 
-## 2. Library Install (Consumer Projects)
+## 2. Install Libraries (Consumer Projects)
 
 ```bash
 pnpm add @lunatest/core @lunatest/react
@@ -32,7 +32,7 @@ node packages/cli/dist/index.js run
 node packages/cli/dist/index.js gen --ai
 ```
 
-## 5. Performance Gate
+## 5. Run Performance Gate
 
 ```bash
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json

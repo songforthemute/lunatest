@@ -1,6 +1,6 @@
 # Playwright 라우팅 모킹 가이드
 
-LunaTest Playwright 플러그인은 두 축을 같이 처리합니다.
+LunaTest Playwright 플러그인은 아래 두 축을 함께 처리합니다.
 
 - 지갑 주입: `injectProvider`
 - 네트워크 모킹: `installRouting`
@@ -9,8 +9,8 @@ LunaTest Playwright 플러그인은 두 축을 같이 처리합니다.
 
 - `rpcEndpoints` 배열: JSON-RPC 엔드포인트와 메서드별 응답 매핑
 - `httpEndpoints` 배열: 백엔드 API 응답 매핑
-- `mode: "strict"`: 매핑되지 않은 요청은 차단
-- `mode: "permissive"`: 매핑되지 않은 요청은 통과
+- `mode: "strict"`: 매핑되지 않은 요청 차단
+- `mode: "permissive"`: 매핑되지 않은 요청 통과
 
 ## 예시
 
@@ -50,5 +50,5 @@ test("swap flow", async ({ page }) => {
 ## 배열 기반 라우팅이 유리한 이유
 
 - RPC 노드 상호작용과 백엔드 API를 같은 테스트에서 함께 제어할 수 있습니다.
-- 시나리오별로 endpoint 배열만 바꿔서 재사용하기 쉽습니다.
+- 시나리오별로 endpoint 배열만 바꿔 재사용하기 쉽습니다.
 - strict 모드로 누락된 네트워크 호출을 빠르게 잡을 수 있습니다.

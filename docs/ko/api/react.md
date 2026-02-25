@@ -12,6 +12,8 @@
 - `createEthersAdapter`
 - `createWeb3JsAdapter`
 
+실무에서는 `LunaTestProvider` + `useLunaTest` 조합으로 시작하는 경우가 가장 많습니다.
+
 ## 최소 예시
 
 ```tsx

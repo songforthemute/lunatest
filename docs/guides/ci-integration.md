@@ -1,6 +1,6 @@
 # CI Integration
 
-권장 CI 게이트는 PR 스모크와 야간 확장을 분리합니다.
+권장 CI 구성은 PR 스모크 게이트와 야간 확장 게이트를 분리해 운영하는 방식입니다.
 
 ## PR Required Gates
 
@@ -15,4 +15,4 @@
 1. `node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json`
 2. `pnpm test:e2e:extended`
 
-스모크 게이트는 머지 차단용, 확장 게이트는 리스크 탐지용으로 운용합니다.
+PR에서는 머지를 막아야 할 리스크를 빠르게 잡고, 야간 배치에서는 확장 시나리오로 품질 저하를 조기에 탐지합니다.

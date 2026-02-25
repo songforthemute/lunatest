@@ -1,11 +1,11 @@
 # LunaTest (한국어 가이드)
 
-> Web3 프론트엔드 테스트를 위한 결정론(Deterministic) SDK
+> Web3 프론트엔드를 위한 결정론 테스트 SDK
 > 체인 포크나 flaky 테스트 없이, 밀리초 단위로 빠르게 검증
 > English version: [README.md](./README.md)
 
 LunaTest는 Anvil fork, RPC stub, 느린 브라우저 E2E 중심의 기존 Web3 테스트 흐름을
-Wasm 기반 Lua 런타임으로 바꿔서, 빠르고 재현 가능한 테스트 경험을 제공합니다.
+Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경험을 제공합니다.
 
 ## 빠른 시작
 
@@ -26,7 +26,7 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5
 
 ## 사용 가이드
 
-1. 기본 품질 게이트를 실행합니다.
+1. 기본 품질 게이트 실행
 
 ```bash
 pnpm -r build
@@ -35,13 +35,13 @@ pnpm -r test
 pnpm test:e2e:smoke
 ```
 
-2. 문서 사이트를 로컬에서 띄웁니다.
+2. 문서 사이트 로컬 실행
 
 ```bash
 pnpm docs:dev
 ```
 
-3. 채널별로 배포합니다.
+3. 채널별 배포
 
 ```bash
 pnpm release:publish:stable
@@ -70,7 +70,7 @@ pnpm release:publish:next
 
 ## 라이브러리 사용 예시
 
-필요한 패키지만 골라 설치합니다.
+필요한 패키지만 골라 설치할 수 있습니다.
 
 ```bash
 pnpm add @lunatest/core
@@ -111,7 +111,7 @@ export function App() {
 }
 ```
 
-### 3) 어댑터(wagmi/ethers/web3.js)
+### 3) 어댑터 (wagmi/ethers/web3.js)
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -143,6 +143,7 @@ await runStdioServer({
 
 한국어 문서 인덱스: `docs/ko/index.md`
 한국어 시나리오 예제: `docs/ko/guides/scenario-examples.md`
+한국어 E2E 워크스루: `docs/ko/guides/e2e-0to1.md`
 
 ## 릴리스 채널
 
