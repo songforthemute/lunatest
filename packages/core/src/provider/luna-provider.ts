@@ -16,6 +16,8 @@ type Receipt = {
   blockNumber: string;
 };
 
+type ProviderListener = (...args: unknown[]) => void;
+
 function normalizeAddress(value: string): string {
   return value.toLowerCase();
 }
@@ -28,6 +30,7 @@ export class LunaProvider {
   private txCounter: bigint;
   private subCounter: number;
   private receipts: Map<string, Receipt>;
+  private listeners: Map<string, Set<ProviderListener>>;
 
   constructor(options: LunaProviderOptions) {
     this.chainId = options.chainId ?? "0x1";
@@ -42,6 +45,39 @@ export class LunaProvider {
     this.txCounter = 1n;
     this.subCounter = 1;
     this.receipts = new Map();
+    this.listeners = new Map();
+  }
+
+  on(event: string, listener: ProviderListener): this {
+    const bucket = this.listeners.get(event) ?? new Set<ProviderListener>();
+    bucket.add(listener);
+    this.listeners.set(event, bucket);
+    return this;
+  }
+
+  removeListener(event: string, listener: ProviderListener): this {
+    const bucket = this.listeners.get(event);
+    if (!bucket) {
+      return this;
+    }
+
+    bucket.delete(listener);
+    if (bucket.size === 0) {
+      this.listeners.delete(event);
+    }
+
+    return this;
+  }
+
+  private emit(event: string, ...args: unknown[]): void {
+    const bucket = this.listeners.get(event);
+    if (!bucket) {
+      return;
+    }
+
+    for (const listener of bucket) {
+      listener(...args);
+    }
   }
 
   async request(payload: Eip1193Request): Promise<unknown> {
@@ -88,6 +124,11 @@ export class LunaProvider {
         blockNumber: "0x1",
       });
 
+      this.emit("message", {
+        type: "tx_submitted",
+        data: { transactionHash: txHash },
+      });
+
       return txHash;
     }
 
@@ -112,6 +153,7 @@ export class LunaProvider {
       }
 
       this.chainId = chainId;
+      this.emit("chainChanged", chainId);
       return null;
     }
 
