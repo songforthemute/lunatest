@@ -68,6 +68,79 @@ pnpm release:publish:next
 | `examples` | 예제 앱 및 시나리오 |
 | `scripts` | 성능 게이트 및 보조 스크립트 |
 
+## 라이브러리 사용 예시
+
+필요한 패키지만 선택 설치:
+
+```bash
+pnpm add @lunatest/core
+pnpm add @lunatest/react
+pnpm add @lunatest/mcp
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+```
+
+### 1) Core provider
+
+```ts
+import { LunaProvider } from "@lunatest/core";
+
+const provider = new LunaProvider({
+  chainId: "0x1",
+  accounts: ["0x1111111111111111111111111111111111111111"],
+});
+
+await provider.request({ method: "eth_chainId" });
+```
+
+### 2) React 연동
+
+```tsx
+import { LunaTestProvider, useLunaTest } from "@lunatest/react";
+
+function View() {
+  const { provider } = useLunaTest();
+  return <span>{String(Boolean(provider))}</span>;
+}
+
+export function App() {
+  return (
+    <LunaTestProvider options={{ chainId: "0x1" }}>
+      <View />
+    </LunaTestProvider>
+  );
+}
+```
+
+### 3) 어댑터(wagmi/ethers/web3.js)
+
+```ts
+import { LunaProvider } from "@lunatest/core";
+import {
+  withLunaWagmiConfig,
+  createEthersAdapter,
+  createWeb3JsAdapter,
+} from "@lunatest/react";
+
+const provider = new LunaProvider({ chainId: "0x1" });
+const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const ethersLike = createEthersAdapter(provider);
+const web3Like = createWeb3JsAdapter(provider);
+```
+
+### 4) MCP stdio 실행
+
+```ts
+import { createMcpServer, runStdioServer } from "@lunatest/mcp";
+
+await runStdioServer({
+  input: process.stdin,
+  output: process.stdout,
+  server: createMcpServer({ scenarios: [] }),
+});
+```
+
+더 자세한 소비자 가이드: `docs/guides/library-consumption.md`
+
 ## 릴리스 채널
 
 - `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`

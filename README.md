@@ -82,6 +82,115 @@ pnpm release:publish:next
 | `examples` | Example apps and scenario files |
 | `scripts` | Performance gate runner and utilities |
 
+## Library Integration Examples
+
+Install only what you need:
+
+```bash
+pnpm add @lunatest/core
+pnpm add @lunatest/react
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+pnpm add @lunatest/mcp
+```
+
+### 1) Core provider (EIP-1193 compatible)
+
+```ts
+import { LunaProvider } from "@lunatest/core";
+
+const provider = new LunaProvider({
+  chainId: "0x1",
+  accounts: ["0x1111111111111111111111111111111111111111"],
+  balances: {
+    "0x1111111111111111111111111111111111111111": "0xde0b6b3a7640000",
+  },
+});
+
+const chainId = await provider.request({ method: "eth_chainId" });
+```
+
+### 2) React provider + hook
+
+```tsx
+import { LunaTestProvider, useLunaTest } from "@lunatest/react";
+
+function WalletBadge() {
+  const { provider } = useLunaTest();
+  // provider.request({ method: "eth_accounts" }) ...
+  return <span>Luna Provider Ready</span>;
+}
+
+export function App() {
+  return (
+    <LunaTestProvider options={{ chainId: "0x1" }}>
+      <WalletBadge />
+    </LunaTestProvider>
+  );
+}
+```
+
+### 3) Adapter bridge (wagmi / ethers / web3.js)
+
+```ts
+import { LunaProvider } from "@lunatest/core";
+import {
+  withLunaWagmiConfig,
+  createEthersAdapter,
+  createWeb3JsAdapter,
+} from "@lunatest/react";
+
+const provider = new LunaProvider({ chainId: "0x1" });
+
+const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const ethersLike = createEthersAdapter(provider);
+const web3Like = createWeb3JsAdapter(provider);
+```
+
+### 4) MCP stdio server
+
+```ts
+import { createMcpServer, runStdioServer } from "@lunatest/mcp";
+
+const server = createMcpServer({
+  scenarios: [{ id: "swap-smoke", name: "Swap Smoke", lua: "scenario {}" }],
+});
+
+await runStdioServer({
+  input: process.stdin,
+  output: process.stdout,
+  server,
+});
+```
+
+### 5) Playwright routing fixture
+
+```ts
+import { createLunaFixture } from "@lunatest/playwright-plugin";
+
+const fixture = createLunaFixture({
+  routing: {
+    mode: "strict",
+    rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
+    httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+  },
+  mockResponses: {
+    eth_call: { result: "0x01" },
+    quote: { status: 200, body: { amountOut: "123.45" } },
+  },
+});
+
+// in test: await fixture.injectProvider(page); await fixture.installRouting(page);
+```
+
+### 6) Vitest matcher
+
+```ts
+import { toLunaPass } from "@lunatest/vitest-plugin";
+
+expect.extend({ toLunaPass });
+expect({ pass: true }).toLunaPass();
+```
+
 ## Why
 
 |                        | Jest / Vitest | Cypress / Playwright | MSW / Mock     | Anvil / Hardhat  | Synpress         | **LunaTest**        |
@@ -139,6 +248,7 @@ pnpm release:publish:next
 - GitHub Pages: repository-name-aware base path is resolved in `.github/workflows/docs.yml`
   - project page: `/${repo}/`
   - user/org page: `/`
+- Library consumption guide: `docs/guides/library-consumption.md`
 
 ## Quality and Gates
 

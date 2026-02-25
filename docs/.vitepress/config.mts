@@ -11,6 +11,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: "Getting Started", link: "/getting-started" },
+      { text: "Library Guide", link: "/guides/library-consumption" },
       { text: "Concepts", link: "/concepts/architecture" },
       { text: "Guides", link: "/guides/writing-scenarios" },
       { text: "API", link: "/api/core" },
@@ -22,6 +23,7 @@ export default defineConfig({
         items: [
           { text: "Index", link: "/" },
           { text: "Getting Started", link: "/getting-started" },
+          { text: "Library Consumption", link: "/guides/library-consumption" },
           { text: "Wagmi Integration", link: "/wagmi-integration" },
         ],
       },
@@ -36,10 +38,12 @@ export default defineConfig({
       {
         text: "Guides",
         items: [
+          { text: "Library Consumption", link: "/guides/library-consumption" },
           { text: "Writing Scenarios", link: "/guides/writing-scenarios" },
           { text: "Multi-stage", link: "/guides/multi-stage" },
           { text: "Wagmi Setup", link: "/guides/wagmi-setup" },
           { text: "Ethers Setup", link: "/guides/ethers-setup" },
+          { text: "Web3.js Setup", link: "/guides/web3js-setup" },
           { text: "CI Integration", link: "/guides/ci-integration" },
         ],
       },
@@ -61,6 +65,6 @@ export default defineConfig({
         ],
       },
     ],
-    socialLinks: [{ icon: "github", link: "https://github.com/example/lunatest" }],
+    socialLinks: [{ icon: "github", link: "https://github.com/songforthemute/lunatest" }],
   },
 });
