@@ -2,12 +2,19 @@ export type ScenarioDescriptor = {
   id: string;
   name: string;
   lua?: string;
+  tags?: string[];
 };
 
 type ScenarioCreateInput = {
   id: string;
   name: string;
   lua?: string;
+  tags?: string[];
+};
+
+type ScenarioMutateInput = {
+  id: string;
+  count?: number;
 };
 
 export type ScenarioTools = {
@@ -15,6 +22,8 @@ export type ScenarioTools = {
   get: (id: string) => Promise<ScenarioDescriptor | null>;
   create: (input: ScenarioCreateInput) => Promise<ScenarioDescriptor>;
   run: (id: string) => Promise<{ id: string; pass: boolean }>;
+  runAll: (filter?: string) => Promise<Array<{ id: string; pass: boolean }>>;
+  mutate: (input: ScenarioMutateInput) => Promise<ScenarioDescriptor[]>;
 };
 
 export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
@@ -44,6 +53,42 @@ export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
         id,
         pass: true,
       };
+    },
+
+    async runAll(filter) {
+      const candidates = Array.from(store.values()).filter((scenario) => {
+        if (!filter) {
+          return true;
+        }
+        return scenario.id.includes(filter) || scenario.name.includes(filter);
+      });
+
+      return candidates.map((item) => ({
+        id: item.id,
+        pass: true,
+      }));
+    },
+
+    async mutate(input) {
+      const source = store.get(input.id);
+      if (!source) {
+        throw new Error(`Scenario not found: ${input.id}`);
+      }
+
+      const count = Math.max(1, Math.trunc(input.count ?? 1));
+      const variants: ScenarioDescriptor[] = [];
+
+      for (let index = 1; index <= count; index += 1) {
+        const variant: ScenarioDescriptor = {
+          ...source,
+          id: `${source.id}-mut-${index}`,
+          name: `${source.name} mutation ${index}`,
+        };
+        store.set(variant.id, variant);
+        variants.push(variant);
+      }
+
+      return variants;
     },
   };
 }

@@ -19,5 +19,21 @@ export function createCoverageTools(seed?: Partial<CoverageReport>) {
     async report() {
       return report;
     },
+
+    async gaps() {
+      const missing = Math.max(0, report.total - report.covered);
+      return Array.from({ length: missing }, (_, index) => ({
+        id: `gap-${index + 1}`,
+        reason: "scenario not covered",
+      }));
+    },
+
+    async suggest() {
+      const missing = Math.max(0, report.total - report.covered);
+      return Array.from({ length: missing }, (_, index) => ({
+        id: `suggestion-${index + 1}`,
+        title: `Add edge case scenario ${index + 1}`,
+      }));
+    },
   };
 }
