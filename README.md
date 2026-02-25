@@ -249,6 +249,8 @@ expect({ pass: true }).toLunaPass();
   - project page: `/${repo}/`
   - user/org page: `/`
 - Library consumption guide: `docs/guides/library-consumption.md`
+- Korean docs index: `docs/ko/index.md`
+- Korean scenario examples: `docs/ko/guides/scenario-examples.md`
 
 ## Quality and Gates
 

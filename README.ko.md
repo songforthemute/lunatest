@@ -141,6 +141,9 @@ await runStdioServer({
 
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
 
+한국어 문서 인덱스: `docs/ko/index.md`
+한국어 시나리오 예제: `docs/ko/guides/scenario-examples.md`
+
 ## 릴리스 채널
 
 - `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`

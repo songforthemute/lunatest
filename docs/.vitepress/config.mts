@@ -11,6 +11,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: "Getting Started", link: "/getting-started" },
+      { text: "한국어", link: "/ko/" },
       { text: "Library Guide", link: "/guides/library-consumption" },
       { text: "Concepts", link: "/concepts/architecture" },
       { text: "Guides", link: "/guides/writing-scenarios" },
@@ -23,8 +24,25 @@ export default defineConfig({
         items: [
           { text: "Index", link: "/" },
           { text: "Getting Started", link: "/getting-started" },
+          { text: "한국어 문서", link: "/ko/" },
           { text: "Library Consumption", link: "/guides/library-consumption" },
           { text: "Wagmi Integration", link: "/wagmi-integration" },
+        ],
+      },
+      {
+        text: "한국어",
+        items: [
+          { text: "문서 인덱스", link: "/ko/" },
+          { text: "빠른 시작", link: "/ko/getting-started" },
+          { text: "라이브러리 소비자 가이드", link: "/ko/guides/library-consumption" },
+          { text: "시나리오 예제", link: "/ko/guides/scenario-examples" },
+          { text: "React 통합", link: "/ko/guides/react-integration" },
+          { text: "MCP stdio", link: "/ko/guides/mcp-stdio" },
+          { text: "Playwright 라우팅", link: "/ko/guides/playwright-routing" },
+          { text: "CLI 워크플로", link: "/ko/guides/cli-workflow" },
+          { text: "API: Core", link: "/ko/api/core" },
+          { text: "API: React", link: "/ko/api/react" },
+          { text: "API: MCP", link: "/ko/api/mcp" },
         ],
       },
       {
