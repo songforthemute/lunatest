@@ -9,8 +9,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "node -e \"console.log('build placeholder')\"",
-    "test": "node -e \"console.log('no tests yet')\"",
-    "lint": "node -e \"console.log('lint placeholder')\""
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit"
   }
 }
