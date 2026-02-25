@@ -2,3 +2,7 @@
 node_modules/
 dist/
 .turbo/
+scripts/perf-current.json
+scripts/perf-current-absolute.json
+scripts/perf-current.json
+scripts/perf-current-absolute.json
