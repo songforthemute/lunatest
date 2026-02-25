@@ -1,0 +1,16 @@
+{
+  "mode": "regression",
+  "baseline": {
+    "p95Ms": 0.5,
+    "totalMs1000": 600
+  },
+  "metrics": {
+    "measuredAt": "2026-02-25T16:10:04.722Z",
+    "p95Ms": 0.0015829999999965594,
+    "averageMs": 0.0009074999999999989,
+    "totalMs200": 0.18149999999999977,
+    "totalMs1000": 2.3603749999999906
+  },
+  "passed": true,
+  "reasons": []
+}

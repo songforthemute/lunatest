@@ -64,6 +64,12 @@ scenario {
 | `@lunatest/react` | React hooks and test utilities                           |
 | `@lunatest/mcp`   | MCP server for AI agent integration                      |
 
+## Performance Gates
+
+- PR: p95 regression gate (baseline 대비 +10% 초과 시 실패)
+- Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
+- Runner: `node scripts/check-performance.mjs --mode=regression`
+
 ## Status
 
 Yet.
