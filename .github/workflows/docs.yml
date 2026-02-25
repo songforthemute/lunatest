@@ -34,9 +34,17 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Resolve docs base for GitHub Pages
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          OWNER_NAME="${GITHUB_REPOSITORY_OWNER}"
+
+          if [ "$REPO_NAME" = "${OWNER_NAME}.github.io" ]; then
+            echo "DOCS_BASE=/" >> "$GITHUB_ENV"
+          else
+            echo "DOCS_BASE=/${REPO_NAME}/" >> "$GITHUB_ENV"
+          fi
       - run: pnpm docs:build
-        env:
-          DOCS_BASE: /lunatest/
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push'
         with:
