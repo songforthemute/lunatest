@@ -1,0 +1,16 @@
+{
+  "name": "@lunatest/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node -e \"console.log('build placeholder')\"",
+    "test": "node -e \"console.log('no tests yet')\"",
+    "lint": "node -e \"console.log('lint placeholder')\""
+  }
+}
