@@ -6,6 +6,8 @@
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
     "lint": "pnpm -r --if-present run lint",
+    "test:e2e:smoke": "pnpm --filter @lunatest/e2e-tests test:smoke",
+    "test:e2e:extended": "pnpm --filter @lunatest/e2e-tests test:extended",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release:publish": "pnpm -r publish --access public --no-git-checks"
