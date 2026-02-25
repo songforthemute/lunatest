@@ -1,3 +1,4 @@
+import { fromLuaValue, toLuaArgs } from "./bridge";
 import { createSandbox } from "./sandbox";
 import { RuntimeOptionsSchema, type Runtime, type RuntimeOptions } from "./types";
 
@@ -89,13 +90,16 @@ export async function createRuntime(rawOptions: RuntimeOptions = {}): Promise<Ru
         throw new Error(`Function not found: ${name}`);
       }
 
-      const orderedArgs = registered.paramNames.map((param) => args[param]);
-      return registered.jsFunction(...orderedArgs);
+      const normalizedArgs = toLuaArgs(args) as Record<string, unknown>;
+      const orderedArgs = registered.paramNames.map((param) => normalizedArgs[param]);
+      const result = registered.jsFunction(...orderedArgs);
+
+      return fromLuaValue(result);
     },
 
     async getState(keys: string[] = []): Promise<Record<string, unknown>> {
       if (keys.length === 0) {
-        return { ...state };
+        return fromLuaValue({ ...state }) as Record<string, unknown>;
       }
 
       const snapshot: Record<string, unknown> = {};
@@ -103,7 +107,7 @@ export async function createRuntime(rawOptions: RuntimeOptions = {}): Promise<Ru
         snapshot[key] = state[key];
       }
 
-      return snapshot;
+      return fromLuaValue(snapshot) as Record<string, unknown>;
     },
   };
 }
