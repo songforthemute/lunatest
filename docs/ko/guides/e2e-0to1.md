@@ -1,164 +1,196 @@
 # E2E 0→1 워크스루 (라이브러리 설치 사용자용)
 
-이 문서는 "LunaTest를 처음 설치해서 써보는 사용자"를 기준으로 작성했습니다.
+이 문서는 "기존 프론트엔드 앱에 LunaTest를 처음 붙이는 개발자"를 기준으로 작성했습니다.
 
-읽는 흐름은 단순합니다.
+목표는 하나입니다.
 
-1. 프로젝트를 만든다.
-2. 패키지를 설치한다.
-3. 테스트 파일을 만든다.
-4. 실행 결과를 보고 정상 동작을 확인한다.
+- 앱을 직접 브라우저에서 조작했을 때, 지갑/HTTP/RPC/WebSocket 응답이 우리가 설정한 값으로 들어오는지 확인한다.
 
-## 목표
+## 완료 기준
 
-아래 두 가지가 확인되면 0→1은 성공입니다.
+아래 3가지를 눈으로 확인하면 0→1은 끝입니다.
 
-- Playwright 테스트에서 네트워크 모킹이 실제로 동작한다.
-- CLI/MCP 명령 실행 결과를 눈으로 확인할 수 있다.
+1. `window.ethereum.request("eth_chainId")` 결과가 설정값(`0x1`)으로 나온다.
+2. `fetch("/api/quote")` 응답이 설정한 mock payload로 나온다.
+3. WebSocket `send` 이후 설정한 frame 응답이 `message` 이벤트로 들어온다.
 
-## 0) 새 프로젝트 생성
+## 0) 샘플 프로젝트 준비
 
 ```bash
-pnpm create vite lunatest-hello --template react-ts
-cd lunatest-hello
+pnpm create vite lunatest-runtime-demo --template react-ts
+cd lunatest-runtime-demo
 ```
 
 ## 1) 패키지 설치
 
 ```bash
-pnpm add @lunatest/core@latest @lunatest/react@latest @lunatest/mcp@latest @lunatest/cli@latest
-pnpm add -D @lunatest/playwright-plugin@next @lunatest/vitest-plugin@next @playwright/test vitest
-pnpm exec playwright install
+pnpm add @lunatest/runtime-intercept @lunatest/core @lunatest/react
 ```
 
-설치가 끝나면 "core/react/mcp/cli + e2e plugin" 최소 조합이 준비된 상태입니다.
+핵심은 `@lunatest/runtime-intercept`입니다.
+`core/react`는 앱과 함께 붙였을 때 실제 사용 흐름을 바로 확인하려고 같이 넣습니다.
 
-## 2) Playwright E2E 테스트 파일 작성
-
-`tests/luna.e2e.spec.ts` 파일을 만들고 아래 내용을 넣습니다.
+## 2) `lunatest.config.ts` 작성 (앱 루트)
 
 ```ts
-import { test, expect } from "@playwright/test";
-import { createLunaFixture } from "@lunatest/playwright-plugin";
+import type { LunaRuntimeInterceptConfig } from "@lunatest/runtime-intercept";
 
-test("0to1: quote api is mocked", async ({ page }) => {
-  const luna = createLunaFixture({
+const config: LunaRuntimeInterceptConfig = {
+  enable: undefined,
+  debug: true,
+  intercept: {
+    mode: "strict",
     routing: {
-      mode: "strict",
-      httpEndpoints: [
+      ethereumMethods: [
+        { method: "eth_chainId", responseKey: "wallet.chainId" },
+        { method: "eth_accounts", responseKey: "wallet.accounts" },
+      ],
+      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "rpc.call" }],
+      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "api.quote" }],
+      wsEndpoints: [
         {
-          urlPattern: "https://api.luna.local/quote",
-          method: "GET",
-          responseKey: "quote",
+          urlPattern: "ws://localhost:8787/stream",
+          match: "SUBSCRIBE_QUOTE",
+          responseKey: "ws.quote",
         },
       ],
     },
     mockResponses: {
-      quote: {
+      "wallet.chainId": { result: "0x1" },
+      "wallet.accounts": { result: ["0x1111111111111111111111111111111111111111"] },
+      "rpc.call": { result: "0x01" },
+      "api.quote": {
         status: 200,
-        headers: {
-          "access-control-allow-origin": "*",
-        },
         body: {
           amountOut: "123.45",
           priceImpactBps: 12,
         },
       },
+      "ws.quote": {
+        type: "QUOTE_UPDATED",
+        payload: {
+          amountOut: "123.40",
+        },
+      },
     },
-  });
+  },
+};
 
-  await luna.injectProvider(page);
-  await luna.installRouting(page);
+export default config;
+```
 
-  await page.goto("https://example.com");
+## 3) 엔트리 파일에 1줄 추가 (`src/main.tsx`)
 
-  const quote = await page.evaluate(async () => {
-    const response = await fetch("https://api.luna.local/quote", {
+```ts
+import config from "../lunatest.config";
+import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+
+enableLunaRuntimeIntercept(config);
+```
+
+여기서 중요한 규칙:
+
+- `enable`이 있으면 그 값이 최우선
+- `enable`이 없으면 `NODE_ENV === "development"`일 때만 활성화
+
+## 4) 화면에서 직접 확인할 버튼 추가 (`src/App.tsx`)
+
+```tsx
+import { useState } from "react";
+
+type CheckResult = {
+  chainId?: string;
+  accounts?: string[];
+  quote?: unknown;
+  wsFrames: unknown[];
+};
+
+export default function App() {
+  const [result, setResult] = useState<CheckResult>({ wsFrames: [] });
+
+  async function runChecks() {
+    const ethereum = (window as Window & { ethereum?: { request: (input: unknown) => Promise<unknown> } })
+      .ethereum;
+
+    const chainId = ethereum
+      ? ((await ethereum.request({ method: "eth_chainId" })) as string)
+      : "no-ethereum";
+
+    const accounts = ethereum
+      ? ((await ethereum.request({ method: "eth_accounts" })) as string[])
+      : [];
+
+    const quote = await fetch("http://localhost:5173/api/quote", {
       method: "GET",
+    }).then((response) => response.json());
+
+    const wsFrames: unknown[] = [];
+    const ws = new WebSocket("ws://localhost:8787/stream");
+    ws.addEventListener("message", (event) => {
+      try {
+        wsFrames.push(JSON.parse(event.data));
+      } catch {
+        wsFrames.push(event.data);
+      }
+      setResult((prev) => ({ ...prev, wsFrames: [...wsFrames] }));
+      ws.close();
     });
-    return response.json();
-  });
 
-  expect(quote).toEqual({
-    amountOut: "123.45",
-    priceImpactBps: 12,
-  });
-});
+    ws.addEventListener("open", () => {
+      ws.send(JSON.stringify({ type: "SUBSCRIBE_QUOTE" }));
+    });
+
+    setResult({ chainId, accounts, quote, wsFrames });
+  }
+
+  return (
+    <main style={{ fontFamily: "sans-serif", padding: 24 }}>
+      <h1>LunaTest Runtime Intercept 0→1</h1>
+      <button onClick={runChecks}>Run Checks</button>
+      <pre>{JSON.stringify(result, null, 2)}</pre>
+    </main>
+  );
+}
 ```
 
-## 3) E2E 실행
+## 5) 개발 서버 실행
 
 ```bash
-pnpm exec playwright test tests/luna.e2e.spec.ts
+pnpm dev
 ```
 
-기대 출력(요약):
-
-```text
-Running 1 test using 1 worker
-  ✓  tests/luna.e2e.spec.ts:3:1 › 0to1: quote api is mocked
-  1 passed
-```
-
-결과를 이렇게 읽으면 됩니다.
-
-- `1 passed`면 라우팅 모킹이 실제 브라우저 컨텍스트에서 정상 동작합니다.
-- 여기서 실패하면 endpoint 패턴(`urlPattern`)이나 `mode: "strict"` 매핑 누락을 먼저 확인하면 됩니다.
-
-## 4) CLI 실행 확인
-
-```bash
-pnpm exec lunatest run
-pnpm exec lunatest gen --ai
-```
-
-기대 출력:
-
-```text
-Scenario Summary
-filter=all
-passed=1
-failed=0
-```
-
-```text
-AI generation complete
-created=1
-executed=1
-```
-
-결과를 이렇게 읽으면 됩니다.
-
-- `run` 출력은 시나리오 실행 요약입니다.
-- `gen --ai` 출력의 `created`, `executed` 값으로 생성/실행 여부를 바로 확인할 수 있습니다.
-
-## 5) MCP stdio 실행 확인
-
-```bash
-printf '%s\n' \
-  '{"id":"1","method":"scenario.create","params":{"id":"swap-smoke","name":"Swap Smoke"}}' \
-  '{"id":"2","method":"scenario.run","params":{"id":"swap-smoke"}}' \
-  | pnpm exec lunatest-mcp
-```
-
-기대 출력(줄별):
+브라우저에서 `Run Checks`를 누르면 `pre` 블록에 아래와 비슷한 결과가 나옵니다.
 
 ```json
-{"id":"1","result":{"id":"swap-smoke","name":"Swap Smoke"}}
-{"id":"2","result":{"id":"swap-smoke","pass":true}}
+{
+  "chainId": "0x1",
+  "accounts": ["0x1111111111111111111111111111111111111111"],
+  "quote": {
+    "amountOut": "123.45",
+    "priceImpactBps": 12
+  },
+  "wsFrames": [
+    {
+      "type": "QUOTE_UPDATED",
+      "payload": {
+        "amountOut": "123.40"
+      }
+    }
+  ]
+}
 ```
 
-결과를 이렇게 읽으면 됩니다.
+이 화면이 나오면, 런타임 인터셉트가 지갑/프로토콜 통신 모두 잡고 있다는 뜻입니다.
 
-- 첫 줄은 시나리오 생성 성공 여부
-- 둘째 줄은 실행 결과(`pass`) 확인
+## 6) 실패 시 먼저 볼 체크포인트
 
-## 6) 최종 체크리스트
+- `strict` 모드에서 라우팅 누락이 있으면 요청이 바로 차단됩니다.
+- `urlPattern`, `method`, `responseKey` 오타를 가장 먼저 확인하세요.
+- WebSocket은 `urlPattern`과 `match`가 동시에 맞아야 합니다.
+- 콘솔에 `[lunatest:runtime-intercept]` 로그가 안 보이면 `debug: true` 여부를 확인하세요.
 
-- Playwright 테스트가 `1 passed`로 끝나는가
-- `lunatest run` 결과에 `passed`/`failed` 요약이 보이는가
-- `lunatest gen --ai`에 `created`, `executed`가 찍히는가
-- `lunatest-mcp` 응답에서 `scenario.create -> scenario.run` 흐름이 보이는가
+## 7) 다음 단계
 
-여기까지 확인되면 "설치해서 처음 붙여보는 단계"는 통과입니다.
-이후에는 프로젝트 도메인 시나리오를 추가하고, CI 게이트에 연결하면 됩니다.
+- 현재 예제를 프로젝트 도메인 API/WS 엔드포인트로 치환
+- `strict`를 유지한 채 필수 경로만 점진적으로 등록
+- 이후 Playwright smoke 테스트로 같은 응답 계약을 CI에서 재검증

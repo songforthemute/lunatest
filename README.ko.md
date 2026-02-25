@@ -63,6 +63,7 @@ pnpm release:publish:next
 | `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
 | `packages/vitest-plugin` | Vitest 플러그인/매처 |
 | `packages/playwright-plugin` | Playwright fixture 및 라우팅 헬퍼 |
+| `packages/runtime-intercept` | 개발 서버 브라우저 런타임 인터셉트 |
 | `e2e-tests` | smoke/extended E2E 테스트 |
 | `docs` | VitePress 문서 사이트 |
 | `examples` | 예제 앱 및 시나리오 |
@@ -76,7 +77,7 @@ pnpm release:publish:next
 pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin @lunatest/runtime-intercept
 ```
 
 ### 1) Core provider
@@ -139,6 +140,15 @@ await runStdioServer({
 });
 ```
 
+### 5) 개발 서버 런타임 인터셉트
+
+```ts
+import config from "../lunatest.config";
+import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+
+enableLunaRuntimeIntercept(config);
+```
+
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
 
 한국어 문서 인덱스: `docs/ko/index.md`
@@ -148,7 +158,7 @@ await runStdioServer({
 ## 릴리스 채널
 
 - `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
-- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
+- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`, `@lunatest/runtime-intercept`
 
 ## CI / 게이트
 

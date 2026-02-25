@@ -8,3 +8,5 @@
 - `LunaProviderOptions`
 
 `LunaProvider`는 EIP-1193의 `request/on/removeListener` 패턴을 기준으로 동작합니다.
+
+브라우저 런타임 인터셉트는 [API: @lunatest/runtime-intercept](./runtime-intercept.md) 문서를 참고하세요.

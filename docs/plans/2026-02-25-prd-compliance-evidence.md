@@ -35,6 +35,7 @@ pnpm -r test
   - `@lunatest/react`: 3 tests pass
   - `@lunatest/vitest-plugin`: 2 tests pass
   - `@lunatest/playwright-plugin`: 7 tests pass
+  - `@lunatest/runtime-intercept`: 19 tests pass
   - `@lunatest/e2e-tests`(workspace test 스모크): 3 tests pass
 
 ### 2) Documentation Build/Deploy Gates
@@ -82,8 +83,8 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=script
 
 결과:
 
-- regression: `p95Ms=0.0025`, `totalMs1000=2.3252`
-- absolute: `p95Ms=0.0029`, `totalMs1000=1.2877`
+- regression: `p95Ms=0.0023`, `totalMs1000=1.3881`
+- absolute: `p95Ms=0.0027`, `totalMs1000=1.3347`
 - 판정: pass
 
 ### 5) Explicit Path/Feature Checks (행동 요건 핵심 경로)
@@ -94,8 +95,13 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=script
 - `packages/mcp/src/bin/mcp-stdio.ts`
 - `packages/vitest-plugin/src/plugin.ts`
 - `packages/playwright-plugin/src/fixture.ts`
+- `packages/runtime-intercept/src/index.ts`
+- `packages/runtime-intercept/src/runtime.ts`
+- `packages/runtime-intercept/src/interceptors/websocket.ts`
 - `e2e-tests/mcp-flow.smoke.test.ts`
 - `docs/.vitepress/config.mts`
+- `docs/api/runtime-intercept.md`
+- `docs/ko/api/runtime-intercept.md`
 - `.github/workflows/docs.yml`
 - `.github/workflows/ci.yml`
 - `.github/workflows/benchmark.yml`
@@ -130,6 +136,8 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=script
 
 - protocol presets 4종(V2/V3/Curve/Aave): 충족
 - Vitest/Playwright plugin 패키지 + 테스트: 충족
+- Runtime intercept 패키지(`ethereum/fetch/xhr/ws`, strict/permissive, NODE_ENV 가드): 충족
+- 런타임 인터셉트 문서(영문/국문 API + 0→1 가이드): 충족
 - docs 사이트 빌드/배포(GitHub Pages): 충족
 - E2E 게이트 분리 운영(PR smoke / nightly extended): 충족
 - release/changeset/workflow: 충족

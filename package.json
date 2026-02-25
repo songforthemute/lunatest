@@ -14,7 +14,7 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release:publish:stable": "pnpm --filter @lunatest/core --filter @lunatest/cli --filter @lunatest/react --filter @lunatest/mcp publish --access public --no-git-checks --tag latest",
-    "release:publish:next": "pnpm --filter @lunatest/vitest-plugin --filter @lunatest/playwright-plugin publish --access public --no-git-checks --tag next",
+    "release:publish:next": "pnpm --filter @lunatest/vitest-plugin --filter @lunatest/playwright-plugin --filter @lunatest/runtime-intercept publish --access public --no-git-checks --tag next",
     "release:publish": "pnpm run release:publish:stable && pnpm run release:publish:next",
     "release:publish:dry-run": "pnpm run release:publish:stable --dry-run && pnpm run release:publish:next --dry-run"
   },

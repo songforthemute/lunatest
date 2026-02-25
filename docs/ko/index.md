@@ -13,6 +13,7 @@ LunaTest는 Web3 프론트엔드 테스트를 빠르고 안정적으로 운영�
 - [Playwright 라우팅 모킹](./guides/playwright-routing.md)
 - [CLI 워크플로](./guides/cli-workflow.md)
 - [API: Core](./api/core.md)
+- [API: Runtime Intercept](./api/runtime-intercept.md)
 - [API: React](./api/react.md)
 - [API: MCP](./api/mcp.md)
 

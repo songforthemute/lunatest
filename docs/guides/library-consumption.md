@@ -1,6 +1,6 @@
 # Library Consumption Guide
 
-LunaTest can be consumed by package role. Install only the layers you need.
+This guide targets teams that install LunaTest as a library inside an existing frontend project.
 
 ## Package Selection
 
@@ -9,12 +9,13 @@ LunaTest can be consumed by package role. Install only the layers you need.
 - `@lunatest/mcp`: MCP server, tools/resources/prompts, stdio transport
 - `@lunatest/vitest-plugin`: Vitest matcher/plugin helpers
 - `@lunatest/playwright-plugin`: Playwright provider injection and routing
+- `@lunatest/runtime-intercept`: browser runtime intercept for local interactive testing
 
 ## Install
 
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin @lunatest/runtime-intercept
 ```
 
 ## Core Provider Example
@@ -33,6 +34,54 @@ const provider = new LunaProvider({
 await provider.request({ method: "eth_chainId" });
 await provider.request({ method: "eth_accounts" });
 ```
+
+## Runtime Intercept Example (Local Dev Browser)
+
+Create `lunatest.config.ts` in your app root:
+
+```ts
+import type { LunaRuntimeInterceptConfig } from "@lunatest/runtime-intercept";
+
+const config: LunaRuntimeInterceptConfig = {
+  enable: undefined,
+  debug: true,
+  intercept: {
+    mode: "strict",
+    routing: {
+      ethereumMethods: [
+        { method: "eth_chainId", responseKey: "wallet.chainId" },
+        { method: "eth_accounts", responseKey: "wallet.accounts" },
+      ],
+      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "rpc.call" }],
+      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "api.quote" }],
+      wsEndpoints: [{ urlPattern: "wss://stream.local/socket", responseKey: "ws.quote" }],
+    },
+    mockResponses: {
+      "wallet.chainId": { result: "0x1" },
+      "wallet.accounts": { result: ["0x1111111111111111111111111111111111111111"] },
+      "rpc.call": { result: "0x01" },
+      "api.quote": { status: 200, body: { amountOut: "123.45" } },
+      "ws.quote": { type: "QUOTE_UPDATED", amountOut: "123.40" },
+    },
+  },
+};
+
+export default config;
+```
+
+Enable it once in your app entry (`src/main.tsx`):
+
+```ts
+import config from "../lunatest.config";
+import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+
+enableLunaRuntimeIntercept(config);
+```
+
+Activation rule:
+
+- `enable?: boolean` is explicit override
+- if omitted, intercept is enabled only when `NODE_ENV === "development"`
 
 ## React Example
 
@@ -120,3 +169,4 @@ expect({ pass: true }).toLunaPass();
 - `docs/guides/wagmi-setup.md`
 - `docs/guides/ethers-setup.md`
 - `docs/guides/web3js-setup.md`
+- `docs/ko/guides/e2e-0to1.md`

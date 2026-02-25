@@ -77,6 +77,7 @@ pnpm release:publish:next
 | `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
 | `packages/vitest-plugin` | Vitest plugin/matchers |
 | `packages/playwright-plugin` | Playwright fixtures and routing helpers |
+| `packages/runtime-intercept` | Browser runtime intercept for local dev interaction tests |
 | `e2e-tests` | Smoke/extended end-to-end test suite |
 | `docs` | VitePress documentation site |
 | `examples` | Example apps and scenario files |
@@ -89,7 +90,7 @@ Install only what you need:
 ```bash
 pnpm add @lunatest/core
 pnpm add @lunatest/react
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin @lunatest/runtime-intercept
 pnpm add @lunatest/mcp
 ```
 
@@ -182,7 +183,16 @@ const fixture = createLunaFixture({
 // in test: await fixture.injectProvider(page); await fixture.installRouting(page);
 ```
 
-### 6) Vitest matcher
+### 6) Browser runtime intercept (local dev app)
+
+```ts
+import config from "../lunatest.config";
+import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+
+enableLunaRuntimeIntercept(config);
+```
+
+### 7) Vitest matcher
 
 ```ts
 import { toLunaPass } from "@lunatest/vitest-plugin";
@@ -236,11 +246,12 @@ expect({ pass: true }).toLunaPass();
 | `@lunatest/mcp`                 | MCP server for AI agent integration                      |
 | `@lunatest/vitest-plugin`       | Vitest integration plugin                                |
 | `@lunatest/playwright-plugin`   | Playwright fixture and routing plugin                    |
+| `@lunatest/runtime-intercept`   | Browser runtime intercept package                        |
 
 ### Release Channels
 
 - `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
-- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
+- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`, `@lunatest/runtime-intercept`
 
 ## Documentation
 

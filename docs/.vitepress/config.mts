@@ -42,6 +42,7 @@ export default defineConfig({
           { text: "Playwright 라우팅", link: "/ko/guides/playwright-routing" },
           { text: "CLI 워크플로", link: "/ko/guides/cli-workflow" },
           { text: "API: Core", link: "/ko/api/core" },
+          { text: "API: Runtime Intercept", link: "/ko/api/runtime-intercept" },
           { text: "API: React", link: "/ko/api/react" },
           { text: "API: MCP", link: "/ko/api/mcp" },
         ],
@@ -70,6 +71,7 @@ export default defineConfig({
         text: "API",
         items: [
           { text: "Core", link: "/api/core" },
+          { text: "Runtime Intercept", link: "/api/runtime-intercept" },
           { text: "CLI", link: "/api/cli" },
           { text: "MCP", link: "/api/mcp" },
           { text: "React", link: "/api/react" },

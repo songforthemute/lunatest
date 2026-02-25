@@ -12,3 +12,4 @@ LunaTest는 Web3 프론트엔드를 빠르고 안정적으로 검증하기 위�
 - [Architecture](./concepts/architecture.md)
 - [Scenario Writing](./guides/writing-scenarios.md)
 - [API: Core](./api/core.md)
+- [API: Runtime Intercept](./api/runtime-intercept.md)
