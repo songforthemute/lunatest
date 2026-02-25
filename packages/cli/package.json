@@ -1,0 +1,14 @@
+{
+  "name": "@lunatest/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "lunatest": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('build placeholder')\"",
+    "test": "node -e \"console.log('no tests yet')\"",
+    "lint": "node -e \"console.log('lint placeholder')\""
+  }
+}
