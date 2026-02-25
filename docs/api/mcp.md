@@ -1,5 +1,7 @@
 # API: @lunatest/mcp
 
+배포 채널: `latest`
+
 도구 그룹:
 
 - `scenario.*`

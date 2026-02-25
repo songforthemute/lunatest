@@ -63,6 +63,13 @@ scenario {
 | `@lunatest/cli`   | CLI interface (`lunatest run`, `lunatest gen --ai`)      |
 | `@lunatest/react` | React hooks and test utilities                           |
 | `@lunatest/mcp`   | MCP server for AI agent integration                      |
+| `@lunatest/vitest-plugin` | Vitest integration plugin                        |
+| `@lunatest/playwright-plugin` | Playwright fixture and routing plugin       |
+
+### Release Channels
+
+- `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
+- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
 ## Performance Gates
 
