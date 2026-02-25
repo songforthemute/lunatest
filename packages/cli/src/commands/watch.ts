@@ -1,3 +1,3 @@
 export function watchCommand(): string {
-  return "Watch mode";
+  return "Watch mode\nstatus=idle";
 }
