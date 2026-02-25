@@ -1,13 +1,17 @@
 {
   "name": "@lunatest/mcp",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "bin": {
     "lunatest-mcp": "./dist/bin/mcp-stdio.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
   "files": [
     "dist"
   ],

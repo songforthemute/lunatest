@@ -1,10 +1,14 @@
 {
   "name": "@lunatest/cli",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "bin": {
     "lunatest": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

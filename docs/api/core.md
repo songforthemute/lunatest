@@ -1,5 +1,7 @@
 # API: @lunatest/core
 
+배포 채널: `latest`
+
 현재 공개 API:
 
 - `LunaProvider`
