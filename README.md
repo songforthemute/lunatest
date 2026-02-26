@@ -72,7 +72,7 @@ pnpm release:publish:next
 | Path | Purpose |
 | ---- | ------- |
 | `packages/core` | Runtime, scenario engine, mock provider, runner |
-| `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen`) |
+| `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen/devtools/doctor`) |
 | `packages/react` | React provider/hooks + adapters |
 | `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
 | `packages/vitest-plugin` | Vitest plugin/matchers |
@@ -90,7 +90,7 @@ Install only what you need:
 ```bash
 pnpm add @lunatest/core
 pnpm add @lunatest/react
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
 pnpm add @lunatest/mcp
 ```
 
@@ -163,36 +163,61 @@ await runStdioServer({
 });
 ```
 
-### 5) Playwright routing fixture
+### 5) Browser runtime intercept + in-browser devtools
 
-```ts
-import { createLunaFixture } from "@lunatest/playwright-plugin";
+`lunatest.lua` (project root):
 
-const fixture = createLunaFixture({
-  routing: {
-    mode: "strict",
-    rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
-    httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+```lua
+scenario {
+  name = "app-runtime",
+  mode = "strict",
+  given = { chain = { id = 1 }, wallet = { connected = true } },
+  intercept = {
+    routes = {
+      { endpointType = "ethereum", method = "eth_chainId", responseKey = "wallet.chainId" },
+      { endpointType = "http", urlPattern = "**/api/quote", method = "GET", responseKey = "api.quote" },
+    },
+    mockResponses = {
+      ["wallet.chainId"] = { result = "0x1" },
+      ["api.quote"] = { status = 200, body = { amountOut = "123.45" } },
+    },
   },
-  mockResponses: {
-    eth_call: { result: "0x01" },
-    quote: { status: 200, body: { amountOut: "123.45" } },
-  },
-});
-
-// in test: await fixture.injectProvider(page); await fixture.installRouting(page);
+}
 ```
 
-### 6) Browser runtime intercept (local dev app)
+`src/main.tsx` (one-line bootstrap + `NODE_ENV` guard):
 
 ```ts
-import config from "../lunatest.config";
-import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+import { loadLunaConfig } from "@lunatest/core";
+import {
+  enableLunaRuntimeIntercept,
+  setRouteMocks,
+  applyInterceptState,
+} from "@lunatest/runtime-intercept";
+import { mountLunaDevtools } from "@lunatest/react";
 
-enableLunaRuntimeIntercept(config);
+async function bootstrapLuna() {
+  const config = await loadLunaConfig("./lunatest.lua");
+  const enabled = enableLunaRuntimeIntercept(
+    {
+      intercept: {
+        mode: config.mode,
+        mockResponses: config.intercept?.mockResponses ?? {},
+      },
+    },
+    process.env.NODE_ENV,
+  );
+
+  if (!enabled) return;
+  setRouteMocks(config.intercept?.routes ?? []);
+  applyInterceptState(config.intercept?.state ?? {});
+  mountLunaDevtools();
+}
+
+void bootstrapLuna();
 ```
 
-### 7) Vitest matcher
+### 6) Vitest matcher
 
 ```ts
 import { toLunaPass } from "@lunatest/vitest-plugin";
@@ -218,7 +243,7 @@ expect({ pass: true }).toLunaPass();
 
 ## Features
 
-- **Zero code change** — EIP-1193 provider swap. Works with wagmi, ethers, viem, web3.js.
+- **One-line dev bootstrap** — enable intercept in app entry, guarded by `NODE_ENV`.
 - **Fully deterministic** — Sandboxed Lua VM. No timers, no system clock, no flaky. Ever.
 - **Millisecond execution** — 1,000 scenarios under 1 second.
 - **Precise edge cases** — Flaky 0% means every failure is a real bug. Test boundary values aggressively.

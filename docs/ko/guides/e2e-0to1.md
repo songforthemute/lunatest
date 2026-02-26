@@ -30,68 +30,72 @@ pnpm add @lunatest/runtime-intercept @lunatest/core @lunatest/react
 핵심은 `@lunatest/runtime-intercept`입니다.
 `core/react`는 앱과 함께 붙였을 때 실제 사용 흐름을 바로 확인하려고 같이 넣습니다.
 
-## 2) `lunatest.config.ts` 작성 (앱 루트)
+## 2) `lunatest.lua` 작성 (앱 루트)
 
-```ts
-import type { LunaRuntimeInterceptConfig } from "@lunatest/runtime-intercept";
-
-const config: LunaRuntimeInterceptConfig = {
-  enable: undefined,
-  debug: true,
-  intercept: {
-    mode: "strict",
-    routing: {
-      ethereumMethods: [
-        { method: "eth_chainId", responseKey: "wallet.chainId" },
-        { method: "eth_accounts", responseKey: "wallet.accounts" },
-      ],
-      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "rpc.call" }],
-      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "api.quote" }],
-      wsEndpoints: [
-        {
-          urlPattern: "ws://localhost:8787/stream",
-          match: "SUBSCRIBE_QUOTE",
-          responseKey: "ws.quote",
-        },
-      ],
-    },
-    mockResponses: {
-      "wallet.chainId": { result: "0x1" },
-      "wallet.accounts": { result: ["0x1111111111111111111111111111111111111111"] },
-      "rpc.call": { result: "0x01" },
-      "api.quote": {
-        status: 200,
-        body: {
-          amountOut: "123.45",
-          priceImpactBps: 12,
-        },
-      },
-      "ws.quote": {
-        type: "QUOTE_UPDATED",
-        payload: {
-          amountOut: "123.40",
-        },
-      },
-    },
+```lua
+scenario {
+  name = "runtime-0to1",
+  mode = "strict",
+  given = {
+    chain = { id = 1, gasPrice = 30 },
+    wallet = { connected = true, balances = { ETH = 10.0 } },
   },
-};
-
-export default config;
+  intercept = {
+    routes = {
+      { endpointType = "ethereum", method = "eth_chainId", responseKey = "wallet.chainId" },
+      { endpointType = "ethereum", method = "eth_accounts", responseKey = "wallet.accounts" },
+      { endpointType = "rpc", urlPattern = "**/rpc", methods = { "eth_call" }, responseKey = "rpc.call" },
+      { endpointType = "http", urlPattern = "**/api/quote", method = "GET", responseKey = "api.quote" },
+      { endpointType = "ws", urlPattern = "ws://localhost:8787/stream", match = "SUBSCRIBE_QUOTE", responseKey = "ws.quote" },
+    },
+    mockResponses = {
+      ["wallet.chainId"] = { result = "0x1" },
+      ["wallet.accounts"] = { result = { "0x1111111111111111111111111111111111111111" } },
+      ["rpc.call"] = { result = "0x01" },
+      ["api.quote"] = { status = 200, body = { amountOut = "123.45", priceImpactBps = 12 } },
+      ["ws.quote"] = { type = "QUOTE_UPDATED", payload = { amountOut = "123.40" } },
+    },
+    state = { chain = { blockNumber = 19000000 } },
+  },
+}
 ```
 
 ## 3) 엔트리 파일에 1줄 추가 (`src/main.tsx`)
 
 ```ts
-import config from "../lunatest.config";
-import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+import { loadLunaConfig } from "@lunatest/core";
+import {
+  enableLunaRuntimeIntercept,
+  setRouteMocks,
+  applyInterceptState,
+} from "@lunatest/runtime-intercept";
+import { mountLunaDevtools } from "@lunatest/react";
 
-enableLunaRuntimeIntercept(config);
+async function bootstrapLuna() {
+  const config = await loadLunaConfig("./lunatest.lua");
+  const enabled = enableLunaRuntimeIntercept(
+    {
+      intercept: {
+        mode: config.mode,
+        mockResponses: config.intercept?.mockResponses ?? {},
+      },
+    },
+    process.env.NODE_ENV,
+  );
+
+  if (!enabled) return;
+  setRouteMocks(config.intercept?.routes ?? []);
+  applyInterceptState(config.intercept?.state ?? {});
+  mountLunaDevtools();
+}
+
+void bootstrapLuna();
 ```
 
-여기서 중요한 규칙:
+여기서 중요한 규칙은 `NODE_ENV` 가드입니다.
 
-- `enable`이 있으면 그 값이 최우선
-- `enable`이 없으면 `NODE_ENV === "development"`일 때만 활성화
+- `enable` 값을 명시하면 그 값이 최우선
+- 생략하면 `NODE_ENV === "development"`에서만 활성화
 
 ## 4) 화면에서 직접 확인할 버튼 추가 (`src/App.tsx`)
 

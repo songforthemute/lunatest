@@ -6,6 +6,10 @@
 
 - `LunaProvider`
 - `LunaProviderOptions`
+- `loadLunaConfig(source)`
+- `createScenarioRuntime(config)`
+- `LuaConfig`
+- `RouteMock`
 
 개발 서버 브라우저 인터셉트는 [API: @lunatest/runtime-intercept](./runtime-intercept.md)에서 확인할 수 있습니다.
 

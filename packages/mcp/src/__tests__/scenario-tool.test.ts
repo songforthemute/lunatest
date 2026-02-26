@@ -49,4 +49,24 @@ describe("mcp scenario tools", () => {
       },
     ]);
   });
+
+  it("creates scenario from lua only and runs inline", async () => {
+    const tools = createScenarioTools([]);
+
+    const created = await tools.create({
+      lua: "scenario { name = 'inline' }",
+    });
+
+    expect(created.id).toBe("scenario-1");
+    expect(created.name).toBe("scenario 1");
+
+    await expect(
+      tools.run({
+        lua: "scenario { name = 'inline' }",
+      }),
+    ).resolves.toEqual({
+      id: "inline",
+      pass: true,
+    });
+  });
 });

@@ -84,4 +84,70 @@ describe("mcp transport", () => {
       },
     });
   });
+
+  it("supports inline scenario run and route/state mock tools", async () => {
+    const server = createMcpServer({
+      scenarios: [{ id: "swap-1", name: "swap happy path" }],
+    });
+
+    const inlineRun = await server.handleRequest({
+      id: "req-inline",
+      method: "scenario.run",
+      params: {
+        lua: "scenario { name = 'inline', given = {} }",
+      },
+    });
+
+    expect(inlineRun).toEqual({
+      id: "req-inline",
+      result: {
+        id: "inline",
+        pass: true,
+      },
+    });
+
+    const routeSet = await server.handleRequest({
+      id: "req-routes",
+      method: "mock.routes.set",
+      params: {
+        routes: [
+          {
+            endpointType: "http",
+            urlPattern: "https://api.example/quote",
+            method: "GET",
+            responseKey: "quote",
+          },
+        ],
+      },
+    });
+
+    expect(routeSet).toEqual({
+      id: "req-routes",
+      result: [
+        {
+          endpointType: "http",
+          urlPattern: "https://api.example/quote",
+          method: "GET",
+          responseKey: "quote",
+        },
+      ],
+    });
+
+    const statePatched = await server.handleRequest({
+      id: "req-state-patch",
+      method: "state.patch",
+      params: {
+        state: {
+          wallet: { connected: true },
+        },
+      },
+    });
+
+    expect(statePatched).toEqual({
+      id: "req-state-patch",
+      result: {
+        wallet: { connected: true },
+      },
+    });
+  });
 });

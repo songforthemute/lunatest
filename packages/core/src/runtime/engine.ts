@@ -1,8 +1,12 @@
 import { LuaFactory, type LuaEngine } from "wasmoon";
 
-import { fromLuaValue, toLuaArgs } from "./bridge";
-import { applySandbox } from "./sandbox";
-import { RuntimeOptionsSchema, type Runtime, type RuntimeOptions } from "./types";
+import { fromLuaValue, toLuaArgs } from "./bridge.js";
+import { applySandbox } from "./sandbox.js";
+import {
+  RuntimeOptionsSchema,
+  type Runtime,
+  type RuntimeOptions,
+} from "./types.js";
 
 const FUNCTION_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const DEFAULT_MEMORY_LIMIT = 16 * 1024 * 1024;

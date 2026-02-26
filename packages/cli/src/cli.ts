@@ -1,21 +1,23 @@
 import { Command, CommanderError } from "commander";
 
-import { coverageCommand } from "./commands/coverage";
-import { genCommand } from "./commands/gen";
-import { runCommand } from "./commands/run";
-import { watchCommand } from "./commands/watch";
-import { loadConfig } from "./config";
+import { loadConfig } from "./config.js";
+import { coverageCommand } from "./commands/coverage.js";
+import { devtoolsCommand } from "./commands/devtools.js";
+import { doctorCommand } from "./commands/doctor.js";
+import { genCommand } from "./commands/gen.js";
+import { runCommand } from "./commands/run.js";
+import { watchCommand } from "./commands/watch.js";
 
 export type CliExecutionResult = {
   exitCode: number;
   output: string;
 };
 
-export function executeCommand(args: string[]): CliExecutionResult {
+export async function executeCommand(args: string[]): Promise<CliExecutionResult> {
   let output = "";
   let exitCode = 0;
 
-  loadConfig();
+  const config = loadConfig();
 
   const program = new Command();
   program.name("lunatest");
@@ -33,8 +35,13 @@ export function executeCommand(args: string[]): CliExecutionResult {
   program
     .command("run")
     .argument("[filter]")
-    .action((filter?: string) => {
-      output = runCommand(filter);
+    .option("--scenario <fileOrGlob>")
+    .action(async (filter?: string, options?: { scenario?: string }) => {
+      output = await runCommand({
+        filter,
+        scenario: options?.scenario,
+        luaConfigPath: config.luaConfigPath,
+      });
     });
 
   program.command("watch").action(() => {
@@ -55,8 +62,24 @@ export function executeCommand(args: string[]): CliExecutionResult {
       }
     });
 
+  program
+    .command("devtools")
+    .option("--open", "print devtools mounting guide")
+    .action((options: { open?: boolean }) => {
+      output = devtoolsCommand({
+        open: Boolean(options.open),
+      });
+      if (!options.open) {
+        exitCode = 1;
+      }
+    });
+
+  program.command("doctor").action(() => {
+    output = doctorCommand();
+  });
+
   try {
-    program.parse(args, { from: "user" });
+    await program.parseAsync(args, { from: "user" });
   } catch (error) {
     if (error instanceof CommanderError) {
       exitCode = error.exitCode || 1;

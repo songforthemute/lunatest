@@ -1,6 +1,6 @@
-import { isRecord, resolveMock } from "../matcher";
-import type { RuntimeLogger } from "../logger";
-import type { NormalizedRuntimeInterceptConfig } from "../types";
+import { isRecord, resolveMock } from "../matcher.js";
+import type { RuntimeLogger } from "../logger.js";
+import type { NormalizedRuntimeInterceptConfig } from "../types.js";
 
 type EthereumListener = (...args: unknown[]) => void;
 

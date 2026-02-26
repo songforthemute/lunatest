@@ -1,4 +1,4 @@
-import type { ScenarioDescriptor } from "../tools/scenario";
+import type { ScenarioDescriptor } from "../tools/scenario.js";
 
 function mutateNumericToken(token: string, delta: number): string {
   const asNumber = Number(token);

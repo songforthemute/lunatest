@@ -11,8 +11,11 @@
 - `withLunaWagmiConfig`
 - `createEthersAdapter`
 - `createWeb3JsAdapter`
+- `enableLunaIntercept`
+- `LunaDevtoolsPanel`
+- `mountLunaDevtools`
 
-실무에서는 `LunaTestProvider` + `useLunaTest` 조합으로 시작하는 경우가 가장 많습니다.
+실무에서는 `LunaTestProvider` + `useLunaTest` 조합으로 시작하고, 개발 서버에서는 `enableLunaIntercept` + `mountLunaDevtools`를 같이 두는 경우가 많습니다.
 
 ## 최소 예시
 

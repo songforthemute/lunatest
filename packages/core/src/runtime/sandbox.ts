@@ -1,6 +1,6 @@
 import type { LuaEngine } from "wasmoon";
 
-import type { RuntimeOptions } from "./types";
+import type { RuntimeOptions } from "./types.js";
 
 function createDeterministicRandom(seed: number): () => number {
   let cursor = seed;
