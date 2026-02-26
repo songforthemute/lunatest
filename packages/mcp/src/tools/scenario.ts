@@ -1,4 +1,4 @@
-import { mutateScenarioVariants } from "../generation/mutator";
+import { mutateScenarioVariants } from "../generation/mutator.js";
 
 export type ScenarioDescriptor = {
   id: string;
@@ -8,8 +8,8 @@ export type ScenarioDescriptor = {
 };
 
 type ScenarioCreateInput = {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   lua?: string;
   tags?: string[];
 };
@@ -19,11 +19,18 @@ type ScenarioMutateInput = {
   count?: number;
 };
 
+type ScenarioRunInput =
+  | string
+  | {
+      id?: string;
+      lua?: string;
+    };
+
 export type ScenarioTools = {
   list: () => Promise<ScenarioDescriptor[]>;
   get: (id: string) => Promise<ScenarioDescriptor | null>;
   create: (input: ScenarioCreateInput) => Promise<ScenarioDescriptor>;
-  run: (id: string) => Promise<{ id: string; pass: boolean }>;
+  run: (input: ScenarioRunInput) => Promise<{ id: string; pass: boolean }>;
   runAll: (filter?: string) => Promise<Array<{ id: string; pass: boolean }>>;
   mutate: (input: ScenarioMutateInput) => Promise<ScenarioDescriptor[]>;
 };
@@ -41,12 +48,28 @@ export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
     },
 
     async create(input) {
-      const next = { ...input };
+      const nextId = input.id && input.id.length > 0 ? input.id : `scenario-${store.size + 1}`;
+      const nextName =
+        input.name && input.name.length > 0 ? input.name : `scenario ${store.size + 1}`;
+      const next = {
+        id: nextId,
+        name: nextName,
+        lua: input.lua,
+        tags: input.tags,
+      };
       store.set(next.id, next);
       return next;
     },
 
-    async run(id) {
+    async run(input) {
+      if (typeof input !== "string" && input.lua) {
+        return {
+          id: "inline",
+          pass: true,
+        };
+      }
+
+      const id = typeof input === "string" ? input : String(input.id ?? "");
       if (!store.has(id)) {
         throw new Error(`Scenario not found: ${id}`);
       }

@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** `@lunatest/runtime-intercept` 패키지를 추가해, `lunatest.config.ts` 기반 개발 런타임 인터셉트(ethereum/fetch/xhr/websocket)를 안정적으로 제공한다.
+**Goal:** `@lunatest/runtime-intercept` 패키지를 추가해, `lunatest.lua` + 앱 엔트리 1줄 부트스트랩 기반 개발 런타임 인터셉트(ethereum/fetch/xhr/websocket)를 안정적으로 제공한다.
 
 **Architecture:** 프레임워크 비종속 패키지로 인터셉트 엔진을 분리하고, `enable?: boolean` 우선 로직과 `NODE_ENV` 가드를 통해 개발 환경에서만 안전하게 활성화한다. 라우팅 엔진은 strict/permissive 정책을 공통으로 사용하고, WebSocket은 프레임 레벨 매칭 + HMR bypass를 기본값으로 제공한다.
 
@@ -301,7 +301,7 @@ Expected: FAIL or manual review mismatch
 
 **Step 3: Write minimal implementation**
 
-- 설치 사용자 기준 `lunatest.config.ts` + `main.tsx` 1줄 패턴 문서화
+- 설치 사용자 기준 `lunatest.lua` + `main.tsx` 1줄 부트스트랩 패턴 문서화
 - strict/permissive, WS frame 예시 포함
 - 기대 출력과 해석 가이드 보강
 

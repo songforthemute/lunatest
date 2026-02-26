@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 
-import { runScenario, type RunScenarioInput } from "./runner";
+import { runScenario, type RunScenarioInput } from "./runner.js";
 
 export type ScenarioPerformanceInput = {
   iterations: number;

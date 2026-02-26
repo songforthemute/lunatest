@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { createMcpServer } from "../server";
-import { runStdioServer } from "../transport/stdio";
+import { createMcpServer } from "../server.js";
+import { runStdioServer } from "../transport/stdio.js";
 
 const server = createMcpServer({
   scenarios: [],

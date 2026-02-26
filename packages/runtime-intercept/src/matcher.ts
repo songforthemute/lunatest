@@ -1,4 +1,8 @@
-import type { EndpointPattern, InterceptResolverContext, MockResponseInput } from "./types";
+import type {
+  EndpointPattern,
+  InterceptResolverContext,
+  MockResponseInput,
+} from "./types.js";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

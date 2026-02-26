@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline";
 
-import type { createMcpServer } from "../server";
+import type { createMcpServer } from "../server.js";
 
 type McpServer = ReturnType<typeof createMcpServer>;
 

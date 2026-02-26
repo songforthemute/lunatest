@@ -25,6 +25,31 @@ export type WsEndpointRoute = {
   match?: EndpointPattern;
 };
 
+export type RouteMock =
+  | {
+      endpointType: "ethereum";
+      method: string;
+      responseKey: string;
+    }
+  | {
+      endpointType: "rpc";
+      urlPattern: EndpointPattern;
+      methods?: string[];
+      responseKey: string;
+    }
+  | {
+      endpointType: "http";
+      urlPattern: EndpointPattern;
+      method?: string;
+      responseKey: string;
+    }
+  | {
+      endpointType: "ws";
+      urlPattern: EndpointPattern;
+      responseKey: string;
+      match?: EndpointPattern;
+    };
+
 export type RoutingConfig = {
   ethereumMethods?: EthereumMethodRoute[];
   rpcEndpoints?: RpcEndpointRoute[];
@@ -53,6 +78,7 @@ export type LunaRuntimeInterceptConfig = {
   debug?: boolean;
   intercept?: {
     mode?: RoutingMode;
+    routes?: RouteMock[];
     routing?: RoutingConfig;
     mockResponses?: MockResponseMap;
   };
@@ -78,4 +104,7 @@ export type RuntimeInterceptHandle = {
   enable: (nodeEnv?: string) => boolean;
   disable: () => void;
   isEnabled: () => boolean;
+  setRouteMocks?: (routes: RouteMock[]) => RouteMock[];
+  applyInterceptState?: (partialState: Record<string, unknown>) => Record<string, unknown>;
+  getInterceptState?: () => Record<string, unknown>;
 };

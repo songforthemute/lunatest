@@ -1,4 +1,4 @@
-import type { RuntimeInterceptHandle } from "./types";
+import type { RuntimeInterceptHandle } from "./types.js";
 
 let activeHandle: RuntimeInterceptHandle | null = null;
 

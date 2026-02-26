@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { executeCommand } from "./cli";
+import { executeCommand } from "./cli.js";
 
-const result = executeCommand(process.argv.slice(2));
+const result = await executeCommand(process.argv.slice(2));
 
 if (result.output) {
   console.log(result.output);

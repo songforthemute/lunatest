@@ -3,15 +3,15 @@ import type {
   NormalizedRuntimeInterceptConfig,
   RoutingMode,
   RoutingConfig,
-} from "../types";
-import type { RuntimeLogger } from "../logger";
+} from "../types.js";
+import type { RuntimeLogger } from "../logger.js";
 import {
   createJsonResponse,
   isRecord,
   matchesPattern,
   readBodyPayload,
   resolveMock,
-} from "../matcher";
+} from "../matcher.js";
 
 type JsonRpcPayload = {
   id?: unknown;
