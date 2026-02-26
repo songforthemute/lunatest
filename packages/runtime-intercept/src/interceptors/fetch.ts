@@ -3,15 +3,15 @@ import type {
   NormalizedRuntimeInterceptConfig,
   RoutingMode,
   RoutingConfig,
-} from "../types";
-import type { RuntimeLogger } from "../logger";
+} from "../types.js";
+import type { RuntimeLogger } from "../logger.js";
 import {
   createJsonResponse,
   isRecord,
   matchesPattern,
   readBodyPayload,
   resolveMock,
-} from "../matcher";
+} from "../matcher.js";
 
 type JsonRpcPayload = {
   id?: unknown;
@@ -21,6 +21,12 @@ type JsonRpcPayload = {
 };
 
 export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
+type InterceptFetchSnapshot = {
+  mode: RoutingMode;
+  routing: RoutingConfig;
+  mockResponses: MockResponseMap;
+};
 
 function extractRequest(input: RequestInfo | URL, init?: RequestInit): {
   url: string;
@@ -62,18 +68,16 @@ function noBaseFetchError(url: string): Error {
 }
 
 export function createInterceptedFetch(options: {
-  mode: RoutingMode;
-  routing: RoutingConfig;
-  mockResponses: MockResponseMap;
+  getSnapshot: () => InterceptFetchSnapshot;
   logger: RuntimeLogger;
   baseFetch?: FetchLike;
 }): FetchLike {
-  const routingMode = options.mode;
-  const rpcEndpoints = options.routing.rpcEndpoints ?? [];
-  const httpEndpoints = options.routing.httpEndpoints ?? [];
-
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = extractRequest(input, init);
+    const snapshot = options.getSnapshot();
+    const routingMode = snapshot.mode;
+    const rpcEndpoints = snapshot.routing.rpcEndpoints ?? [];
+    const httpEndpoints = snapshot.routing.httpEndpoints ?? [];
 
     const rpcEndpoint = rpcEndpoints.find((endpoint) => {
       if (!matchesPattern(request.url, endpoint.urlPattern)) {
@@ -92,7 +96,7 @@ export function createInterceptedFetch(options: {
     });
 
     if (rpcEndpoint) {
-      const response = await resolveMock(options.mockResponses[rpcEndpoint.responseKey], {
+      const response = await resolveMock(snapshot.mockResponses[rpcEndpoint.responseKey], {
         url: request.url,
         method: request.method,
         payload: request.payload,
@@ -152,7 +156,7 @@ export function createInterceptedFetch(options: {
     });
 
     if (httpEndpoint) {
-      const response = await resolveMock(options.mockResponses[httpEndpoint.responseKey], {
+      const response = await resolveMock(snapshot.mockResponses[httpEndpoint.responseKey], {
         url: request.url,
         method: request.method,
         payload: request.payload,
@@ -236,9 +240,11 @@ export function installFetchInterceptor(
   }
 
   const interceptedFetch = createInterceptedFetch({
-    mode: config.intercept.mode,
-    routing: config.intercept.routing,
-    mockResponses: config.intercept.mockResponses,
+    getSnapshot: () => ({
+      mode: config.intercept.mode,
+      routing: config.intercept.routing,
+      mockResponses: config.intercept.mockResponses,
+    }),
     logger,
     baseFetch,
   });

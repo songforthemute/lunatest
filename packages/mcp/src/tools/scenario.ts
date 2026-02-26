@@ -1,4 +1,5 @@
-import { mutateScenarioVariants } from "../generation/mutator";
+import { mutateScenarioVariants } from "../generation/mutator.js";
+import { executeLuaScenario, type ExecuteLuaScenarioInput } from "@lunatest/core";
 
 export type ScenarioDescriptor = {
   id: string;
@@ -8,8 +9,8 @@ export type ScenarioDescriptor = {
 };
 
 type ScenarioCreateInput = {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   lua?: string;
   tags?: string[];
 };
@@ -19,16 +20,62 @@ type ScenarioMutateInput = {
   count?: number;
 };
 
+type ScenarioRunInput =
+  | string
+  | {
+      id?: string;
+      lua?: string;
+    };
+
 export type ScenarioTools = {
   list: () => Promise<ScenarioDescriptor[]>;
   get: (id: string) => Promise<ScenarioDescriptor | null>;
   create: (input: ScenarioCreateInput) => Promise<ScenarioDescriptor>;
-  run: (id: string) => Promise<{ id: string; pass: boolean }>;
-  runAll: (filter?: string) => Promise<Array<{ id: string; pass: boolean }>>;
+  run: (input: ScenarioRunInput) => Promise<{
+    id: string;
+    pass: boolean;
+    error?: string;
+    diff?: string;
+  }>;
+  runAll: (filter?: string) => Promise<
+    Array<{
+      id: string;
+      pass: boolean;
+      error?: string;
+      diff?: string;
+    }>
+  >;
   mutate: (input: ScenarioMutateInput) => Promise<ScenarioDescriptor[]>;
 };
 
-export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
+type CreateScenarioToolsOptions = {
+  adapter?: ExecuteLuaScenarioInput["adapter"];
+};
+
+async function runLua(
+  source: string,
+  adapter?: ExecuteLuaScenarioInput["adapter"],
+): Promise<{
+  pass: boolean;
+  error?: string;
+  diff?: string;
+}> {
+  const execution = await executeLuaScenario({
+    source,
+    adapter,
+  });
+
+  return {
+    pass: execution.pass,
+    error: execution.error,
+    diff: execution.result?.diff,
+  };
+}
+
+export function createScenarioTools(
+  seed: ScenarioDescriptor[],
+  options: CreateScenarioToolsOptions = {},
+): ScenarioTools {
   const store = new Map(seed.map((item) => [item.id, { ...item }]));
 
   return {
@@ -41,19 +88,47 @@ export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
     },
 
     async create(input) {
-      const next = { ...input };
+      const nextId = input.id && input.id.length > 0 ? input.id : `scenario-${store.size + 1}`;
+      const nextName =
+        input.name && input.name.length > 0 ? input.name : `scenario ${store.size + 1}`;
+      const next = {
+        id: nextId,
+        name: nextName,
+        lua: input.lua,
+        tags: input.tags,
+      };
       store.set(next.id, next);
       return next;
     },
 
-    async run(id) {
-      if (!store.has(id)) {
+    async run(input) {
+      if (typeof input !== "string" && input.lua) {
+        const executed = await runLua(input.lua, options.adapter);
+        return {
+          id: "inline",
+          ...executed,
+        };
+      }
+
+      const id = typeof input === "string" ? input : String(input.id ?? "");
+      const scenario = store.get(id);
+      if (!scenario) {
         throw new Error(`Scenario not found: ${id}`);
       }
 
+      if (!scenario.lua) {
+        return {
+          id,
+          pass: false,
+          error: "scenario_lua_missing",
+        };
+      }
+
+      const executed = await runLua(scenario.lua, options.adapter);
+
       return {
         id,
-        pass: true,
+        ...executed,
       };
     },
 
@@ -65,10 +140,23 @@ export function createScenarioTools(seed: ScenarioDescriptor[]): ScenarioTools {
         return scenario.id.includes(filter) || scenario.name.includes(filter);
       });
 
-      return candidates.map((item) => ({
-        id: item.id,
-        pass: true,
-      }));
+      return Promise.all(
+        candidates.map(async (item) => {
+          if (!item.lua) {
+            return {
+              id: item.id,
+              pass: false,
+              error: "scenario_lua_missing",
+            };
+          }
+
+          const executed = await runLua(item.lua, options.adapter);
+          return {
+            id: item.id,
+            ...executed,
+          };
+        }),
+      );
     },
 
     async mutate(input) {

@@ -9,6 +9,9 @@
 - `enableLunaRuntimeIntercept(config)`
 - `disableLunaRuntimeIntercept()`
 - `createLunaRuntimeIntercept(config)`
+- `setRouteMocks(routes)`
+- `applyInterceptState(partialState)`
+- `getInterceptState()`
 - `resolveEnabled(config, nodeEnv?)`
 - `LunaRuntimeInterceptConfig`
 
@@ -20,6 +23,12 @@ type LunaRuntimeInterceptConfig = {
   debug?: boolean;
   intercept?: {
     mode?: "strict" | "permissive";
+    routes?: Array<
+      | { endpointType: "ethereum"; method: string; responseKey: string }
+      | { endpointType: "rpc"; urlPattern: string | RegExp; methods?: string[]; responseKey: string }
+      | { endpointType: "http"; urlPattern: string | RegExp; method?: string; responseKey: string }
+      | { endpointType: "ws"; urlPattern: string | RegExp; responseKey: string; match?: string | RegExp }
+    >;
     routing?: {
       ethereumMethods?: Array<{
         method: string;
@@ -55,10 +64,28 @@ type LunaRuntimeInterceptConfig = {
 ## 최소 사용 예시
 
 ```ts
-import config from "../lunatest.config";
-import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+import { loadLunaConfig } from "@lunatest/core";
+import {
+  enableLunaRuntimeIntercept,
+  setRouteMocks,
+  applyInterceptState,
+} from "@lunatest/runtime-intercept";
 
-enableLunaRuntimeIntercept(config);
+const config = await loadLunaConfig("./lunatest.lua");
+const enabled = enableLunaRuntimeIntercept(
+  {
+    intercept: {
+      mode: config.mode,
+      mockResponses: config.intercept?.mockResponses ?? {},
+    },
+  },
+  process.env.NODE_ENV,
+);
+
+if (enabled) {
+  setRouteMocks(config.intercept?.routes ?? []);
+  applyInterceptState(config.intercept?.state ?? {});
+}
 ```
 
 ## 동작 요약

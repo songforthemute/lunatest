@@ -6,14 +6,14 @@ import {
   readBodyPayload,
   resolveMock,
   stringifyUnknown,
-} from "../matcher";
-import type { RuntimeLogger } from "../logger";
+} from "../matcher.js";
+import type { RuntimeLogger } from "../logger.js";
 import type {
   MockResponseMap,
   NormalizedRuntimeInterceptConfig,
   RoutingMode,
   RoutingConfig,
-} from "../types";
+} from "../types.js";
 
 type JsonRpcPayload = {
   id?: unknown;

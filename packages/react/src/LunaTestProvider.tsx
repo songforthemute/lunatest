@@ -2,7 +2,7 @@ import React, { createContext, useMemo, useState } from "react";
 
 import { LunaProvider, type LunaProviderOptions } from "@lunatest/core";
 
-import { createLunaProvider } from "./luna-provider";
+import { createLunaProvider } from "./luna-provider.js";
 
 export type LunaTestContextValue = {
   provider: LunaProvider;

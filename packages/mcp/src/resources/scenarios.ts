@@ -1,4 +1,4 @@
-import type { ScenarioDescriptor } from "../tools/scenario";
+import type { ScenarioDescriptor } from "../tools/scenario.js";
 
 export function scenariosResource(scenarios: ScenarioDescriptor[]) {
   return {

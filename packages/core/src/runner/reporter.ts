@@ -1,4 +1,4 @@
-import type { RunAllResult, RunScenarioResult } from "./runner";
+import type { RunAllResult, RunScenarioResult } from "./runner.js";
 
 function escapeXml(value: string): string {
   return value

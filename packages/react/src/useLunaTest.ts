@@ -1,6 +1,6 @@
 import { useContext } from "react";
 
-import { LunaTestContext } from "./LunaTestProvider";
+import { LunaTestContext } from "./LunaTestProvider.js";
 
 export function useLunaTest() {
   const context = useContext(LunaTestContext);

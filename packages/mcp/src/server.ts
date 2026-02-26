@@ -1,12 +1,13 @@
-import { createPromptCatalog } from "./prompts";
-import { createResourceCatalog } from "./resources";
-import { createComponentTools } from "./tools/component";
-import { createCoverageTools } from "./tools/coverage";
-import { createMockTools } from "./tools/mock";
+import { createPromptCatalog } from "./prompts/index.js";
+import { createResourceCatalog } from "./resources/index.js";
+import { createComponentTools } from "./tools/component.js";
+import { createCoverageTools } from "./tools/coverage.js";
+import { createMockTools } from "./tools/mock.js";
 import {
   createScenarioTools,
   type ScenarioDescriptor,
-} from "./tools/scenario";
+} from "./tools/scenario.js";
+import type { ExecuteLuaScenarioInput } from "@lunatest/core";
 
 type JsonRpcRequest = {
   id: string;
@@ -33,10 +34,13 @@ type McpServerOptions = {
   componentTree?: Array<{ name: string; children?: Array<{ name: string }> }>;
   componentStates?: Record<string, string[]>;
   protocols?: string[];
+  scenarioAdapter?: ExecuteLuaScenarioInput["adapter"];
 };
 
 export function createMcpServer(options: McpServerOptions) {
-  const scenarioTools = createScenarioTools(options.scenarios ?? []);
+  const scenarioTools = createScenarioTools(options.scenarios ?? [], {
+    adapter: options.scenarioAdapter,
+  });
   const coverageTools = createCoverageTools(options.coverage);
   const mockTools = createMockTools(options.mockState);
   const componentTools = createComponentTools(
@@ -79,8 +83,14 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await scenarioTools.create({
-              id: String(request.params?.id ?? ""),
-              name: String(request.params?.name ?? ""),
+              id:
+                request.params?.id === undefined
+                  ? undefined
+                  : String(request.params.id),
+              name:
+                request.params?.name === undefined
+                  ? undefined
+                  : String(request.params.name),
               lua:
                 request.params?.lua === undefined
                   ? undefined
@@ -92,7 +102,16 @@ export function createMcpServer(options: McpServerOptions) {
         if (request.method === "scenario.run") {
           return {
             id: request.id,
-            result: await scenarioTools.run(String(request.params?.id ?? "")),
+            result: await scenarioTools.run({
+              id:
+                request.params?.id === undefined
+                  ? undefined
+                  : String(request.params.id),
+              lua:
+                request.params?.lua === undefined
+                  ? undefined
+                  : String(request.params.lua),
+            }),
           };
         }
 
@@ -154,6 +173,31 @@ export function createMcpServer(options: McpServerOptions) {
             result: await mockTools.setState(
               (request.params?.state as Record<string, unknown>) ?? {},
             ),
+          };
+        }
+
+        if (request.method === "state.patch") {
+          return {
+            id: request.id,
+            result: await mockTools.patchState(
+              (request.params?.state as Record<string, unknown>) ?? {},
+            ),
+          };
+        }
+
+        if (request.method === "mock.routes.set") {
+          return {
+            id: request.id,
+            result: await mockTools.setRoutes(
+              (request.params?.routes as Array<Record<string, unknown>>) ?? [],
+            ),
+          };
+        }
+
+        if (request.method === "mock.routes.get") {
+          return {
+            id: request.id,
+            result: await mockTools.getRoutes(),
           };
         }
 

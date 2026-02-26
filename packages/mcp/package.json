@@ -15,6 +15,10 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "@lunatest/contracts": "workspace:*",
+    "@lunatest/core": "workspace:*"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",

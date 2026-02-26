@@ -16,6 +16,9 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "commander": "^14.0.3"
+    "@lunatest/core": "workspace:*",
+    "@lunatest/runtime-intercept": "workspace:*",
+    "commander": "^14.0.3",
+    "tinyglobby": "^0.2.15"
   }
 }

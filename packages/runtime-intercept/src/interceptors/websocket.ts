@@ -6,15 +6,15 @@ import {
   readWsPayload,
   resolveMock,
   stringifyUnknown,
-} from "../matcher";
-import type { RuntimeLogger } from "../logger";
+} from "../matcher.js";
+import type { RuntimeLogger } from "../logger.js";
 import type {
   EndpointPattern,
   NormalizedRuntimeInterceptConfig,
   RoutingMode,
   RoutingConfig,
   WsEndpointRoute,
-} from "../types";
+} from "../types.js";
 
 type RuntimeWebSocketListener = EventListenerOrEventListenerObject;
 

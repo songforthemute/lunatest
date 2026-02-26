@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline";
+import { isRecord } from "@lunatest/contracts";
 
-import type { createMcpServer } from "../server";
+import type { createMcpServer } from "../server.js";
 
 type McpServer = ReturnType<typeof createMcpServer>;
 
@@ -32,10 +33,6 @@ function invalidRequestResponse(message: string): JsonRpcLikeResponse {
       message,
     },
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function isJsonRpcLikeRequest(

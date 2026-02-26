@@ -10,6 +10,7 @@
     "tag": "latest"
   },
   "dependencies": {
+    "@lunatest/contracts": "workspace:*",
     "wasmoon": "^1.16.0",
     "zod": "^4.1.5"
   },

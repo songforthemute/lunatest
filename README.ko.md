@@ -58,7 +58,7 @@ pnpm release:publish:next
 | 경로 | 설명 |
 | --- | --- |
 | `packages/core` | 런타임, 시나리오 엔진, mock provider, runner |
-| `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen`) |
+| `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen/devtools/doctor`) |
 | `packages/react` | React provider/hooks 및 adapter |
 | `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
 | `packages/vitest-plugin` | Vitest 플러그인/매처 |
@@ -77,7 +77,7 @@ pnpm release:publish:next
 pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
 ```
 
 ### 1) Core provider
@@ -140,13 +140,58 @@ await runStdioServer({
 });
 ```
 
-### 5) 개발 서버 런타임 인터셉트
+### 5) 개발 서버 런타임 인터셉트 + 인브라우저 위젯
+
+프로젝트 루트 `lunatest.lua`:
+
+```lua
+scenario {
+  name = "app-runtime",
+  mode = "strict",
+  given = { chain = { id = 1 }, wallet = { connected = true } },
+  intercept = {
+    routes = {
+      { endpointType = "ethereum", method = "eth_chainId", responseKey = "wallet.chainId" },
+      { endpointType = "http", urlPattern = "**/api/quote", method = "GET", responseKey = "api.quote" },
+    },
+    mockResponses = {
+      ["wallet.chainId"] = { result = "0x1" },
+      ["api.quote"] = { status = 200, body = { amountOut = "123.45" } },
+    },
+  },
+}
+```
+
+`src/main.tsx` 1줄 부트스트랩 패턴:
 
 ```ts
-import config from "../lunatest.config";
-import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+import { loadLunaConfig } from "@lunatest/core";
+import {
+  enableLunaRuntimeIntercept,
+  setRouteMocks,
+  applyInterceptState,
+} from "@lunatest/runtime-intercept";
+import { mountLunaDevtools } from "@lunatest/react";
 
-enableLunaRuntimeIntercept(config);
+async function bootstrapLuna() {
+  const config = await loadLunaConfig("./lunatest.lua");
+  const enabled = enableLunaRuntimeIntercept(
+    {
+      intercept: {
+        mode: config.mode,
+        mockResponses: config.intercept?.mockResponses ?? {},
+      },
+    },
+    process.env.NODE_ENV,
+  );
+
+  if (!enabled) return;
+  setRouteMocks(config.intercept?.routes ?? []);
+  applyInterceptState(config.intercept?.state ?? {});
+  mountLunaDevtools();
+}
+
+void bootstrapLuna();
 ```
 
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.

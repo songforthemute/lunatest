@@ -17,7 +17,7 @@
 
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
 ```
 
 ## Core Provider 최소 예시
@@ -39,45 +39,61 @@ const accounts = await provider.request({ method: "eth_accounts" });
 
 ## 런타임 Intercept 예시 (개발 서버 브라우저)
 
-### 1) 앱 루트에 `lunatest.config.ts` 작성
+### 1) 앱 루트에 `lunatest.lua` 작성
 
-```ts
-import type { LunaRuntimeInterceptConfig } from "@lunatest/runtime-intercept";
-
-const config: LunaRuntimeInterceptConfig = {
-  enable: undefined,
-  debug: true,
-  intercept: {
-    mode: "strict",
-    routing: {
-      ethereumMethods: [
-        { method: "eth_chainId", responseKey: "wallet.chainId" },
-        { method: "eth_accounts", responseKey: "wallet.accounts" },
-      ],
-      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "rpc.call" }],
-      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "api.quote" }],
-      wsEndpoints: [{ urlPattern: "wss://stream.local/socket", responseKey: "ws.quote" }],
+```lua
+scenario {
+  name = "runtime-dev",
+  mode = "strict",
+  given = { chain = { id = 1 }, wallet = { connected = true } },
+  intercept = {
+    routes = {
+      { endpointType = "ethereum", method = "eth_chainId", responseKey = "wallet.chainId" },
+      { endpointType = "ethereum", method = "eth_accounts", responseKey = "wallet.accounts" },
+      { endpointType = "rpc", urlPattern = "**/rpc", methods = { "eth_call" }, responseKey = "rpc.call" },
+      { endpointType = "http", urlPattern = "**/api/quote", method = "GET", responseKey = "api.quote" },
     },
-    mockResponses: {
-      "wallet.chainId": { result: "0x1" },
-      "wallet.accounts": { result: ["0x1111111111111111111111111111111111111111"] },
-      "rpc.call": { result: "0x01" },
-      "api.quote": { status: 200, body: { amountOut: "123.45" } },
-      "ws.quote": { type: "QUOTE_UPDATED", amountOut: "123.40" },
+    mockResponses = {
+      ["wallet.chainId"] = { result = "0x1" },
+      ["wallet.accounts"] = { result = { "0x1111111111111111111111111111111111111111" } },
+      ["rpc.call"] = { result = "0x01" },
+      ["api.quote"] = { status = 200, body = { amountOut = "123.45" } },
     },
+    state = { chain = { blockNumber = 19000000 } },
   },
-};
-
-export default config;
+}
 ```
 
-### 2) 엔트리 파일(`src/main.tsx`)에서 1줄 활성화
+### 2) 엔트리 파일(`src/main.tsx`)에서 1줄 부트스트랩
 
 ```ts
-import config from "../lunatest.config";
-import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
+import { loadLunaConfig } from "@lunatest/core";
+import {
+  enableLunaRuntimeIntercept,
+  setRouteMocks,
+  applyInterceptState,
+} from "@lunatest/runtime-intercept";
+import { mountLunaDevtools } from "@lunatest/react";
 
-enableLunaRuntimeIntercept(config);
+async function bootstrapLuna() {
+  const config = await loadLunaConfig("./lunatest.lua");
+  const enabled = enableLunaRuntimeIntercept(
+    {
+      intercept: {
+        mode: config.mode,
+        mockResponses: config.intercept?.mockResponses ?? {},
+      },
+    },
+    process.env.NODE_ENV,
+  );
+
+  if (!enabled) return;
+  setRouteMocks(config.intercept?.routes ?? []);
+  applyInterceptState(config.intercept?.state ?? {});
+  mountLunaDevtools();
+}
+
+void bootstrapLuna();
 ```
 
 활성화 규칙은 다음과 같습니다.

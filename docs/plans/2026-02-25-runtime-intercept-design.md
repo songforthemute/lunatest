@@ -10,7 +10,7 @@
 ## 목표
 
 - 프레임워크 비종속 런타임 인터셉트 엔진 제공
-- `lunatest.config.ts` 기반 선언형 설정
+- `lunatest.lua` 기반 선언형 설정
 - 개발 환경 기본 활성화 (`NODE_ENV === "development"`)
 - `enable?: boolean`이 있으면 해당 값 우선
 - 지갑 + HTTP/RPC + WebSocket 프레임 레벨 인터셉트
@@ -28,7 +28,7 @@
 - 이유: React/Playwright와 분리된 순수 브라우저 런타임 계층 유지
 
 2. 설정 방식
-- 앱 루트 `lunatest.config.ts`
+- 앱 루트 `lunatest.lua`
 - 엔트리 파일(`main.tsx`)에서 명시 import + enable 호출
 
 3. 활성화 우선순위
@@ -55,7 +55,7 @@
 
 ```text
 app root
-├─ lunatest.config.ts
+├─ lunatest.lua
 ├─ src/main.tsx
 │  └─ enableLunaRuntimeIntercept(config)
 └─ browser runtime
@@ -105,7 +105,7 @@ export type LunaRuntimeInterceptConfig = {
 
 ### 1) 부트스트랩
 
-1. `main.tsx`에서 `lunatest.config.ts` import
+1. `main.tsx`에서 `lunatest.lua` 로딩
 2. `enableLunaRuntimeIntercept(config)` 호출
 3. 내부에서 활성화 여부 계산:
    - `config.enable` 명시 -> 우선
@@ -175,7 +175,7 @@ export type LunaRuntimeInterceptConfig = {
 ## 설정 예시
 
 ```ts
-// lunatest.config.ts
+-- lunatest.lua
 import type { LunaRuntimeInterceptConfig } from "@lunatest/runtime-intercept";
 
 const config: LunaRuntimeInterceptConfig = {
@@ -207,10 +207,19 @@ export default config;
 
 ```ts
 // src/main.tsx
-import config from "../lunatest.config";
+import { loadLunaConfig } from "@lunatest/core";
 import { enableLunaRuntimeIntercept } from "@lunatest/runtime-intercept";
 
-enableLunaRuntimeIntercept(config);
+const config = await loadLunaConfig("./lunatest.lua");
+enableLunaRuntimeIntercept(
+  {
+    intercept: {
+      mode: config.mode,
+      mockResponses: config.intercept?.mockResponses ?? {},
+    },
+  },
+  process.env.NODE_ENV,
+);
 ```
 
 ## 테스트 전략

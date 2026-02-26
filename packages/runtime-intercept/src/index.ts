@@ -1,11 +1,15 @@
 export {
+  appendRouteMocks,
+  applyInterceptState,
   createLunaRuntimeIntercept,
   disableLunaRuntimeIntercept,
   enableLunaRuntimeIntercept,
+  getInterceptState,
   isLunaRuntimeInterceptEnabled,
   normalizeRuntimeInterceptConfig,
   resolveEnabled,
-} from "./runtime";
+  setRouteMocks,
+} from "./runtime.js";
 
 export type {
   EndpointPattern,
@@ -15,9 +19,10 @@ export type {
   LunaRuntimeInterceptConfig,
   MockResponseInput,
   MockResponseMap,
+  RouteMock,
   RoutingConfig,
   RoutingMode,
   RpcEndpointRoute,
   RuntimeInterceptHandle,
   WsEndpointRoute,
-} from "./types";
+} from "./types.js";

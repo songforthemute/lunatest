@@ -1,16 +1,9 @@
-export type RoutingMode = "strict" | "permissive";
-
-export type RpcEndpointRoute = {
-  urlPattern: string | RegExp;
-  methods?: string[];
-  responseKey: string;
-};
-
-export type HttpEndpointRoute = {
-  urlPattern: string | RegExp;
-  method?: string;
-  responseKey: string;
-};
+import { isRecord, type RoutingMode } from "@lunatest/contracts";
+import type {
+  RpcEndpointRoute,
+  HttpEndpointRoute,
+} from "@lunatest/contracts";
+export type { RoutingMode, RpcEndpointRoute, HttpEndpointRoute };
 
 export type RoutingConfig = {
   mode?: RoutingMode;
@@ -78,10 +71,6 @@ export type LunaFixtureOptions = {
   routing?: RoutingConfig;
   mockResponses?: MockResponseMap;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function patternToRegExp(pattern: string): RegExp {
   const escaped = pattern

@@ -1,11 +1,11 @@
-import type { ScenarioDescriptor } from "../tools/scenario";
+import type { ScenarioDescriptor } from "../tools/scenario.js";
 
-import { componentsResource } from "./components";
-import { coverageResource } from "./coverage";
-import { guideResource } from "./guide";
-import { mocksResource } from "./mocks";
-import { protocolsResource } from "./protocols";
-import { scenariosResource } from "./scenarios";
+import { componentsResource } from "./components.js";
+import { coverageResource } from "./coverage.js";
+import { guideResource } from "./guide.js";
+import { mocksResource } from "./mocks.js";
+import { protocolsResource } from "./protocols.js";
+import { scenariosResource } from "./scenarios.js";
 
 export type McpResource = {
   uri: string;

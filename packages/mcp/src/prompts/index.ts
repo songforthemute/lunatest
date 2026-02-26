@@ -1,7 +1,7 @@
-import { analyzeFailurePrompt } from "./analyze-failure";
-import { generateEdgeCasesPrompt } from "./generate-edge-cases";
-import { improveCoveragePrompt } from "./improve-coverage";
-import { regressionFromDiffPrompt } from "./regression-from-diff";
+import { analyzeFailurePrompt } from "./analyze-failure.js";
+import { generateEdgeCasesPrompt } from "./generate-edge-cases.js";
+import { improveCoveragePrompt } from "./improve-coverage.js";
+import { regressionFromDiffPrompt } from "./regression-from-diff.js";
 
 export type PromptTemplate = {
   id: string;
