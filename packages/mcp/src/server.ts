@@ -7,6 +7,7 @@ import {
   createScenarioTools,
   type ScenarioDescriptor,
 } from "./tools/scenario.js";
+import type { ExecuteLuaScenarioInput } from "@lunatest/core";
 
 type JsonRpcRequest = {
   id: string;
@@ -33,10 +34,13 @@ type McpServerOptions = {
   componentTree?: Array<{ name: string; children?: Array<{ name: string }> }>;
   componentStates?: Record<string, string[]>;
   protocols?: string[];
+  scenarioAdapter?: ExecuteLuaScenarioInput["adapter"];
 };
 
 export function createMcpServer(options: McpServerOptions) {
-  const scenarioTools = createScenarioTools(options.scenarios ?? []);
+  const scenarioTools = createScenarioTools(options.scenarios ?? [], {
+    adapter: options.scenarioAdapter,
+  });
   const coverageTools = createCoverageTools(options.coverage);
   const mockTools = createMockTools(options.mockState);
   const componentTools = createComponentTools(

@@ -6,6 +6,7 @@ import { devtoolsCommand } from "./commands/devtools.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { genCommand } from "./commands/gen.js";
 import { runCommand } from "./commands/run.js";
+import { validateCommand } from "./commands/validate.js";
 import { watchCommand } from "./commands/watch.js";
 
 export type CliExecutionResult = {
@@ -18,6 +19,17 @@ export async function executeCommand(args: string[]): Promise<CliExecutionResult
   let exitCode = 0;
 
   const config = loadConfig();
+  const setExitCodeBySummary = (summary: string): void => {
+    const match = summary.match(/(?:^|\n)failed=(\d+)(?:\n|$)/);
+    if (!match) {
+      return;
+    }
+
+    const failed = Number(match[1] ?? "0");
+    if (failed > 0) {
+      exitCode = 1;
+    }
+  };
 
   const program = new Command();
   program.name("lunatest");
@@ -42,6 +54,18 @@ export async function executeCommand(args: string[]): Promise<CliExecutionResult
         scenario: options?.scenario,
         luaConfigPath: config.luaConfigPath,
       });
+      setExitCodeBySummary(output);
+    });
+
+  program
+    .command("validate")
+    .option("--scenario <fileOrGlob>")
+    .action(async (options?: { scenario?: string }) => {
+      output = await validateCommand({
+        scenario: options?.scenario,
+        luaConfigPath: config.luaConfigPath,
+      });
+      setExitCodeBySummary(output);
     });
 
   program.command("watch").action(() => {

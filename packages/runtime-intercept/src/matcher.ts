@@ -3,10 +3,7 @@ import type {
   InterceptResolverContext,
   MockResponseInput,
 } from "./types.js";
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+export { isRecord } from "@lunatest/contracts";
 
 function patternToRegExp(pattern: string): RegExp {
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&");

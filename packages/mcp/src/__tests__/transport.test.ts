@@ -9,8 +9,12 @@ describe("mcp transport", () => {
         {
           id: "swap-1",
           name: "swap happy path",
+          lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
         },
       ],
+      scenarioAdapter: {
+        resolveUi: async () => ({}),
+      },
     });
 
     const response = await server.handleRequest({
@@ -25,6 +29,7 @@ describe("mcp transport", () => {
         {
           id: "swap-1",
           name: "swap happy path",
+          lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
         },
       ],
     });
@@ -32,13 +37,22 @@ describe("mcp transport", () => {
 
   it("dispatches coverage.gaps and resource/prompt calls", async () => {
     const server = createMcpServer({
-      scenarios: [{ id: "swap-1", name: "swap happy path" }],
+      scenarios: [
+        {
+          id: "swap-1",
+          name: "swap happy path",
+          lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
+        },
+      ],
       coverage: {
         total: 3,
         covered: 1,
       },
       componentTree: [{ name: "SwapForm" }],
       componentStates: { SwapForm: ["idle", "pending", "success"] },
+      scenarioAdapter: {
+        resolveUi: async () => ({}),
+      },
     });
 
     const gaps = await server.handleRequest({
@@ -87,7 +101,16 @@ describe("mcp transport", () => {
 
   it("supports inline scenario run and route/state mock tools", async () => {
     const server = createMcpServer({
-      scenarios: [{ id: "swap-1", name: "swap happy path" }],
+      scenarios: [
+        {
+          id: "swap-1",
+          name: "swap happy path",
+          lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
+        },
+      ],
+      scenarioAdapter: {
+        resolveUi: async () => ({}),
+      },
     });
 
     const inlineRun = await server.handleRequest({
@@ -103,6 +126,8 @@ describe("mcp transport", () => {
       result: {
         id: "inline",
         pass: true,
+        diff: "",
+        error: undefined,
       },
     });
 

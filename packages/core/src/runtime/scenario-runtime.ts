@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { deepClone, deepMerge, type RouteMock } from "@lunatest/contracts";
+export type { RouteMock } from "@lunatest/contracts";
 
 const StringRecordSchema = z.record(z.string(), z.unknown());
 
@@ -10,23 +12,23 @@ const EthereumRouteSchema = z.object({
 
 const RpcRouteSchema = z.object({
   endpointType: z.literal("rpc"),
-  urlPattern: z.string().min(1),
+  urlPattern: z.union([z.string().min(1), z.instanceof(RegExp)]),
   methods: z.array(z.string().min(1)).optional(),
   responseKey: z.string().min(1),
 });
 
 const HttpRouteSchema = z.object({
   endpointType: z.literal("http"),
-  urlPattern: z.string().min(1),
+  urlPattern: z.union([z.string().min(1), z.instanceof(RegExp)]),
   method: z.string().min(1).optional(),
   responseKey: z.string().min(1),
 });
 
 const WsRouteSchema = z.object({
   endpointType: z.literal("ws"),
-  urlPattern: z.string().min(1),
+  urlPattern: z.union([z.string().min(1), z.instanceof(RegExp)]),
   responseKey: z.string().min(1),
-  match: z.string().min(1).optional(),
+  match: z.union([z.string().min(1), z.instanceof(RegExp)]).optional(),
 });
 
 const RouteMockSchema = z.discriminatedUnion("endpointType", [
@@ -97,7 +99,6 @@ export const LuaConfigSchema = z
   })
   .passthrough();
 
-export type RouteMock = z.infer<typeof RouteMockSchema>;
 export type LuaConfig = z.infer<typeof LuaConfigSchema>;
 
 export type ScenarioRuntime = {
@@ -107,33 +108,6 @@ export type ScenarioRuntime = {
   getInterceptState: () => Record<string, unknown>;
   applyInterceptState: (partialState: Record<string, unknown>) => Record<string, unknown>;
 };
-
-function cloneRecord(input: Record<string, unknown>): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(input));
-}
-
-function isRecord(input: unknown): input is Record<string, unknown> {
-  return Boolean(input) && typeof input === "object" && !Array.isArray(input);
-}
-
-function mergeRecord(
-  base: Record<string, unknown>,
-  patch: Record<string, unknown>,
-): Record<string, unknown> {
-  const next: Record<string, unknown> = { ...base };
-
-  for (const [key, value] of Object.entries(patch)) {
-    const baseValue = next[key];
-    if (isRecord(baseValue) && isRecord(value)) {
-      next[key] = mergeRecord(baseValue, value);
-      continue;
-    }
-
-    next[key] = value;
-  }
-
-  return next;
-}
 
 function normalizeLegacyRoutes(routing?: LegacyRouting): RouteMock[] {
   if (!routing) {
@@ -183,16 +157,16 @@ function normalizeLegacyRoutes(routing?: LegacyRouting): RouteMock[] {
 export function createScenarioRuntime(input: LuaConfig): ScenarioRuntime {
   const parsed = LuaConfigSchema.parse(input);
   let routeMocks = parsed.intercept?.routes
-    ? parsed.intercept.routes.map((route) => ({ ...route }))
+    ? parsed.intercept.routes.map((route) => ({ ...route }) as RouteMock)
     : normalizeLegacyRoutes(parsed.intercept?.routing);
-  let interceptState = cloneRecord(parsed.intercept?.state ?? {});
+  let interceptState = deepClone(parsed.intercept?.state ?? {});
 
   return {
     getConfig() {
-      const cloned = cloneRecord(parsed) as LuaConfig;
+      const cloned = deepClone(parsed) as LuaConfig;
       cloned.intercept = cloned.intercept ?? {};
       cloned.intercept.routes = routeMocks.map((route) => ({ ...route }));
-      cloned.intercept.state = cloneRecord(interceptState);
+      cloned.intercept.state = deepClone(interceptState);
       return cloned;
     },
 
@@ -206,13 +180,13 @@ export function createScenarioRuntime(input: LuaConfig): ScenarioRuntime {
     },
 
     getInterceptState() {
-      return cloneRecord(interceptState);
+      return deepClone(interceptState);
     },
 
     applyInterceptState(partialState) {
       const normalized = StringRecordSchema.parse(partialState);
-      interceptState = mergeRecord(interceptState, normalized);
-      return cloneRecord(interceptState);
+      interceptState = deepMerge(interceptState, normalized);
+      return deepClone(interceptState);
     },
   };
 }

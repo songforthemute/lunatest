@@ -7,6 +7,9 @@ describe("mcp flow", () => {
     const server = createMcpServer({
       scenarios: [],
       coverage: { total: 2, covered: 1 },
+      scenarioAdapter: {
+        resolveUi: async () => ({}),
+      },
     });
 
     const created = await server.handleRequest({
@@ -15,6 +18,7 @@ describe("mcp flow", () => {
       params: {
         id: "swap-1",
         name: "swap happy path",
+        lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
       },
     });
 
@@ -23,6 +27,7 @@ describe("mcp flow", () => {
       result: {
         id: "swap-1",
         name: "swap happy path",
+        lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
       },
     });
 
@@ -39,6 +44,8 @@ describe("mcp flow", () => {
       result: {
         id: "swap-1",
         pass: true,
+        diff: "",
+        error: undefined,
       },
     });
 

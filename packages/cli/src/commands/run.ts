@@ -1,4 +1,6 @@
-import { createScenarioRuntime, loadLunaConfig } from "@lunatest/core";
+import { executeLuaScenario } from "@lunatest/core";
+
+import { resolveScenarioSources } from "./scenario-sources.js";
 
 export type RunCommandOptions = {
   filter?: string;
@@ -7,39 +9,65 @@ export type RunCommandOptions = {
 };
 
 export async function runCommand(options: RunCommandOptions): Promise<string> {
-  const scenarioSource = options.scenario ?? options.luaConfigPath;
-  let config;
+  const sources = await resolveScenarioSources({
+    scenario: options.scenario,
+    luaConfigPath: options.luaConfigPath,
+  });
 
-  try {
-    config = await loadLunaConfig(scenarioSource);
-  } catch (cause) {
-    if (options.scenario) {
-      throw cause;
+  let passed = 0;
+  let failed = 0;
+  const lines: string[] = ["Scenario Summary", `sources=${sources.length}`];
+
+  for (const source of sources) {
+    const execution = await executeLuaScenario({
+      source,
+      adapter: {
+        runWhen({ config, runtime }) {
+          if (config.intercept?.routes) {
+            runtime.setRouteMocks(config.intercept.routes);
+          }
+
+          if (config.given) {
+            runtime.applyInterceptState(config.given);
+          }
+
+          if (config.intercept?.state) {
+            runtime.applyInterceptState(config.intercept.state);
+          }
+        },
+        resolveUi({ runtime }) {
+          return runtime.getInterceptState();
+        },
+        resolveState({ runtime }) {
+          return runtime.getInterceptState();
+        },
+      },
+    });
+
+    const targetName = execution.scenarioName;
+    if (options.filter && !targetName.includes(options.filter)) {
+      continue;
     }
 
-    config = await loadLunaConfig(`
-      scenario {
-        name = "default-devtools-scenario",
-        mode = "strict",
-        given = {
-          chain = { id = 1, gasPrice = 30 },
-          wallet = { connected = true, balances = { ETH = 10.0 } }
-        }
-      }
-    `);
+    if (execution.pass) {
+      passed += 1;
+      lines.push(`PASS ${targetName} source=${source}`);
+      continue;
+    }
+
+    failed += 1;
+    lines.push(`FAIL ${targetName} source=${source}`);
+    if (execution.error) {
+      lines.push(`error=${execution.error}`);
+    }
+    if (execution.result?.diff) {
+      lines.push(`diff=${execution.result.diff}`);
+    }
   }
 
-  const runtime = createScenarioRuntime(config);
-  const routeCount = runtime.getRouteMocks().length;
+  lines.push(`filter=${options.filter ?? "all"}`);
+  lines.push(`passed=${passed}`);
+  lines.push(`failed=${failed}`);
 
-  return [
-    "Scenario Summary",
-    `source=${scenarioSource}`,
-    `filter=${options.filter ?? "all"}`,
-    `name=${config.name ?? "unnamed"}`,
-    `mode=${config.mode}`,
-    `routes=${routeCount}`,
-    "passed=1",
-    "failed=0",
-  ].join("\n");
+  return lines.join("\n");
 }

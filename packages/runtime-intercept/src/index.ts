@@ -1,4 +1,5 @@
 export {
+  appendRouteMocks,
   applyInterceptState,
   createLunaRuntimeIntercept,
   disableLunaRuntimeIntercept,

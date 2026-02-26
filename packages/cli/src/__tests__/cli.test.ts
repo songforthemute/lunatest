@@ -25,7 +25,9 @@ async function withLuaScenarioFile(): Promise<string> {
     `scenario {
   name = "cli-swap",
   mode = "strict",
-  given = { wallet = { connected = true } }
+  given = { wallet = { connected = true } },
+  when = { action = "swap" },
+  then_ui = { wallet = { connected = true } }
 }
 `,
     "utf8",
@@ -41,8 +43,18 @@ describe("cli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("Scenario Summary");
-    expect(result.output).toContain(`source=${file}`);
-    expect(result.output).toContain("name=cli-swap");
+    expect(result.output).toContain(`PASS cli-swap source=${file}`);
+    expect(result.output).toContain("passed=1");
+    expect(result.output).toContain("failed=0");
+  });
+
+  it("runs validate command with glob scenario path", async () => {
+    const file = await withLuaScenarioFile();
+    const result = await executeCommand(["validate", "--scenario", file]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain("Validate Summary");
+    expect(result.output).toContain(`PASS ${file}`);
   });
 
   it("runs watch command", async () => {

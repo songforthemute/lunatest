@@ -81,19 +81,21 @@ describe("network routing", () => {
 
   it("fulfills RPC request via fetch route", async () => {
     const fetch = createInterceptedFetch({
-      mode: "strict",
-      routing: {
-        rpcEndpoints: [
-          {
-            urlPattern: "https://rpc.example",
-            methods: ["eth_chainId"],
-            responseKey: "chain-id",
-          },
-        ],
-      },
-      mockResponses: {
-        "chain-id": { result: "0x1" },
-      },
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example",
+              methods: ["eth_chainId"],
+              responseKey: "chain-id",
+            },
+          ],
+        },
+        mockResponses: {
+          "chain-id": { result: "0x1" },
+        },
+      }),
       logger: createLogger(false),
     });
 
@@ -116,12 +118,14 @@ describe("network routing", () => {
 
   it("blocks unmatched fetch request in strict mode", async () => {
     const fetch = createInterceptedFetch({
-      mode: "strict",
-      routing: {
-        rpcEndpoints: [],
-        httpEndpoints: [],
-      },
-      mockResponses: {},
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [],
+          httpEndpoints: [],
+        },
+        mockResponses: {},
+      }),
       logger: createLogger(false),
     });
 
@@ -131,12 +135,14 @@ describe("network routing", () => {
   it("forwards unmatched fetch request in permissive mode", async () => {
     const baseFetch = vi.fn(async () => new Response("ok", { status: 200 }));
     const fetch = createInterceptedFetch({
-      mode: "permissive",
-      routing: {
-        rpcEndpoints: [],
-        httpEndpoints: [],
-      },
-      mockResponses: {},
+      getSnapshot: () => ({
+        mode: "permissive",
+        routing: {
+          rpcEndpoints: [],
+          httpEndpoints: [],
+        },
+        mockResponses: {},
+      }),
       logger: createLogger(false),
       baseFetch,
     });
@@ -147,6 +153,52 @@ describe("network routing", () => {
 
     expect(baseFetch).toHaveBeenCalledTimes(1);
     await expect(response.text()).resolves.toBe("ok");
+  });
+
+  it("applies latest snapshot on every fetch call", async () => {
+    const snapshot = {
+      mode: "strict" as const,
+      routing: {
+        rpcEndpoints: [
+          {
+            urlPattern: "https://rpc.example",
+            methods: ["eth_chainId"],
+            responseKey: "chain-id",
+          },
+        ],
+      },
+      mockResponses: {
+        "chain-id": { result: "0x1" },
+      } as Record<string, unknown>,
+    };
+
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => snapshot,
+      logger: createLogger(false),
+    });
+
+    const first = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    await expect(first.json()).resolves.toMatchObject({ result: "0x1" });
+
+    snapshot.mockResponses["chain-id"] = { result: "0x2" };
+    const second = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 2,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    await expect(second.json()).resolves.toMatchObject({ result: "0x2" });
   });
 
   it("fulfills matched XHR route", async () => {

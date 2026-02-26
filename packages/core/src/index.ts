@@ -12,3 +12,8 @@ export {
   type RouteMock,
   type ScenarioRuntime,
 } from "./runtime/scenario-runtime.js";
+export {
+  executeLuaScenario,
+  type ExecuteLuaScenarioInput,
+  type ExecuteLuaScenarioResult,
+} from "./runner/execute-scenario.js";

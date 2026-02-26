@@ -1,5 +1,6 @@
 import { createRuntime } from "../runtime/engine.js";
 import { LuaConfigSchema, type LuaConfig } from "../runtime/scenario-runtime.js";
+import { isRecord } from "@lunatest/contracts";
 
 type LuaConfigSource = string | URL;
 
@@ -52,10 +53,6 @@ async function readSource(source: LuaConfigSource): Promise<string> {
   } catch {
     return source;
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 export async function loadLunaConfig(source: LuaConfigSource): Promise<LuaConfig> {

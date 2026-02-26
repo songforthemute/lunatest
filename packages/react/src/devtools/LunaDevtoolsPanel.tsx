@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from "react";
 
+import { executeLuaScenario, loadLunaConfig } from "@lunatest/core";
 import {
   applyInterceptState,
+  getInterceptState,
   setRouteMocks,
   type RouteMock,
 } from "@lunatest/runtime-intercept";
@@ -11,7 +13,9 @@ type LunaDevtoolsPanelProps = {
   initialLua?: string;
   initialRoutes?: RouteMock[];
   initialState?: Record<string, unknown>;
-  onRunScenario?: (luaScript: string) => void | Promise<void>;
+  onRunScenario?: (
+    luaScript: string,
+  ) => Promise<{ pass: boolean; error?: string; diff?: string }> | { pass: boolean; error?: string; diff?: string };
   onSetRouteMocks?: (routes: RouteMock[]) => void | Promise<void>;
   onPatchState?: (patch: Record<string, unknown>) => void | Promise<void>;
 };
@@ -62,13 +66,55 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
   const [stateJson, setStateJson] = useState<string>(toPrettyJson(defaultState));
   const [status, setStatus] = useState<string>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [diff, setDiff] = useState<string | null>(null);
 
   const handleRun = async () => {
     setError(null);
+    setDiff(null);
     setStatus("running");
     try {
-      await props.onRunScenario?.(luaScript);
-      setStatus("scenario-applied");
+      const executed = props.onRunScenario
+        ? await props.onRunScenario(luaScript)
+        : await (async () => {
+          const config = await loadLunaConfig(luaScript);
+          const result = await executeLuaScenario({
+            source: config,
+            adapter: {
+              runWhen: async ({ config: nextConfig, runtime }) => {
+                if (nextConfig.intercept?.routes) {
+                  runtime.setRouteMocks(nextConfig.intercept.routes);
+                  setRouteMocks(nextConfig.intercept.routes);
+                }
+
+                if (nextConfig.given) {
+                  runtime.applyInterceptState(nextConfig.given);
+                  applyInterceptState(nextConfig.given);
+                }
+
+                if (nextConfig.intercept?.state) {
+                  runtime.applyInterceptState(nextConfig.intercept.state);
+                  applyInterceptState(nextConfig.intercept.state);
+                }
+              },
+              resolveUi: async () => getInterceptState(),
+              resolveState: async () => getInterceptState(),
+            },
+          });
+
+          return {
+            pass: result.pass,
+            error: result.error,
+            diff: result.result?.diff,
+          };
+        })();
+
+      setStatus(executed.pass ? "pass" : "fail");
+      if (executed.error) {
+        setError(executed.error);
+      }
+      if (executed.diff) {
+        setDiff(executed.diff);
+      }
     } catch (cause) {
       setStatus("failed");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -77,6 +123,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
 
   const handleApplyRoutes = async () => {
     setError(null);
+    setDiff(null);
     setStatus("updating-routes");
     try {
       const parsed = JSON.parse(routeJson) as RouteMock[];
@@ -94,6 +141,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
 
   const handlePatchState = async () => {
     setError(null);
+    setDiff(null);
     setStatus("patching-state");
     try {
       const parsed = JSON.parse(stateJson) as Record<string, unknown>;
@@ -115,6 +163,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
     setStateJson(toPrettyJson(defaultState));
     setStatus("reset");
     setError(null);
+    setDiff(null);
   };
 
   return (
@@ -188,6 +237,11 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       <p style={{ marginTop: 10, marginBottom: 0 }}>status: {status}</p>
       {error ? (
         <p style={{ marginTop: 4, marginBottom: 0, color: "#b91c1c" }}>error: {error}</p>
+      ) : null}
+      {diff ? (
+        <pre style={{ marginTop: 8, marginBottom: 0, color: "#7f1d1d", whiteSpace: "pre-wrap" }}>
+          diff: {diff}
+        </pre>
       ) : null}
     </aside>
   );
