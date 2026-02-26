@@ -363,7 +363,8 @@ interface LunaRuntime {
        │ On-chain data     │   │ eth_send     → Lua event queue │
        └───────────────────┘   │ eth_chainId  → mock chain      │
                                │                                │
-                               │ ★ Zero code change in app.     │
+                               │ ★ Zero business-code change.    │
+                               │   (1-line bootstrap in dev)     │
                                │   Swap provider = swap reality │
                                └────────────────────────────────┘
 ```
