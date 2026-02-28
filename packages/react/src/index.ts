@@ -6,5 +6,7 @@ export { withLunaWagmiConfig } from "./adapters/wagmi.js";
 export { createEthersAdapter } from "./adapters/ethers.js";
 export { createWeb3JsAdapter } from "./adapters/web3js.js";
 export { enableLunaIntercept } from "./intercept.js";
+export type { LunaBootstrapOptions, LunaBootstrapResult } from "./bootstrap.js";
+export { bootstrapLunaRuntime } from "./bootstrap.js";
 export { LunaDevtoolsPanel } from "./devtools/LunaDevtoolsPanel.js";
 export { mountLunaDevtools } from "./devtools/mount.js";
