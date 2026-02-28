@@ -15,7 +15,8 @@ This guide targets teams that install LunaTest as a library inside an existing f
 
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
+pnpm add @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin
 ```
 
 ## Core Provider Example
@@ -65,39 +66,23 @@ scenario {
 Enable once in app entry (`src/main.tsx`):
 
 ```ts
-import { loadLunaConfig } from "@lunatest/core";
-import {
-  enableLunaRuntimeIntercept,
-  setRouteMocks,
-  applyInterceptState,
-} from "@lunatest/runtime-intercept";
-import { mountLunaDevtools } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react";
 
-async function bootstrapLuna() {
-  const config = await loadLunaConfig("./lunatest.lua");
-  const enabled = enableLunaRuntimeIntercept(
-    {
-      intercept: {
-        mode: config.mode,
-        mockResponses: config.intercept?.mockResponses ?? {},
-      },
-    },
-    process.env.NODE_ENV,
-  );
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
 
-  if (!enabled) return;
-  setRouteMocks(config.intercept?.routes ?? []);
-  applyInterceptState(config.intercept?.state ?? {});
-  mountLunaDevtools();
-}
-
-void bootstrapLuna();
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  mountDevtools: true,
+});
 ```
 
 Activation rule:
 
-- `enable?: boolean` is explicit override
-- if omitted, intercept is enabled only when `NODE_ENV === "development"`
+- `enable?: boolean` is explicit override (`lunatest.lua` or config override)
+- if omitted, intercept is enabled only when the resolved `nodeEnv` is `"development"`
 
 ## React Example
 

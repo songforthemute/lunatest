@@ -12,10 +12,29 @@
 - `createEthersAdapter`
 - `createWeb3JsAdapter`
 - `enableLunaIntercept`
+- `bootstrapLunaRuntime`
 - `LunaDevtoolsPanel`
 - `mountLunaDevtools`
 
-실무에서는 `LunaTestProvider` + `useLunaTest` 조합으로 시작하고, 개발 서버에서는 `enableLunaIntercept` + `mountLunaDevtools`를 같이 두는 경우가 많습니다.
+실무에서는 `LunaTestProvider` + `useLunaTest` 조합으로 시작하고, 개발 서버 런타임 모킹은 `bootstrapLunaRuntime`을 기본으로 두는 편이 안전합니다.
+
+## `bootstrapLunaRuntime(options?)`
+
+```ts
+import { bootstrapLunaRuntime } from "@lunatest/react";
+
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
+
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  mountDevtools: true,
+});
+```
+
+세밀한 제어가 필요하면 `enableLunaIntercept` + `mountLunaDevtools`를 직접 조합하는 고급 모드를 사용하면 됩니다.
 
 ## 최소 예시
 

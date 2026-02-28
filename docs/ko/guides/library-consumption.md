@@ -17,7 +17,8 @@
 
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
+pnpm add @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin
 ```
 
 ## Core Provider 최소 예시
@@ -67,39 +68,23 @@ scenario {
 ### 2) 엔트리 파일(`src/main.tsx`)에서 1줄 부트스트랩
 
 ```ts
-import { loadLunaConfig } from "@lunatest/core";
-import {
-  enableLunaRuntimeIntercept,
-  setRouteMocks,
-  applyInterceptState,
-} from "@lunatest/runtime-intercept";
-import { mountLunaDevtools } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react";
 
-async function bootstrapLuna() {
-  const config = await loadLunaConfig("./lunatest.lua");
-  const enabled = enableLunaRuntimeIntercept(
-    {
-      intercept: {
-        mode: config.mode,
-        mockResponses: config.intercept?.mockResponses ?? {},
-      },
-    },
-    process.env.NODE_ENV,
-  );
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
 
-  if (!enabled) return;
-  setRouteMocks(config.intercept?.routes ?? []);
-  applyInterceptState(config.intercept?.state ?? {});
-  mountLunaDevtools();
-}
-
-void bootstrapLuna();
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  mountDevtools: true,
+});
 ```
 
 활성화 규칙은 다음과 같습니다.
 
 - `enable` 값을 직접 넣으면 그 값이 최우선입니다.
-- `enable`을 생략하면 `NODE_ENV === "development"`일 때만 자동 활성화됩니다.
+- `enable`을 생략하면 `nodeEnv`가 `"development"`일 때만 자동 활성화됩니다.
 
 ## React 통합 예시
 
