@@ -6,6 +6,8 @@
 
 **LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI — all under 1ms per test. Flaky? Zero. If a test fails, it's a bug. Period.
 
+Package status: `Not yet published` (npm release pipeline configured, pending first stable publish).
+
 ```lua
 scenario {
   name = "high_slippage_warning",
@@ -90,7 +92,8 @@ Install only what you need:
 ```bash
 pnpm add @lunatest/core
 pnpm add @lunatest/react
-pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
+pnpm add @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin
 pnpm add @lunatest/mcp
 ```
 
@@ -185,36 +188,20 @@ scenario {
 }
 ```
 
-`src/main.tsx` (one-line bootstrap + `NODE_ENV` guard):
+`src/main.tsx` (one-line bootstrap + bundler-independent env detection):
 
 ```ts
-import { loadLunaConfig } from "@lunatest/core";
-import {
-  enableLunaRuntimeIntercept,
-  setRouteMocks,
-  applyInterceptState,
-} from "@lunatest/runtime-intercept";
-import { mountLunaDevtools } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react";
 
-async function bootstrapLuna() {
-  const config = await loadLunaConfig("./lunatest.lua");
-  const enabled = enableLunaRuntimeIntercept(
-    {
-      intercept: {
-        mode: config.mode,
-        mockResponses: config.intercept?.mockResponses ?? {},
-      },
-    },
-    process.env.NODE_ENV,
-  );
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
 
-  if (!enabled) return;
-  setRouteMocks(config.intercept?.routes ?? []);
-  applyInterceptState(config.intercept?.state ?? {});
-  mountLunaDevtools();
-}
-
-void bootstrapLuna();
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  mountDevtools: true,
+});
 ```
 
 ### 6) Vitest matcher
@@ -275,8 +262,8 @@ expect({ pass: true }).toLunaPass();
 
 ### Release Channels
 
-- `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
-- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`, `@lunatest/runtime-intercept`
+- `latest`: `@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
+- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
 ## Documentation
 
@@ -317,7 +304,7 @@ expect({ pass: true }).toLunaPass();
 
 ## Status
 
-Active development. Core, MCP, plugins, docs, CI, E2E, and release gates are integrated.
+Active development. Runtime/CLI/MCP/docs/CI gates are integrated, with npm publication pending first stable release.
 
 ## License
 

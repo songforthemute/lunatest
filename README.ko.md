@@ -7,6 +7,8 @@
 LunaTest는 Anvil fork, RPC stub, 느린 브라우저 E2E 중심의 기존 Web3 테스트 흐름을
 Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경험을 제공합니다.
 
+패키지 상태: `Not yet published` (릴리스 파이프라인은 준비됐고, 첫 stable 배포만 남아 있습니다.)
+
 ## 빠른 시작
 
 ```bash
@@ -77,7 +79,8 @@ pnpm release:publish:next
 pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
+pnpm add @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin
 ```
 
 ### 1) Core provider
@@ -162,36 +165,20 @@ scenario {
 }
 ```
 
-`src/main.tsx` 1줄 부트스트랩 패턴:
+`src/main.tsx` 1줄 부트스트랩 패턴(번들러 독립 env 감지):
 
 ```ts
-import { loadLunaConfig } from "@lunatest/core";
-import {
-  enableLunaRuntimeIntercept,
-  setRouteMocks,
-  applyInterceptState,
-} from "@lunatest/runtime-intercept";
-import { mountLunaDevtools } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react";
 
-async function bootstrapLuna() {
-  const config = await loadLunaConfig("./lunatest.lua");
-  const enabled = enableLunaRuntimeIntercept(
-    {
-      intercept: {
-        mode: config.mode,
-        mockResponses: config.intercept?.mockResponses ?? {},
-      },
-    },
-    process.env.NODE_ENV,
-  );
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
 
-  if (!enabled) return;
-  setRouteMocks(config.intercept?.routes ?? []);
-  applyInterceptState(config.intercept?.state ?? {});
-  mountLunaDevtools();
-}
-
-void bootstrapLuna();
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  mountDevtools: true,
+});
 ```
 
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
@@ -202,8 +189,8 @@ void bootstrapLuna();
 
 ## 릴리스 채널
 
-- `latest`: `@lunatest/core`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
-- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`, `@lunatest/runtime-intercept`
+- `latest`: `@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
+- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
 ## CI / 게이트
 

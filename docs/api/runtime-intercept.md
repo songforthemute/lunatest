@@ -1,6 +1,6 @@
 # API: @lunatest/runtime-intercept
 
-Release channel: `next`
+Release channel: `latest`
 
 `@lunatest/runtime-intercept` is a browser runtime layer for local interactive testing.
 
@@ -10,6 +10,7 @@ Release channel: `next`
 - `disableLunaRuntimeIntercept()`
 - `createLunaRuntimeIntercept(config)`
 - `setRouteMocks(routes)`
+- `appendRouteMocks(routes)`
 - `applyInterceptState(partialState)`
 - `getInterceptState()`
 - `resolveEnabled(config, nodeEnv?)`
@@ -72,6 +73,10 @@ import {
 } from "@lunatest/runtime-intercept";
 
 const config = await loadLunaConfig("./lunatest.lua");
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
+
 const enabled = enableLunaRuntimeIntercept(
   {
     intercept: {
@@ -79,7 +84,7 @@ const enabled = enableLunaRuntimeIntercept(
       mockResponses: config.intercept?.mockResponses ?? {},
     },
   },
-  process.env.NODE_ENV,
+  nodeEnv,
 );
 
 if (enabled) {

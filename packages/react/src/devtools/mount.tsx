@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import { LunaDevtoolsPanel } from "./LunaDevtoolsPanel.js";
+import { resolveNodeEnv } from "../node-env.js";
 
 export type MountLunaDevtoolsOptions = {
   targetId?: string;
@@ -12,18 +13,6 @@ export type MountLunaDevtoolsOptions = {
 const DEFAULT_TARGET_ID = "lunatest-devtools-root";
 let activeRoot: Root | null = null;
 let activeTarget: HTMLElement | null = null;
-
-function resolveNodeEnv(explicit?: string): string | undefined {
-  if (explicit) {
-    return explicit;
-  }
-
-  if (typeof process !== "undefined") {
-    return process.env.NODE_ENV;
-  }
-
-  return undefined;
-}
 
 export function mountLunaDevtools(
   options: MountLunaDevtoolsOptions = {},

@@ -2,6 +2,7 @@ import {
   enableLunaRuntimeIntercept,
   type LunaRuntimeInterceptConfig,
 } from "@lunatest/runtime-intercept";
+import { resolveNodeEnv } from "./node-env.js";
 
 export type EnableLunaInterceptOptions = {
   config?: LunaRuntimeInterceptConfig;
@@ -9,9 +10,7 @@ export type EnableLunaInterceptOptions = {
 };
 
 export function enableLunaIntercept(options: EnableLunaInterceptOptions = {}): boolean {
-  const nodeEnv =
-    options.nodeEnv ??
-    (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
+  const nodeEnv = resolveNodeEnv(options.nodeEnv);
 
   return enableLunaRuntimeIntercept(options.config ?? {}, nodeEnv);
 }

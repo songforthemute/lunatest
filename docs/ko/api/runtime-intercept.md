@@ -1,6 +1,6 @@
 # API: @lunatest/runtime-intercept
 
-배포 채널: `next`
+배포 채널: `latest`
 
 `@lunatest/runtime-intercept`는 개발 서버 브라우저에서 지갑/네트워크 상호작용을 가로채는 런타임 계층입니다.
 
@@ -10,6 +10,7 @@
 - `disableLunaRuntimeIntercept()`
 - `createLunaRuntimeIntercept(config)`
 - `setRouteMocks(routes)`
+- `appendRouteMocks(routes)`
 - `applyInterceptState(partialState)`
 - `getInterceptState()`
 - `resolveEnabled(config, nodeEnv?)`
@@ -72,6 +73,10 @@ import {
 } from "@lunatest/runtime-intercept";
 
 const config = await loadLunaConfig("./lunatest.lua");
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
+
 const enabled = enableLunaRuntimeIntercept(
   {
     intercept: {
@@ -79,7 +84,7 @@ const enabled = enableLunaRuntimeIntercept(
       mockResponses: config.intercept?.mockResponses ?? {},
     },
   },
-  process.env.NODE_ENV,
+  nodeEnv,
 );
 
 if (enabled) {

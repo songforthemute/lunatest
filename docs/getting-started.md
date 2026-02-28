@@ -10,9 +10,12 @@ pnpm install
 
 ```bash
 pnpm add @lunatest/core @lunatest/react
+pnpm add @lunatest/runtime-intercept
 pnpm add @lunatest/mcp
-pnpm add -D @lunatest/vitest-plugin @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin
 ```
+
+Package status: `Not yet published` (first stable npm release pending).
 
 실사용 예제는 [Library Consumption Guide](./guides/library-consumption.md)에서 확인할 수 있습니다.
 

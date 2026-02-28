@@ -63,39 +63,23 @@ scenario {
 ## 3) 엔트리 파일에 1줄 추가 (`src/main.tsx`)
 
 ```ts
-import { loadLunaConfig } from "@lunatest/core";
-import {
-  enableLunaRuntimeIntercept,
-  setRouteMocks,
-  applyInterceptState,
-} from "@lunatest/runtime-intercept";
-import { mountLunaDevtools } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react";
 
-async function bootstrapLuna() {
-  const config = await loadLunaConfig("./lunatest.lua");
-  const enabled = enableLunaRuntimeIntercept(
-    {
-      intercept: {
-        mode: config.mode,
-        mockResponses: config.intercept?.mockResponses ?? {},
-      },
-    },
-    process.env.NODE_ENV,
-  );
+const nodeEnv =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
+  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
 
-  if (!enabled) return;
-  setRouteMocks(config.intercept?.routes ?? []);
-  applyInterceptState(config.intercept?.state ?? {});
-  mountLunaDevtools();
-}
-
-void bootstrapLuna();
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  mountDevtools: true,
+});
 ```
 
-여기서 중요한 규칙은 `NODE_ENV` 가드입니다.
+여기서 중요한 규칙은 `nodeEnv` 가드입니다.
 
 - `enable` 값을 명시하면 그 값이 최우선
-- 생략하면 `NODE_ENV === "development"`에서만 활성화
+- 생략하면 `nodeEnv === "development"`에서만 활성화
 
 ## 4) 화면에서 직접 확인할 버튼 추가 (`src/App.tsx`)
 

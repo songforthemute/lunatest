@@ -23,7 +23,11 @@ jobs:
       - run: pnpm -r lint
       - run: pnpm -r build
       - run: pnpm -r test
-      - uses: changesets/action@v1
+      - run: pnpm lint:deadcode
+      - run: pnpm pack:check-integrity
+      - run: pnpm consumer-smoke:pack
+      - id: changesets
+        uses: changesets/action@v1
         with:
           version: pnpm version-packages
           publish: pnpm release:publish
@@ -31,3 +35,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+      - if: steps.changesets.outputs.published == 'true'
+        run: pnpm consumer-smoke:npm -- --tag=latest
