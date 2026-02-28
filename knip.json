@@ -1,0 +1,38 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "ignore": ["docs/**", "examples/**", "scripts/**"],
+  "workspaces": {
+    "packages/contracts": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/core": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/cli": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/mcp": {
+      "entry": ["src/index.ts", "src/bin/mcp-stdio.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/playwright-plugin": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/react": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts", "src/**/*.tsx"]
+    },
+    "packages/runtime-intercept": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/vitest-plugin": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"]
+    }
+  }
+}
