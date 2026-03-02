@@ -294,6 +294,7 @@ expect({ pass: true }).toLunaPass();
 - Nightly absolute benchmark: `.github/workflows/benchmark.yml`
 - Docs build/deploy: `.github/workflows/docs.yml`
 - Changesets release pipeline: `.github/workflows/release.yml`
+- Release auth: npm Trusted Publishing (GitHub OIDC, no long-lived publish token)
 - Versioning commands:
   - `pnpm changeset`
   - `pnpm version-packages`
