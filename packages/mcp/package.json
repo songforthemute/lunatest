@@ -1,0 +1,35 @@
+{
+  "name": "@lunatest/mcp",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "lunatest-mcp": "./dist/bin/mcp-stdio.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@lunatest/contracts": "workspace:*",
+    "@lunatest/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  }
+}

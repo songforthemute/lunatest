@@ -10,7 +10,7 @@
 
 ### 1.1 한 줄 요약
 
-체인·컨트랙트·인덱서 없이, Lua 시나리오 선언만으로 Web3 프론트엔드 로직을 밀리초 단위로 결정론적 테스트하는 SDK.
+체인·컨트랙트·인덱서 없이, Lua 시나리오 선언만으로 Web3 프론트엔드 로직을 밀리초 단위에서 결정론적으로 테스트할 수 있는 SDK.
 
 ### 1.2 핵심 가치
 
@@ -363,7 +363,8 @@ interface LunaRuntime {
        │ On-chain data     │   │ eth_send     → Lua event queue │
        └───────────────────┘   │ eth_chainId  → mock chain      │
                                │                                │
-                               │ ★ Zero code change in app.     │
+                               │ ★ Zero business-code change.    │
+                               │   (1-line bootstrap in dev)     │
                                │   Swap provider = swap reality │
                                └────────────────────────────────┘
 ```
@@ -1164,7 +1165,7 @@ scenarios = {
 │   │   │   ├── run.ts      #   $ lunatest run [filter]
 │   │   │   ├── watch.ts    #   $ lunatest watch
 │   │   │   └── coverage.ts #   $ lunatest coverage
-│   │   └── config.ts       #   lunatest.config.ts 로딩
+│   │   └── lua-config.ts   #   lunatest.lua 로딩
 │   │
 │   └── __tests__/
 │       └── cli.test.ts
@@ -1424,7 +1425,7 @@ scenarios = {
 ```
 ✅ 3개 프로토콜 preset (Uniswap V2/V3, Curve) 동작
 ✅ Vitest plugin → describe/it 스타일로 LunaTest 시나리오 실행
-✅ Playwright plugin → E2E 테스트에서 LunaProvider 자동 주입
+✅ Playwright plugin → 선택적 E2E 주입 경로로 유지 (필수 게이트 아님)
 ✅ 문서 사이트 빌드 + 배포
 ✅ GitHub Actions CI → PR마다 전체 테스트 + 벤치마크
 ✅ npm publish → @lunatest/* 패키지 퍼블리시
