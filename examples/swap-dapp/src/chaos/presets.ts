@@ -15,7 +15,6 @@ const HIGH_SLIPPAGE_LUA = `scenario {
       preset = "high_slippage_80",
     },
   },
-  intercept = { routes = {}, state = {} },
 }`;
 
 const GAS_SPIKE_LUA = `scenario {
@@ -28,7 +27,6 @@ const GAS_SPIKE_LUA = `scenario {
       preset = "gas_spike_500_gwei",
     },
   },
-  intercept = { routes = {}, state = {} },
 }`;
 
 const PENDING_LUA = `scenario {

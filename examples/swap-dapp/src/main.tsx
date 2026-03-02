@@ -16,6 +16,8 @@ void bootstrapLunaRuntime({
   source: "./lunatest.lua",
   nodeEnv,
   mountDevtools: true,
+}).catch((error) => {
+  console.error("[lunatest] bootstrap failed", error);
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

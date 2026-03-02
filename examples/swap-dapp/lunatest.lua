@@ -16,8 +16,6 @@ scenario {
   },
 
   intercept = {
-    routes = {},
-    state = {},
     mockResponses = {},
   },
 
