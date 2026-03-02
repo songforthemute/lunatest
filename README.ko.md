@@ -7,7 +7,7 @@
 LunaTest는 Anvil fork, RPC stub, 느린 브라우저 E2E 중심의 기존 Web3 테스트 흐름을
 Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경험을 제공합니다.
 
-패키지 상태: `Not yet published` (릴리스 파이프라인은 준비됐고, 첫 stable 배포만 남아 있습니다.)
+패키지 상태: `Published` (stable 패키지가 npm에 배포되어 있습니다.)
 
 ## 빠른 시작
 
@@ -54,6 +54,7 @@ pnpm release:publish:next
 - 시작 가이드: `docs/getting-started.md`
 - 아키텍처: `docs/concepts/architecture.md`
 - CI 게이트: `docs/guides/ci-integration.md`
+- Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 
 ## 저장소 구조
 

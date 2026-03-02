@@ -6,7 +6,7 @@
 
 **LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI — all under 1ms per test. Flaky? Zero. If a test fails, it's a bug. Period.
 
-Package status: `Not yet published` (npm release pipeline configured, pending first stable publish).
+Package status: `Published` (stable packages are available on npm).
 
 ```lua
 scenario {
@@ -68,6 +68,7 @@ pnpm release:publish:next
 - docs index: `docs/index.md`
 - getting started: `docs/getting-started.md`
 - CI and gates: `docs/guides/ci-integration.md`
+- Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 
 ## Repository Structure
 

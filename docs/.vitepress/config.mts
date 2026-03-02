@@ -13,6 +13,7 @@ export default defineConfig({
       { text: "Getting Started", link: "/getting-started" },
       { text: "한국어", link: "/ko/" },
       { text: "Library Guide", link: "/guides/library-consumption" },
+      { text: "Swap Demo", link: "/guides/swap-demo-sepolia-uniswapv3" },
       { text: "Concepts", link: "/concepts/architecture" },
       { text: "Guides", link: "/guides/writing-scenarios" },
       { text: "API", link: "/api/core" },
@@ -37,6 +38,7 @@ export default defineConfig({
           { text: "라이브러리 소비자 가이드", link: "/ko/guides/library-consumption" },
           { text: "시나리오 예제", link: "/ko/guides/scenario-examples" },
           { text: "E2E 0→1 워크스루", link: "/ko/guides/e2e-0to1" },
+          { text: "Sepolia 스왑 데모", link: "/ko/guides/swap-demo-sepolia-uniswapv3" },
           { text: "React 통합", link: "/ko/guides/react-integration" },
           { text: "MCP stdio", link: "/ko/guides/mcp-stdio" },
           { text: "Playwright 라우팅", link: "/ko/guides/playwright-routing" },
@@ -59,6 +61,7 @@ export default defineConfig({
         text: "Guides",
         items: [
           { text: "Library Consumption", link: "/guides/library-consumption" },
+          { text: "Sepolia Swap Demo", link: "/guides/swap-demo-sepolia-uniswapv3" },
           { text: "Writing Scenarios", link: "/guides/writing-scenarios" },
           { text: "Multi-stage", link: "/guides/multi-stage" },
           { text: "Wagmi Setup", link: "/guides/wagmi-setup" },

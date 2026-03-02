@@ -1,0 +1,30 @@
+{
+  "name": "@lunatest/example-swap-dapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@lunatest/core": "^0.1.0",
+    "@lunatest/react": "^0.1.0",
+    "@lunatest/runtime-intercept": "^0.1.0",
+    "ethers": "^6.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.9.2",
+    "vite": "^5.4.14",
+    "vitest": "^3.2.4"
+  }
+}

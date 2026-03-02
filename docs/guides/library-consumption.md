@@ -2,6 +2,11 @@
 
 This guide targets teams that install LunaTest as a library inside an existing frontend project.
 
+If you want a full 0→1 reference app (real wallet + Sepolia + Uniswap V3 + Lua chaos loop), see:
+
+- `examples/swap-dapp`
+- [Sepolia Swap Demo Guide](./swap-demo-sepolia-uniswapv3.md)
+
 ## Package Selection
 
 - `@lunatest/core`: EIP-1193-compatible provider/runtime base

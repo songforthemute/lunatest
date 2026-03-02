@@ -4,6 +4,11 @@
 
 핵심은 간단합니다. 필요한 레이어만 골라 설치하고, 엔트리 파일에서 한 줄로 동작을 켭니다.
 
+실지갑 + Sepolia + Uniswap V3 + Lua 카오스 루프가 한 번에 들어간 샘플이 필요하면 아래를 먼저 보세요.
+
+- `examples/swap-dapp`
+- [Sepolia 스왑 데모 가이드](./swap-demo-sepolia-uniswapv3.md)
+
 ## 어떤 패키지를 고르면 되나
 
 - `@lunatest/core`: EIP-1193 provider를 직접 제어하고 싶을 때
