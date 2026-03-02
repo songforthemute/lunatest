@@ -198,6 +198,7 @@ void bootstrapLunaRuntime({
 - 야간 성능/확장 게이트: `.github/workflows/benchmark.yml`
 - 문서 배포: `.github/workflows/docs.yml` (GitHub Pages)
 - 릴리스 파이프라인: `.github/workflows/release.yml`
+- 릴리스 인증: npm Trusted Publishing(GitHub OIDC, 장기 publish 토큰 미사용)
 
 ## 라이선스
 
