@@ -286,6 +286,7 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
       ...nextSession,
       accounts: nextSession.accounts ?? walletSession.accounts,
       permissions: nextSession.permissions ?? walletSession.permissions,
+      assets: nextSession.assets ?? walletSession.assets,
     });
     normalizedConfig.wallet.session = walletSession;
     syncWalletState();

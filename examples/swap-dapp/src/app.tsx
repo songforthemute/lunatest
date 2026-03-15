@@ -3,7 +3,9 @@ import { MaxUint256, formatUnits, parseUnits, type Provider } from "ethers";
 import { loadLunaConfig } from "@lunatest/core";
 import {
   applyInterceptState,
+  getWalletSession,
   getInterceptState,
+  setWalletSession,
   setRouteMocks,
   type RouteMock,
 } from "@lunatest/runtime-intercept";
@@ -28,7 +30,11 @@ import {
   readTokenSymbol,
 } from "./lib/erc20Approve";
 import { createDemoQuote } from "./lib/demoQuote";
-import { seedLunaWalletTokenState } from "./lib/lunaWallet";
+import {
+  applyLunaWalletAssetState,
+  createDemoLunaWalletAssets,
+  patchLunaWalletAssetState,
+} from "./lib/lunaWallet";
 import { resolveSwapViewState } from "./lib/stateMachine";
 import { quoteExactInputSingle } from "./lib/uniswapQuote";
 import { submitSwap, waitForReceipt } from "./lib/uniswapSwap";
@@ -346,7 +352,12 @@ export function App() {
           // Luna Wallet 데모 경로는 RPC가 불안정해도 진행 가능해야 한다.
         }
 
-        const seeded = seedLunaWalletTokenState({
+        const assets = createDemoLunaWalletAssets({
+          tokenIn: tokenInRuntime,
+          tokenOut: tokenOutRuntime,
+        });
+        setWalletSession({ assets });
+        const seeded = applyLunaWalletAssetState(assets, {
           tokenIn: tokenInRuntime,
           tokenOut: tokenOutRuntime,
         });
@@ -510,10 +521,20 @@ export function App() {
       }
 
       if (wallet.kind === "luna") {
+        const nextAssets = patchLunaWalletAssetState(getWalletSession().assets, {
+          [tokenInState.address]: {
+            allowance: MaxUint256.toString(),
+          },
+        });
+        setWalletSession({ assets: nextAssets });
+        const seeded = applyLunaWalletAssetState(nextAssets, {
+          tokenIn: tokenInState,
+          tokenOut: tokenOutState,
+        });
         setTokenInState((current) => ({
-          ...current,
-          allowance: MaxUint256,
+          ...seeded.tokenIn,
         }));
+        setTokenOutState(seeded.tokenOut);
       } else {
         await refreshTokenState(wallet, config);
       }
@@ -611,14 +632,21 @@ export function App() {
       }
 
       if (wallet.kind === "luna") {
-        setTokenInState((current) => ({
-          ...current,
-          balance: current.balance > amountIn ? current.balance - amountIn : 0n,
-        }));
-        setTokenOutState((current) => ({
-          ...current,
-          balance: current.balance + quote.amountOut,
-        }));
+        const nextAssets = patchLunaWalletAssetState(getWalletSession().assets, {
+          [tokenInState.address]: {
+            balance: (tokenInState.balance > amountIn ? tokenInState.balance - amountIn : 0n).toString(),
+          },
+          [tokenOutState.address]: {
+            balance: (tokenOutState.balance + quote.amountOut).toString(),
+          },
+        });
+        setWalletSession({ assets: nextAssets });
+        const seeded = applyLunaWalletAssetState(nextAssets, {
+          tokenIn: tokenInState,
+          tokenOut: tokenOutState,
+        });
+        setTokenInState(seeded.tokenIn);
+        setTokenOutState(seeded.tokenOut);
       } else {
         await refreshTokenState(wallet, config);
       }

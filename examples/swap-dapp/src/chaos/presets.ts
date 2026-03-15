@@ -1,3 +1,4 @@
+import { asRecord } from "@lunatest/contracts";
 import { loadLunaConfig, type LuaConfig } from "@lunatest/core";
 import type { RouteMock } from "@lunatest/runtime-intercept";
 import type { ChaosPreset } from "../types";
@@ -115,14 +116,6 @@ export const DEFAULT_CHAOS_PRESETS: ChaosPreset[] = [
     },
   },
 ];
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-
-  return value as Record<string, unknown>;
-}
 
 function asRouteMocks(value: unknown): RouteMock[] {
   if (!Array.isArray(value)) {

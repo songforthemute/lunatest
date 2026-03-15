@@ -23,11 +23,27 @@ describe("runtime wallet session", () => {
         chainId: "0xaa36a7",
         accounts: ["0x1111111111111111111111111111111111111111"],
         permissions: [],
+        assets: {
+          nativeBalance: "0",
+          tokens: {
+            "0xabc": {
+              balance: "25",
+              allowance: "0",
+            },
+          },
+        },
       }),
     ).toMatchObject({
       enabled: true,
       connected: false,
       chainId: "0xaa36a7",
+      assets: {
+        tokens: {
+          "0xabc": {
+            balance: "25",
+          },
+        },
+      },
     });
 
     expect(getWalletSession()).toMatchObject({
@@ -46,6 +62,10 @@ describe("runtime wallet session", () => {
       chainId: "0x1",
       accounts: ["0x1111111111111111111111111111111111111111"],
       permissions: [],
+      assets: {
+        nativeBalance: "0",
+        tokens: {},
+      },
     });
 
     const next = connectWalletSession();

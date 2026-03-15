@@ -1,6 +1,7 @@
 import {
   createLunaWalletSession,
   extractPermissionKeys,
+  normalizeAddress,
   normalizeWalletPermissions,
   type LunaWalletPermission,
   type LunaWalletSession,
@@ -26,10 +27,6 @@ type Receipt = {
 };
 
 type ProviderListener = (...args: unknown[]) => void;
-
-function normalizeAddress(value: string): string {
-  return value.toLowerCase();
-}
 
 export class LunaProvider {
   private chainId: string;

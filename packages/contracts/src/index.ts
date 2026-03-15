@@ -62,15 +62,66 @@ export type LunaWalletPermission = {
   parentCapability: string;
 };
 
+export type LunaWalletTokenAsset = {
+  balance: string;
+  allowance: string;
+  symbol?: string;
+  decimals?: number;
+};
+
+export type LunaWalletAssetState = {
+  nativeBalance: string;
+  tokens: Record<string, LunaWalletTokenAsset>;
+};
+
 export type LunaWalletSession = {
   enabled: boolean;
   connected: boolean;
   chainId: string;
   accounts: string[];
   permissions: LunaWalletPermission[];
+  assets: LunaWalletAssetState;
 };
 
 const DEFAULT_LUNA_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111";
+
+export function normalizeAddress(value: string): string {
+  return value.toLowerCase();
+}
+
+export function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+export function createLunaWalletAssetState(
+  input: Partial<LunaWalletAssetState> = {},
+): LunaWalletAssetState {
+  return {
+    nativeBalance: input.nativeBalance ?? "0",
+    tokens: Object.fromEntries(
+      Object.entries(input.tokens ?? {}).map(([address, asset]) => [
+        normalizeAddress(address),
+        {
+          balance: asset.balance ?? "0",
+          allowance: asset.allowance ?? "0",
+          symbol: asset.symbol,
+          decimals: asset.decimals,
+        },
+      ]),
+    ),
+  };
+}
+
+export function getLunaWalletTokenAsset(
+  assets: LunaWalletAssetState,
+  address: string,
+): LunaWalletTokenAsset | null {
+  return assets.tokens[normalizeAddress(address)] ?? null;
+}
 
 export function normalizeWalletPermissions(
   input?: Array<LunaWalletPermission | string>,
@@ -119,6 +170,7 @@ export function createLunaWalletSession(
     chainId: input.chainId ?? "0x1",
     accounts,
     permissions,
+    assets: createLunaWalletAssetState(input.assets),
   };
 }
 
@@ -134,7 +186,7 @@ export function extractPermissionKeys(
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  return asRecord(value) !== null;
 }
 
 export function deepClone<T>(value: T): T {

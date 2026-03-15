@@ -369,6 +369,10 @@ export function createWebSocketInterceptor(input: {
         chainId: "0x1",
         accounts: [],
         permissions: [],
+        assets: {
+          nativeBalance: "0",
+          tokens: {},
+        },
       },
     },
     intercept: {

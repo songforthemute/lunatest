@@ -59,6 +59,10 @@ export function installEthereumInterceptor(
       chainId: "0x1",
       accounts: [],
       permissions: [],
+      assets: {
+        nativeBalance: "0",
+        tokens: {},
+      },
     }),
     setWalletSession: () => ({
       enabled: false,
@@ -66,6 +70,10 @@ export function installEthereumInterceptor(
       chainId: "0x1",
       accounts: [],
       permissions: [],
+      assets: {
+        nativeBalance: "0",
+        tokens: {},
+      },
     }),
   },
 ): () => void {

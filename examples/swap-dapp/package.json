@@ -11,6 +11,7 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@lunatest/contracts": "workspace:*",
     "@lunatest/core": "workspace:*",
     "@lunatest/react": "workspace:*",
     "@lunatest/runtime-intercept": "workspace:*",

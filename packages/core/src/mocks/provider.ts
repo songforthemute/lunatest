@@ -1,3 +1,5 @@
+import { normalizeAddress } from "@lunatest/contracts";
+
 type ProviderRequest = {
   method: string;
   params?: unknown[];
@@ -65,10 +67,6 @@ function parseTokenAmountToWeiHex(value: string): string {
   const fractionalWei = BigInt(fractionalPart || "0");
 
   return `0x${(integerWei + fractionalWei).toString(16)}`;
-}
-
-function normalizeAddress(value: string): string {
-  return value.toLowerCase();
 }
 
 function cloneState(state: MockProviderState): MockProviderState {

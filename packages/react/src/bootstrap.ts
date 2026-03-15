@@ -1,3 +1,9 @@
+import {
+  createLunaWalletAssetState,
+  normalizeWalletPermissions,
+  type LunaWalletAssetState,
+  type LunaWalletPermission,
+} from "@lunatest/contracts";
 import type { LuaConfig } from "@lunatest/core";
 import { loadLunaConfig } from "@lunatest/core";
 import {
@@ -20,6 +26,8 @@ export type LunaBootstrapOptions = {
   walletPreset?: {
     address: string;
     chainId?: string;
+    permissions?: Array<LunaWalletPermission | string>;
+    assets?: Partial<LunaWalletAssetState>;
   };
   configOverride?: Partial<LunaRuntimeInterceptConfig>;
 };
@@ -79,7 +87,8 @@ export async function bootstrapLunaRuntime(
       connected: false,
       chainId: options.walletPreset.chainId ?? "0x1",
       accounts: [options.walletPreset.address],
-      permissions: [],
+      permissions: normalizeWalletPermissions(options.walletPreset.permissions),
+      assets: createLunaWalletAssetState(options.walletPreset.assets),
     });
   }
 

@@ -54,6 +54,9 @@ importers:
 
   examples/swap-dapp:
     dependencies:
+      '@lunatest/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@lunatest/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -145,6 +148,9 @@ importers:
 
   packages/react:
     dependencies:
+      '@lunatest/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@lunatest/core':
         specifier: workspace:*
         version: link:../core

@@ -181,6 +181,10 @@ describe("bootstrapLunaRuntime", () => {
       chainId: "0xaa36a7",
       accounts: ["0x1111111111111111111111111111111111111111"],
       permissions: [],
+      assets: {
+        nativeBalance: "0",
+        tokens: {},
+      },
     });
 
     expect(mocks.mountLunaDevtoolsMock).toHaveBeenCalledWith({
