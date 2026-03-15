@@ -25,6 +25,10 @@ function isLunaWalletEnabled(): boolean {
   }
 }
 
+export function isPlaceholderRpcUrl(rpcUrl: string): boolean {
+  return rpcUrl.includes("<key>") || rpcUrl.includes("YOUR_") || rpcUrl.includes("your-");
+}
+
 export function getEthereumProvider(): InjectedProvider {
   const provider = (window as EthereumWindow).ethereum;
   if (!provider) {

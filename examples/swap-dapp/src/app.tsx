@@ -27,12 +27,15 @@ import {
   readTokenDecimals,
   readTokenSymbol,
 } from "./lib/erc20Approve";
+import { createDemoQuote } from "./lib/demoQuote";
+import { seedLunaWalletTokenState } from "./lib/lunaWallet";
 import { resolveSwapViewState } from "./lib/stateMachine";
 import { quoteExactInputSingle } from "./lib/uniswapQuote";
 import { submitSwap, waitForReceipt } from "./lib/uniswapSwap";
 import {
   connectWallet,
   createReadProvider,
+  isPlaceholderRpcUrl,
   readGasPriceGwei,
   sendInjectedTransaction,
   waitForInjectedReceipt,
@@ -304,27 +307,77 @@ export function App() {
       setWallet(session);
 
       const pair = toTokenPairSeed(config);
-      const [gas, tokenInRuntime, tokenOutRuntime] = await Promise.all([
-        readGasPriceGwei(readProvider),
-        hydrateTokenRuntime(
-          readProvider,
-          pair.tokenIn.address,
-          session.signerAddress,
-          config.router,
-          "TOKEN_IN",
-        ),
-        hydrateTokenRuntime(
-          readProvider,
-          pair.tokenOut.address,
-          session.signerAddress,
-          config.router,
-          "TOKEN_OUT",
-        ),
-      ]);
+      if (session.kind === "luna") {
+        const shouldSkipRpc = isPlaceholderRpcUrl(config.sepoliaRpcUrl);
+        let gas = 30;
+        try {
+          if (shouldSkipRpc) {
+            throw new Error("skip-rpc");
+          }
+          gas = await readGasPriceGwei(readProvider);
+        } catch {
+          gas = 30;
+        }
 
-      setGasPriceGwei(gas);
-      setTokenInState(tokenInRuntime);
-      setTokenOutState(tokenOutRuntime);
+        let tokenInRuntime = makeTokenRuntime(pair.tokenIn.address, "TOKEN_IN");
+        let tokenOutRuntime = makeTokenRuntime(pair.tokenOut.address, "TOKEN_OUT");
+
+        try {
+          if (shouldSkipRpc) {
+            throw new Error("skip-rpc");
+          }
+          [tokenInRuntime, tokenOutRuntime] = await Promise.all([
+            hydrateTokenRuntime(
+              readProvider,
+              pair.tokenIn.address,
+              session.signerAddress,
+              config.router,
+              "TOKEN_IN",
+            ),
+            hydrateTokenRuntime(
+              readProvider,
+              pair.tokenOut.address,
+              session.signerAddress,
+              config.router,
+              "TOKEN_OUT",
+            ),
+          ]);
+        } catch {
+          // Luna Wallet 데모 경로는 RPC가 불안정해도 진행 가능해야 한다.
+        }
+
+        const seeded = seedLunaWalletTokenState({
+          tokenIn: tokenInRuntime,
+          tokenOut: tokenOutRuntime,
+        });
+
+        setGasPriceGwei(gas);
+        setTokenInState(seeded.tokenIn);
+        setTokenOutState(seeded.tokenOut);
+      } else {
+        const [gas, tokenInRuntime, tokenOutRuntime] = await Promise.all([
+          readGasPriceGwei(readProvider),
+          hydrateTokenRuntime(
+            readProvider,
+            pair.tokenIn.address,
+            session.signerAddress,
+            config.router,
+            "TOKEN_IN",
+          ),
+          hydrateTokenRuntime(
+            readProvider,
+            pair.tokenOut.address,
+            session.signerAddress,
+            config.router,
+            "TOKEN_OUT",
+          ),
+        ]);
+
+        setGasPriceGwei(gas);
+        setTokenInState(tokenInRuntime);
+        setTokenOutState(tokenOutRuntime);
+      }
+
       setQuote(null);
       setQuoteError(null);
       setApprovalTx({ type: "approve", status: "idle" });
@@ -342,22 +395,54 @@ export function App() {
     }
 
     setQuoteLoading(true);
-    setQuoteError(null);
-    setAppError(null);
+        setQuoteError(null);
+        setAppError(null);
 
     try {
-      const gas = await readGasPriceGwei(readProvider);
+      const shouldSkipRpc = wallet.kind === "luna" && isPlaceholderRpcUrl(config.sepoliaRpcUrl);
+      let gas = 30;
+      try {
+        if (shouldSkipRpc) {
+          throw new Error("skip-rpc");
+        }
+        gas = await readGasPriceGwei(readProvider);
+      } catch {
+        gas = 30;
+      }
       setGasPriceGwei(gas);
 
       const amountIn = parseAmount(amountInput, tokenInState.decimals);
-      const quoted = await quoteExactInputSingle(readProvider, {
-        quoterAddress: config.quoterV2,
-        tokenIn: tokenInState.address,
-        tokenOut: tokenOutState.address,
-        fee: config.poolFee,
-        amountIn,
-        outputDecimals: tokenOutState.decimals,
-      });
+      const quoted =
+        wallet.kind === "luna"
+          ? await (async () => {
+              try {
+                if (shouldSkipRpc) {
+                  throw new Error("skip-rpc");
+                }
+                return await quoteExactInputSingle(readProvider, {
+                  quoterAddress: config.quoterV2,
+                  tokenIn: tokenInState.address,
+                  tokenOut: tokenOutState.address,
+                  fee: config.poolFee,
+                  amountIn,
+                  outputDecimals: tokenOutState.decimals,
+                });
+              } catch {
+                return createDemoQuote({
+                  amountIn,
+                  inputDecimals: tokenInState.decimals,
+                  outputDecimals: tokenOutState.decimals,
+                });
+              }
+            })()
+          : await quoteExactInputSingle(readProvider, {
+              quoterAddress: config.quoterV2,
+              tokenIn: tokenInState.address,
+              tokenOut: tokenOutState.address,
+              fee: config.poolFee,
+              amountIn,
+              outputDecimals: tokenOutState.decimals,
+            });
 
       setQuote(quoted);
       setApprovalTx({ type: "approve", status: "idle" });

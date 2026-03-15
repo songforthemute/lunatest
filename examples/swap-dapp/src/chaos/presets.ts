@@ -207,6 +207,6 @@ export function extractPresetOverrides(state: Record<string, unknown>): {
   return {
     slippagePctOverride: Number.isFinite(slippage) ? slippage : null,
     gasPriceOverrideGwei: Number.isFinite(gas) ? gas : null,
-    pendingForMs: Number.isFinite(pending) ? pending : null,
+    pendingForMs: Number.isFinite(pending) && pending > 0 ? pending : null,
   };
 }

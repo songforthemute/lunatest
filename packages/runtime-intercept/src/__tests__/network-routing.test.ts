@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createInterceptedFetch } from "../interceptors/fetch";
+import { createInterceptedFetch, installFetchInterceptor } from "../interceptors/fetch";
 import { installXhrInterceptor } from "../interceptors/xhr";
 import { createLogger } from "../logger";
 import { normalizeRuntimeInterceptConfig } from "../runtime";
@@ -67,6 +67,7 @@ class FakeXMLHttpRequest {
 }
 
 describe("network routing", () => {
+  const originalFetch = globalThis.fetch;
   const originalXmlHttpRequest = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
 
   beforeEach(() => {
@@ -76,6 +77,7 @@ describe("network routing", () => {
   });
 
   afterEach(() => {
+    globalThis.fetch = originalFetch;
     (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = originalXmlHttpRequest;
   });
 
@@ -199,6 +201,45 @@ describe("network routing", () => {
     });
 
     await expect(second.json()).resolves.toMatchObject({ result: "0x2" });
+  });
+
+  it("forwards unmatched installed fetch with the original binding", async () => {
+    const runtimeTarget = globalThis as typeof globalThis & {
+      marker?: string;
+    };
+
+    runtimeTarget.marker = "fetch-boundary";
+    globalThis.fetch = (function (this: typeof runtimeTarget, input: RequestInfo | URL) {
+      if (this.marker !== "fetch-boundary") {
+        throw new TypeError("lost fetch binding");
+      }
+
+      return Promise.resolve(
+        new Response(typeof input === "string" ? input : input.toString(), {
+          status: 200,
+        }),
+      );
+    }) as typeof fetch;
+
+    const restore = installFetchInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            rpcEndpoints: [],
+            httpEndpoints: [],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+    );
+
+    const response = await fetch("https://forward.example");
+
+    await expect(response.text()).resolves.toBe("https://forward.example");
+    restore();
   });
 
   it("fulfills matched XHR route", async () => {

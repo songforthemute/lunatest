@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_CHAOS_PRESETS, parseChaosPresetsFromLua } from "../presets";
+import { DEFAULT_CHAOS_PRESETS, extractPresetOverrides, parseChaosPresetsFromLua } from "../presets";
 
 describe("parseChaosPresetsFromLua", () => {
   it("falls back to defaults when presets are missing", async () => {
@@ -44,6 +44,20 @@ scenario {
       endpointType: "ethereum",
       method: "eth_call",
       responseKey: "call.mock",
+    });
+  });
+
+  it("treats zero pending override as unset", () => {
+    expect(
+      extractPresetOverrides({
+        chaos: {
+          pendingForMs: 0,
+        },
+      }),
+    ).toEqual({
+      slippagePctOverride: null,
+      gasPriceOverrideGwei: null,
+      pendingForMs: null,
     });
   });
 });

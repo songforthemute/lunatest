@@ -231,7 +231,8 @@ export function installFetchInterceptor(
   logger: RuntimeLogger,
 ): () => void {
   const target = globalThis as { fetch?: FetchLike };
-  const baseFetch = target.fetch;
+  const originalFetch = target.fetch;
+  const baseFetch = originalFetch?.bind(globalThis);
   if (!baseFetch) {
     logger.debug("fetch.skip.no_base");
     return () => {
@@ -253,7 +254,7 @@ export function installFetchInterceptor(
   logger.debug("fetch.installed");
 
   return () => {
-    target.fetch = baseFetch;
+    target.fetch = originalFetch;
     logger.debug("fetch.restored");
   };
 }
