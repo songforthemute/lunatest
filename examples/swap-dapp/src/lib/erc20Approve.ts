@@ -1,8 +1,8 @@
-import { Contract, MaxUint256, type BrowserProvider, type JsonRpcSigner } from "ethers";
+import { Contract, MaxUint256, type JsonRpcSigner, type Provider } from "ethers";
 import { ERC20_ABI } from "../config/uniswap";
 
 export async function readTokenSymbol(
-  provider: BrowserProvider,
+  provider: Provider,
   tokenAddress: string,
 ): Promise<string> {
   try {
@@ -15,7 +15,7 @@ export async function readTokenSymbol(
 }
 
 export async function readTokenDecimals(
-  provider: BrowserProvider,
+  provider: Provider,
   tokenAddress: string,
 ): Promise<number> {
   try {
@@ -28,7 +28,7 @@ export async function readTokenDecimals(
 }
 
 export async function readTokenBalance(
-  provider: BrowserProvider,
+  provider: Provider,
   tokenAddress: string,
   owner: string,
 ): Promise<bigint> {
@@ -37,7 +37,7 @@ export async function readTokenBalance(
 }
 
 export async function readAllowance(
-  provider: BrowserProvider,
+  provider: Provider,
   tokenAddress: string,
   owner: string,
   spender: string,

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   enableLunaRuntimeInterceptMock: vi.fn(),
   setRouteMocksMock: vi.fn(),
   applyInterceptStateMock: vi.fn(),
+  setWalletSessionMock: vi.fn(),
   mountLunaDevtoolsMock: vi.fn(),
 }));
 
@@ -24,6 +25,7 @@ vi.mock("@lunatest/runtime-intercept", () => ({
   enableLunaRuntimeIntercept: mocks.enableLunaRuntimeInterceptMock,
   setRouteMocks: mocks.setRouteMocksMock,
   applyInterceptState: mocks.applyInterceptStateMock,
+  setWalletSession: mocks.setWalletSessionMock,
 }));
 
 vi.mock("../devtools/mount", () => ({
@@ -57,6 +59,7 @@ describe("bootstrapLunaRuntime", () => {
     });
     expect(mocks.setRouteMocksMock).not.toHaveBeenCalled();
     expect(mocks.applyInterceptStateMock).not.toHaveBeenCalled();
+    expect(mocks.setWalletSessionMock).not.toHaveBeenCalled();
     expect(mocks.mountLunaDevtoolsMock).not.toHaveBeenCalled();
   });
 
@@ -108,6 +111,9 @@ describe("bootstrapLunaRuntime", () => {
     expect(mocks.mountLunaDevtoolsMock).toHaveBeenCalledWith({
       targetId: undefined,
       nodeEnv: "development",
+      panelProps: {
+        walletFallbackMode: "off",
+      },
     });
     expect(result.enabled).toBe(true);
     expect(typeof result.unmountDevtools).toBe("function");
@@ -151,5 +157,38 @@ describe("bootstrapLunaRuntime", () => {
     expect(mocks.setRouteMocksMock).toHaveBeenCalledWith(overrideRoutes);
     expect(mocks.mountLunaDevtoolsMock).not.toHaveBeenCalled();
     expect(result.unmountDevtools).toBeUndefined();
+  });
+
+  it("initializes wallet preset and passes fallback mode to devtools", async () => {
+    const config = createConfig();
+
+    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
+    mocks.mountLunaDevtoolsMock.mockReturnValueOnce(() => undefined);
+
+    await bootstrapLunaRuntime({
+      nodeEnv: "development",
+      walletFallbackMode: "manual-toggle",
+      walletPreset: {
+        address: "0x1111111111111111111111111111111111111111",
+        chainId: "0xaa36a7",
+      },
+    });
+
+    expect(mocks.setWalletSessionMock).toHaveBeenCalledWith({
+      enabled: false,
+      connected: false,
+      chainId: "0xaa36a7",
+      accounts: ["0x1111111111111111111111111111111111111111"],
+      permissions: [],
+    });
+
+    expect(mocks.mountLunaDevtoolsMock).toHaveBeenCalledWith({
+      targetId: undefined,
+      nodeEnv: "development",
+      panelProps: {
+        walletFallbackMode: "manual-toggle",
+      },
+    });
   });
 });

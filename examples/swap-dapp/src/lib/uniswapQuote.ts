@@ -1,4 +1,4 @@
-import { Contract, formatUnits, type BrowserProvider } from "ethers";
+import { Contract, formatUnits, type Provider } from "ethers";
 import { UNISWAP_QUOTER_V2_ABI } from "../config/uniswap";
 import type { QuoteResult } from "../types";
 
@@ -68,7 +68,7 @@ function calculatePriceImpact(
 }
 
 export async function quoteExactInputSingle(
-  provider: BrowserProvider,
+  provider: Provider,
   input: QuoteInput,
 ): Promise<QuoteResult> {
   const quoter = new Contract(input.quoterAddress, UNISWAP_QUOTER_V2_ABI, provider);

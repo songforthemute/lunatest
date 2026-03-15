@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatUnits, parseUnits } from "ethers";
+import { MaxUint256, formatUnits, parseUnits, type Provider } from "ethers";
 import { loadLunaConfig } from "@lunatest/core";
 import {
   applyInterceptState,
@@ -30,7 +30,14 @@ import {
 import { resolveSwapViewState } from "./lib/stateMachine";
 import { quoteExactInputSingle } from "./lib/uniswapQuote";
 import { submitSwap, waitForReceipt } from "./lib/uniswapSwap";
-import { connectWallet, readGasPriceGwei, type ConnectedWallet } from "./lib/wallet";
+import {
+  connectWallet,
+  createReadProvider,
+  readGasPriceGwei,
+  sendInjectedTransaction,
+  waitForInjectedReceipt,
+  type ConnectedWallet,
+} from "./lib/wallet";
 import { resolveSwapWarnings } from "./lib/warnings";
 import {
   DEFAULT_CHAOS_PRESETS,
@@ -75,7 +82,7 @@ function makeTokenRuntime(address: string, symbol = "TOKEN"): TokenRuntime {
 }
 
 async function hydrateTokenRuntime(
-  provider: ConnectedWallet["provider"],
+  provider: Provider,
   address: string,
   owner: string,
   spender: string,
@@ -108,6 +115,10 @@ function readInterceptStateSafe(): Record<string, unknown> {
 export function App() {
   const envResult = useMemo(() => loadSwapEnvConfig(toEnvRecord(import.meta.env)), []);
   const config = envResult.ok ? envResult.value : null;
+  const readProvider = useMemo(
+    () => (config ? createReadProvider(config.sepoliaRpcUrl) : null),
+    [config],
+  );
 
   const [wallet, setWallet] = useState<ConnectedWallet | null>(null);
   const [tokenInState, setTokenInState] = useState<TokenRuntime>(() =>
@@ -251,17 +262,21 @@ export function App() {
 
   const refreshTokenState = useCallback(
     async (session: ConnectedWallet, nextConfig: SwapEnvConfig) => {
+      if (!readProvider) {
+        return;
+      }
+
       const [gas, tokenInRuntime, tokenOutRuntime] = await Promise.all([
-        readGasPriceGwei(session.provider),
+        readGasPriceGwei(readProvider),
         hydrateTokenRuntime(
-          session.provider,
+          readProvider,
           tokenInState.address,
           session.signerAddress,
           nextConfig.router,
           tokenInState.symbol,
         ),
         hydrateTokenRuntime(
-          session.provider,
+          readProvider,
           tokenOutState.address,
           session.signerAddress,
           nextConfig.router,
@@ -273,11 +288,11 @@ export function App() {
       setTokenInState(tokenInRuntime);
       setTokenOutState(tokenOutRuntime);
     },
-    [tokenInState.address, tokenInState.symbol, tokenOutState.address, tokenOutState.symbol],
+    [readProvider, tokenInState.address, tokenInState.symbol, tokenOutState.address, tokenOutState.symbol],
   );
 
   const connect = useCallback(async () => {
-    if (!config) {
+    if (!config || !readProvider) {
       return;
     }
 
@@ -290,16 +305,16 @@ export function App() {
 
       const pair = toTokenPairSeed(config);
       const [gas, tokenInRuntime, tokenOutRuntime] = await Promise.all([
-        readGasPriceGwei(session.provider),
+        readGasPriceGwei(readProvider),
         hydrateTokenRuntime(
-          session.provider,
+          readProvider,
           pair.tokenIn.address,
           session.signerAddress,
           config.router,
           "TOKEN_IN",
         ),
         hydrateTokenRuntime(
-          session.provider,
+          readProvider,
           pair.tokenOut.address,
           session.signerAddress,
           config.router,
@@ -319,10 +334,10 @@ export function App() {
     } finally {
       setConnecting(false);
     }
-  }, [config]);
+  }, [config, readProvider]);
 
   const quoteSwap = useCallback(async () => {
-    if (!wallet || !config) {
+    if (!wallet || !config || !readProvider) {
       return;
     }
 
@@ -331,11 +346,11 @@ export function App() {
     setAppError(null);
 
     try {
-      const gas = await readGasPriceGwei(wallet.provider);
+      const gas = await readGasPriceGwei(readProvider);
       setGasPriceGwei(gas);
 
       const amountIn = parseAmount(amountInput, tokenInState.decimals);
-      const quoted = await quoteExactInputSingle(wallet.provider, {
+      const quoted = await quoteExactInputSingle(readProvider, {
         quoterAddress: config.quoterV2,
         tokenIn: tokenInState.address,
         tokenOut: tokenOutState.address,
@@ -353,10 +368,10 @@ export function App() {
     } finally {
       setQuoteLoading(false);
     }
-  }, [wallet, config, amountInput, tokenInState, tokenOutState]);
+  }, [wallet, config, readProvider, amountInput, tokenInState, tokenOutState]);
 
   const approve = useCallback(async () => {
-    if (!wallet || !config) {
+    if (!wallet || !config || !readProvider) {
       return;
     }
 
@@ -365,8 +380,17 @@ export function App() {
     const started = Date.now();
 
     try {
-      const signer = await wallet.provider.getSigner();
-      const txHash = await approveMax(signer, tokenInState.address, config.router);
+      const txHash =
+        wallet.kind === "luna"
+          ? await sendInjectedTransaction(wallet.transport, {
+              from: wallet.signerAddress,
+              to: tokenInState.address,
+              data: "0x6c756e61746573745f617070726f7665",
+            })
+          : await (async () => {
+              const signer = await wallet.provider.getSigner();
+              return approveMax(signer, tokenInState.address, config.router);
+            })();
       setApprovalTx({
         type: "approve",
         status: "pending",
@@ -374,12 +398,20 @@ export function App() {
         submittedAtMs: started,
       });
 
-      const receipt = await waitForReceipt(
-        wallet.provider,
-        txHash,
-        DEFAULT_MAX_WAIT_MS,
-        DEFAULT_POLL_MS,
-      );
+      const receipt =
+        wallet.kind === "luna"
+          ? await waitForInjectedReceipt(
+              wallet.transport,
+              txHash,
+              DEFAULT_MAX_WAIT_MS,
+              DEFAULT_POLL_MS,
+            )
+          : await waitForReceipt(
+              readProvider,
+              txHash,
+              DEFAULT_MAX_WAIT_MS,
+              DEFAULT_POLL_MS,
+            );
 
       if (!receipt || receipt.status !== 1) {
         setApprovalTx({
@@ -392,7 +424,14 @@ export function App() {
         return;
       }
 
-      await refreshTokenState(wallet, config);
+      if (wallet.kind === "luna") {
+        setTokenInState((current) => ({
+          ...current,
+          allowance: MaxUint256,
+        }));
+      } else {
+        await refreshTokenState(wallet, config);
+      }
       setApprovalTx({
         type: "approve",
         status: "confirmed",
@@ -410,10 +449,10 @@ export function App() {
     } finally {
       setApproving(false);
     }
-  }, [wallet, config, tokenInState.address, refreshTokenState]);
+  }, [wallet, config, readProvider, tokenInState.address, refreshTokenState]);
 
   const swap = useCallback(async () => {
-    if (!wallet || !config || !quote) {
+    if (!wallet || !config || !quote || !readProvider) {
       return;
     }
 
@@ -422,7 +461,6 @@ export function App() {
     const started = Date.now();
 
     try {
-      const signer = await wallet.provider.getSigner();
       const amountIn = parseAmount(amountInput, tokenInState.decimals);
       const slippagePct = Math.max(
         0,
@@ -432,15 +470,25 @@ export function App() {
       const minOut =
         quote.amountOut * BigInt(Math.max(0, 10_000 - slippageBps)) / 10_000n;
 
-      const txHash = await submitSwap(signer, {
-        routerAddress: config.router,
-        tokenIn: tokenInState.address,
-        tokenOut: tokenOutState.address,
-        fee: config.poolFee,
-        recipient: wallet.signerAddress,
-        amountIn,
-        amountOutMinimum: minOut,
-      });
+      const txHash =
+        wallet.kind === "luna"
+          ? await sendInjectedTransaction(wallet.transport, {
+              from: wallet.signerAddress,
+              to: config.router,
+              data: "0x6c756e61746573745f73776170",
+            })
+          : await (async () => {
+              const signer = await wallet.provider.getSigner();
+              return submitSwap(signer, {
+                routerAddress: config.router,
+                tokenIn: tokenInState.address,
+                tokenOut: tokenOutState.address,
+                fee: config.poolFee,
+                recipient: wallet.signerAddress,
+                amountIn,
+                amountOutMinimum: minOut,
+              });
+            })();
 
       setSwapTx({
         type: "swap",
@@ -450,7 +498,10 @@ export function App() {
       });
 
       const maxWaitMs = overrides.pendingForMs ?? DEFAULT_MAX_WAIT_MS;
-      const receipt = await waitForReceipt(wallet.provider, txHash, maxWaitMs, DEFAULT_POLL_MS);
+      const receipt =
+        wallet.kind === "luna"
+          ? await waitForInjectedReceipt(wallet.transport, txHash, maxWaitMs, DEFAULT_POLL_MS)
+          : await waitForReceipt(readProvider, txHash, maxWaitMs, DEFAULT_POLL_MS);
 
       if (!receipt) {
         setSwapTx({
@@ -474,7 +525,18 @@ export function App() {
         return;
       }
 
-      await refreshTokenState(wallet, config);
+      if (wallet.kind === "luna") {
+        setTokenInState((current) => ({
+          ...current,
+          balance: current.balance > amountIn ? current.balance - amountIn : 0n,
+        }));
+        setTokenOutState((current) => ({
+          ...current,
+          balance: current.balance + quote.amountOut,
+        }));
+      } else {
+        await refreshTokenState(wallet, config);
+      }
       setSwapTx({
         type: "swap",
         status: "confirmed",
@@ -492,7 +554,7 @@ export function App() {
     } finally {
       setSwapping(false);
     }
-  }, [wallet, config, quote, amountInput, tokenInState, tokenOutState, overrides, refreshTokenState]);
+  }, [wallet, config, quote, readProvider, amountInput, tokenInState, tokenOutState, overrides, refreshTokenState]);
 
   const flipPair = useCallback(() => {
     setTokenInState((previousIn) => {
@@ -680,6 +742,10 @@ export function App() {
           <div className="kv-row">
             <dt>Swap</dt>
             <dd>{swapTx.status}</dd>
+          </div>
+          <div className="kv-row">
+            <dt>Wallet Mode</dt>
+            <dd>{wallet ? (wallet.kind === "luna" ? "Luna Wallet" : "Injected Wallet") : "Disconnected"}</dd>
           </div>
           <div className="kv-row">
             <dt>Allowance</dt>

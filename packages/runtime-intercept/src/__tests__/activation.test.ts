@@ -189,9 +189,13 @@ describe("runtime activation", () => {
       },
     });
 
-    expect(state).toEqual({
+    expect(state).toMatchObject({
       chain: {
         gasPrice: 30,
+      },
+      walletSession: {
+        enabled: false,
+        connected: false,
       },
     });
   });

@@ -1,4 +1,4 @@
-import { Contract, type BrowserProvider, type JsonRpcSigner } from "ethers";
+import { Contract, type JsonRpcSigner, type Provider } from "ethers";
 import { UNISWAP_SWAP_ROUTER_ABI } from "../config/uniswap";
 
 type SwapInput = {
@@ -33,7 +33,7 @@ export async function submitSwap(
 }
 
 export async function waitForReceipt(
-  provider: BrowserProvider,
+  provider: Provider,
   txHash: string,
   maxWaitMs: number,
   pollIntervalMs: number,

@@ -1,13 +1,17 @@
 export {
   appendRouteMocks,
   applyInterceptState,
+  connectWalletSession,
   createLunaRuntimeIntercept,
   disableLunaRuntimeIntercept,
+  disconnectWalletSession,
   enableLunaRuntimeIntercept,
+  getWalletSession,
   getInterceptState,
   isLunaRuntimeInterceptEnabled,
   normalizeRuntimeInterceptConfig,
   resolveEnabled,
+  setWalletSession,
   setRouteMocks,
 } from "./runtime.js";
 

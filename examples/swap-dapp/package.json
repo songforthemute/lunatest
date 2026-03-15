@@ -11,9 +11,9 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@lunatest/core": "^0.1.0",
-    "@lunatest/react": "^0.1.0",
-    "@lunatest/runtime-intercept": "^0.1.0",
+    "@lunatest/core": "workspace:*",
+    "@lunatest/react": "workspace:*",
+    "@lunatest/runtime-intercept": "workspace:*",
     "ethers": "^6.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

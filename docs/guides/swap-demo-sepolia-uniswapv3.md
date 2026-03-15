@@ -18,7 +18,7 @@
 
 ## Prerequisites
 
-- MetaMask (or EIP-1193 wallet)
+- Optional wallet extension (MetaMask or any EIP-1193 wallet)
 - Sepolia ETH for gas
 - Token pair addresses that exist on Sepolia
 - Node 20+
@@ -26,6 +26,8 @@
 ## 1) Configure Environment
 
 ```bash
+cd /Users/joeylee/lunatest
+pnpm install
 cd examples/swap-dapp
 cp .env.example .env.local
 ```
@@ -45,17 +47,18 @@ If any field is missing/invalid, the app renders a configuration error screen wi
 ## 2) Run the Demo
 
 ```bash
-pnpm install
-pnpm dev
+cd /Users/joeylee/lunatest
+pnpm --filter @lunatest/example-swap-dapp dev
 ```
 
 Then in browser:
 
-1. `Connect Wallet`
-2. Ensure wallet network is Sepolia (`11155111`)
-3. Enter amount and click `Quote`
-4. If needed, click `Approve`
-5. Click `Swap` and observe `Tx Stepper` progression
+1. If you have a real wallet, click `Connect Wallet`
+2. If you do not have a wallet, open `LunaTest Devtools` and click `Enable Luna Wallet`
+3. Ensure wallet network is Sepolia (`11155111`)
+4. Enter amount and click `Quote`
+5. If needed, click `Approve`
+6. Click `Swap` and observe `Tx Stepper` progression
 
 ## 3) Chaos QA Loop
 
@@ -64,8 +67,9 @@ In the in-browser panel:
 1. Pick preset (`Slippage 80%`, `Gas 500 Gwei`, `Pending 10m`)
 2. Click `Apply Preset`
 3. Observe warning/button/stepper changes
-4. Edit Lua text and click `Apply Lua`
-5. Check `State Diff` for exact runtime patch output
+4. Toggle `Luna Wallet` on/off to hijack wallet RPC without a browser extension
+5. Edit Lua text and click `Apply Lua`
+6. Check `State Diff` for exact runtime patch output
 
 ## 4) Validation Commands
 

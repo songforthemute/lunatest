@@ -9,6 +9,8 @@
 ## 1. 준비
 
 ```bash
+cd /Users/joeylee/lunatest
+pnpm install
 cd examples/swap-dapp
 cp .env.example .env.local
 ```
@@ -18,8 +20,8 @@ cp .env.example .env.local
 ## 2. 실행
 
 ```bash
-pnpm install
-pnpm dev
+cd /Users/joeylee/lunatest
+pnpm --filter @lunatest/example-swap-dapp dev
 ```
 
 브라우저에서 앱을 열고 지갑 연결 후 아래를 확인합니다.
@@ -27,6 +29,8 @@ pnpm dev
 1. `Quote` 조회
 2. `Approve` 전송/확인
 3. `Swap` 전송/확인
+
+지갑 확장/앱이 없다면 우하단 `LunaTest Devtools`에서 `Enable Luna Wallet`을 켠 뒤 같은 플로우를 바로 실험할 수 있습니다.
 
 ## 3. 카오스 프리셋
 
