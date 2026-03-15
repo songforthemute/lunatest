@@ -3,7 +3,11 @@ import React, { useMemo, useState } from "react";
 import { executeLuaScenario, loadLunaConfig } from "@lunatest/core";
 import {
   applyInterceptState,
+  connectWalletSession,
+  disconnectWalletSession,
   getInterceptState,
+  getWalletSession,
+  setWalletSession,
   setRouteMocks,
   type RouteMock,
 } from "@lunatest/runtime-intercept";
@@ -18,6 +22,7 @@ type LunaDevtoolsPanelProps = {
   ) => Promise<{ pass: boolean; error?: string; diff?: string }> | { pass: boolean; error?: string; diff?: string };
   onSetRouteMocks?: (routes: RouteMock[]) => void | Promise<void>;
   onPatchState?: (patch: Record<string, unknown>) => void | Promise<void>;
+  walletFallbackMode?: "off" | "manual-toggle";
 };
 
 function toPrettyJson(input: unknown): string {
@@ -67,6 +72,21 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
   const [status, setStatus] = useState<string>("idle");
   const [error, setError] = useState<string | null>(null);
   const [diff, setDiff] = useState<string | null>(null);
+  const [walletSession, setWalletSessionState] = useState(() => {
+    try {
+      return getWalletSession();
+    } catch {
+      return null;
+    }
+  });
+
+  const refreshWalletSession = () => {
+    try {
+      setWalletSessionState(getWalletSession());
+    } catch {
+      setWalletSessionState(null);
+    }
+  };
 
   const handleRun = async () => {
     setError(null);
@@ -115,6 +135,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       if (executed.diff) {
         setDiff(executed.diff);
       }
+      refreshWalletSession();
     } catch (cause) {
       setStatus("failed");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -133,6 +154,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
         setRouteMocks(parsed);
       }
       setStatus("routes-updated");
+      refreshWalletSession();
     } catch (cause) {
       setStatus("failed");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -151,6 +173,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
         applyInterceptState(parsed);
       }
       setStatus("state-patched");
+      refreshWalletSession();
     } catch (cause) {
       setStatus("failed");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -164,6 +187,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
     setStatus("reset");
     setError(null);
     setDiff(null);
+    refreshWalletSession();
   };
 
   return (
@@ -204,6 +228,72 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       <button type="button" onClick={handleRun}>
         Run Scenario
       </button>
+
+      {props.walletFallbackMode === "manual-toggle" ? (
+        <>
+          <hr />
+
+          <h4 style={{ margin: 0, marginBottom: 8 }}>Luna Wallet</h4>
+          <p style={{ margin: 0, marginBottom: 8, color: "#334155" }}>
+            지갑이 없어도 wallet RPC를 Luna session으로 하이재킹합니다.
+          </p>
+          <p style={{ margin: 0, marginBottom: 8 }}>
+            mode: {walletSession?.enabled ? "on" : "off"} / connected: {walletSession?.connected ? "yes" : "no"}
+          </p>
+          <p style={{ margin: 0, marginBottom: 8 }}>
+            account: {walletSession?.accounts?.[0] ?? "n/a"}
+          </p>
+          <p style={{ margin: 0, marginBottom: 8 }}>
+            chain: {walletSession?.chainId ?? "n/a"}
+          </p>
+          <p style={{ margin: 0, marginBottom: 8 }}>
+            permissions: {walletSession?.permissions?.map((item: { parentCapability: string }) => item.parentCapability).join(", ") || "none"}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                if (walletSession?.enabled) {
+                  disconnectWalletSession();
+                } else {
+                  connectWalletSession();
+                }
+                refreshWalletSession();
+                setStatus("wallet-updated");
+                setError(null);
+              } catch (cause) {
+                setStatus("failed");
+                setError(cause instanceof Error ? cause.message : String(cause));
+              }
+            }}
+          >
+            {walletSession?.enabled ? "Disable Luna Wallet" : "Enable Luna Wallet"}
+          </button>
+          <button
+            type="button"
+            style={{ marginLeft: 8 }}
+            onClick={() => {
+              try {
+                setWalletSession({
+                  enabled: walletSession?.enabled ?? false,
+                  connected: walletSession?.connected ?? false,
+                  chainId: "0xaa36a7",
+                  accounts: ["0x1111111111111111111111111111111111111111"],
+                  permissions: walletSession?.permissions ?? [],
+                });
+                refreshWalletSession();
+                setStatus("wallet-updated");
+                setError(null);
+              } catch (cause) {
+                setStatus("failed");
+                setError(cause instanceof Error ? cause.message : String(cause));
+              }
+            }}
+          >
+            Reset Session
+          </button>
+        </>
+      ) : null}
 
       <hr />
 

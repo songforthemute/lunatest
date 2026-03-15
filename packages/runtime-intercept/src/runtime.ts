@@ -5,7 +5,7 @@ import { installXhrInterceptor } from "./interceptors/xhr.js";
 import { createLogger } from "./logger.js";
 import { getGlobalNodeEnv } from "./matcher.js";
 import { getActiveRuntimeHandle, setActiveRuntimeHandle } from "./state.js";
-import { deepClone, deepMerge, isRecord } from "@lunatest/contracts";
+import { createLunaWalletSession, deepClone, deepMerge, isRecord, type LunaWalletSession } from "@lunatest/contracts";
 import type {
   LunaRuntimeInterceptConfig,
   NormalizedRuntimeInterceptConfig,
@@ -23,6 +23,10 @@ type MutableRuntimeHandle = RuntimeInterceptHandle & {
   appendRouteMocks: (routes: RouteMock[]) => RouteMock[];
   applyInterceptState: (partialState: Record<string, unknown>) => Record<string, unknown>;
   getInterceptState: () => Record<string, unknown>;
+  setWalletSession: (session: Partial<LunaWalletSession>) => LunaWalletSession;
+  getWalletSession: () => LunaWalletSession;
+  connectWalletSession: (address?: string) => LunaWalletSession;
+  disconnectWalletSession: () => LunaWalletSession;
 };
 
 function normalizeRouteMocks(routes: RouteMock[]): RouteMock[] {
@@ -207,7 +211,11 @@ function requireActiveHandle(): MutableRuntimeHandle {
     typeof normalized.setRouteMocks !== "function" ||
     typeof normalized.appendRouteMocks !== "function" ||
     typeof normalized.applyInterceptState !== "function" ||
-    typeof normalized.getInterceptState !== "function"
+    typeof normalized.getInterceptState !== "function" ||
+    typeof normalized.setWalletSession !== "function" ||
+    typeof normalized.getWalletSession !== "function" ||
+    typeof normalized.connectWalletSession !== "function" ||
+    typeof normalized.disconnectWalletSession !== "function"
   ) {
     throw new Error("Luna runtime intercept does not support mutable runtime APIs");
   }
@@ -230,6 +238,9 @@ export function normalizeRuntimeInterceptConfig(
   const normalized: NormalizedRuntimeInterceptConfig = {
     enable: input.enable,
     debug: input.debug ?? false,
+    wallet: {
+      session: createLunaWalletSession(input.wallet?.session),
+    },
     intercept: {
       mode: input.intercept?.mode ?? DEFAULT_ROUTING_MODE,
       routing: {
@@ -259,6 +270,45 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
   let enabled = false;
   let restorers: Array<() => void> = [];
   let runtimeState: Record<string, unknown> = {};
+  let walletSession = createLunaWalletSession(normalizedConfig.wallet.session);
+
+  const syncWalletState = (): void => {
+    runtimeState = deepMerge(runtimeState, {
+      walletSession: deepClone(walletSession),
+    });
+  };
+
+  const setWalletSessionInternal = (
+    nextSession: Partial<LunaWalletSession>,
+  ): LunaWalletSession => {
+    walletSession = createLunaWalletSession({
+      ...walletSession,
+      ...nextSession,
+      accounts: nextSession.accounts ?? walletSession.accounts,
+      permissions: nextSession.permissions ?? walletSession.permissions,
+    });
+    normalizedConfig.wallet.session = walletSession;
+    syncWalletState();
+    return deepClone(walletSession);
+  };
+
+  const connectWalletSessionInternal = (address?: string): LunaWalletSession => {
+    return setWalletSessionInternal({
+      enabled: true,
+      connected: true,
+      accounts: address ? [address] : walletSession.accounts,
+      permissions: [...walletSession.permissions, { parentCapability: "eth_accounts" }],
+    });
+  };
+
+  const disconnectWalletSessionInternal = (): LunaWalletSession => {
+    return setWalletSessionInternal({
+      enabled: false,
+      connected: false,
+    });
+  };
+
+  syncWalletState();
 
   const setRouteMocksInternal = (routes: RouteMock[]): RouteMock[] => {
     if (!routes.every((route) => isRouteMock(route))) {
@@ -300,7 +350,14 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
 
       try {
         restorers = [
-          installEthereumInterceptor(normalizedConfig, logger),
+          installEthereumInterceptor(
+            normalizedConfig,
+            logger,
+            {
+              getWalletSession: () => walletSession,
+              setWalletSession: setWalletSessionInternal,
+            },
+          ),
           installFetchInterceptor(normalizedConfig, logger),
           installXhrInterceptor(normalizedConfig, logger),
           installWebSocketInterceptor(normalizedConfig, logger),
@@ -373,10 +430,27 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
         }
       }
 
+      const nextWalletSession = partialState.walletSession;
+      if (isRecord(nextWalletSession)) {
+        setWalletSessionInternal(nextWalletSession as Partial<LunaWalletSession>);
+      }
+
       return deepClone(runtimeState);
     },
     getInterceptState() {
       return deepClone(runtimeState);
+    },
+    setWalletSession(session) {
+      return setWalletSessionInternal(session);
+    },
+    getWalletSession() {
+      return deepClone(walletSession);
+    },
+    connectWalletSession(address) {
+      return connectWalletSessionInternal(address);
+    },
+    disconnectWalletSession() {
+      return disconnectWalletSessionInternal();
     },
   };
 }
@@ -428,4 +502,22 @@ export function applyInterceptState(partialState: Record<string, unknown>): Reco
 
 export function getInterceptState(): Record<string, unknown> {
   return requireActiveHandle().getInterceptState();
+}
+
+export function setWalletSession(
+  session: Partial<LunaWalletSession>,
+): LunaWalletSession {
+  return requireActiveHandle().setWalletSession(session);
+}
+
+export function getWalletSession(): LunaWalletSession {
+  return requireActiveHandle().getWalletSession();
+}
+
+export function connectWalletSession(address?: string): LunaWalletSession {
+  return requireActiveHandle().connectWalletSession(address);
+}
+
+export function disconnectWalletSession(): LunaWalletSession {
+  return requireActiveHandle().disconnectWalletSession();
 }

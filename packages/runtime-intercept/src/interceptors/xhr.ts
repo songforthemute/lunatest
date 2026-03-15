@@ -494,6 +494,15 @@ export function createXhrInterceptor(input: {
   const normalizedConfig: NormalizedRuntimeInterceptConfig = {
     debug: false,
     enable: true,
+    wallet: {
+      session: {
+        enabled: false,
+        connected: false,
+        chainId: "0x1",
+        accounts: [],
+        permissions: [],
+      },
+    },
     intercept: {
       mode: input.mode,
       routing: {

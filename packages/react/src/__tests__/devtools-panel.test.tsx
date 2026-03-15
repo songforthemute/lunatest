@@ -10,6 +10,7 @@ describe("LunaDevtoolsPanel", () => {
     const html = renderToString(
       React.createElement(LunaDevtoolsPanel, {
         title: "Runtime QA",
+        walletFallbackMode: "manual-toggle",
       }),
     );
 
@@ -17,6 +18,7 @@ describe("LunaDevtoolsPanel", () => {
     expect(html).toContain("Run Scenario");
     expect(html).toContain("Apply Routes");
     expect(html).toContain("Patch State");
+    expect(html).toContain("Luna Wallet");
   });
 
   it("skips mount outside development DOM context", () => {

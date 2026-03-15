@@ -1,3 +1,11 @@
+import {
+  createLunaWalletSession,
+  extractPermissionKeys,
+  normalizeWalletPermissions,
+  type LunaWalletPermission,
+  type LunaWalletSession,
+} from "@lunatest/contracts";
+
 export type Eip1193Request = {
   method: string;
   params?: unknown[];
@@ -7,6 +15,7 @@ export type LunaProviderOptions = {
   chainId?: string;
   accounts?: string[];
   balances?: Record<string, string>;
+  wallet?: Partial<LunaWalletSession>;
   callHandler?: (input: Record<string, unknown>) => Promise<string> | string;
 };
 
@@ -26,6 +35,7 @@ export class LunaProvider {
   private chainId: string;
   private accounts: string[];
   private balances: Record<string, string>;
+  private wallet: LunaWalletSession;
   private callHandler?: (input: Record<string, unknown>) => Promise<string> | string;
   private txCounter: bigint;
   private subCounter: number;
@@ -41,6 +51,15 @@ export class LunaProvider {
         value,
       ]),
     );
+    this.wallet = createLunaWalletSession({
+      chainId: options.wallet?.chainId ?? this.chainId,
+      accounts: options.wallet?.accounts ?? this.accounts,
+      connected:
+        options.wallet?.connected ??
+        (options.wallet ? false : this.accounts.length > 0),
+      enabled: options.wallet?.enabled ?? true,
+      permissions: options.wallet?.permissions,
+    });
     this.callHandler = options.callHandler;
     this.txCounter = 1n;
     this.subCounter = 1;
@@ -84,11 +103,45 @@ export class LunaProvider {
     const method = payload.method;
 
     if (method === "eth_chainId") {
-      return this.chainId;
+      return this.wallet.enabled ? this.wallet.chainId : this.chainId;
     }
 
     if (method === "eth_accounts") {
-      return this.accounts;
+      if (!this.wallet.enabled) {
+        return this.accounts;
+      }
+
+      const hasAccountsPermission = this.wallet.permissions.some(
+        (permission) => permission.parentCapability === "eth_accounts",
+      );
+
+      if (!this.wallet.connected || !hasAccountsPermission) {
+        return [];
+      }
+
+      return [...this.wallet.accounts];
+    }
+
+    if (method === "eth_requestAccounts") {
+      const previousAccounts =
+        this.wallet.connected
+          ? [...this.wallet.accounts]
+          : [];
+      this.wallet.connected = true;
+      this.wallet.permissions = normalizeWalletPermissions([
+        ...this.wallet.permissions,
+        "eth_accounts",
+      ]);
+      this.accounts = [...this.wallet.accounts];
+      this.emit("accountsChanged", [...this.wallet.accounts]);
+
+      if (previousAccounts.length === 0 && this.wallet.accounts.length > 0) {
+        this.emit("connect", {
+          chainId: this.wallet.chainId,
+        });
+      }
+
+      return [...this.wallet.accounts];
     }
 
     if (method === "eth_getBalance") {
@@ -153,8 +206,48 @@ export class LunaProvider {
       }
 
       this.chainId = chainId;
+      this.wallet.chainId = chainId;
       this.emit("chainChanged", chainId);
       return null;
+    }
+
+    if (method === "wallet_requestPermissions") {
+      const keys = extractPermissionKeys(payload.params);
+      this.wallet.permissions = normalizeWalletPermissions([
+        ...this.wallet.permissions,
+        ...keys,
+      ]);
+
+      if (keys.includes("eth_accounts")) {
+        this.wallet.connected = true;
+        this.accounts = [...this.wallet.accounts];
+        this.emit("accountsChanged", [...this.wallet.accounts]);
+      }
+
+      return [...this.wallet.permissions];
+    }
+
+    if (method === "wallet_getPermissions") {
+      return [...this.wallet.permissions];
+    }
+
+    if (method === "wallet_revokePermissions") {
+      const keys = new Set(extractPermissionKeys(payload.params));
+      const revoked = this.wallet.permissions.filter((permission) =>
+        keys.has(permission.parentCapability),
+      );
+      this.wallet.permissions = this.wallet.permissions.filter(
+        (permission) => !keys.has(permission.parentCapability),
+      );
+
+      if (keys.has("eth_accounts")) {
+        this.wallet.connected = false;
+        this.emit("accountsChanged", []);
+      }
+
+      return revoked.map((permission: LunaWalletPermission) => ({
+        parentCapability: permission.parentCapability,
+      }));
     }
 
     if (method === "eth_subscribe") {

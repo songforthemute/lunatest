@@ -3,6 +3,7 @@ import { loadLunaConfig } from "@lunatest/core";
 import {
   applyInterceptState,
   enableLunaRuntimeIntercept,
+  setWalletSession,
   setRouteMocks,
   type LunaRuntimeInterceptConfig,
 } from "@lunatest/runtime-intercept";
@@ -15,6 +16,11 @@ export type LunaBootstrapOptions = {
   nodeEnv?: string;
   mountDevtools?: boolean;
   devtoolsTargetId?: string;
+  walletFallbackMode?: "off" | "manual-toggle";
+  walletPreset?: {
+    address: string;
+    chainId?: string;
+  };
   configOverride?: Partial<LunaRuntimeInterceptConfig>;
 };
 
@@ -67,12 +73,25 @@ export async function bootstrapLunaRuntime(
     applyInterceptState(config.intercept.state);
   }
 
+  if (options.walletPreset) {
+    setWalletSession({
+      enabled: false,
+      connected: false,
+      chainId: options.walletPreset.chainId ?? "0x1",
+      accounts: [options.walletPreset.address],
+      permissions: [],
+    });
+  }
+
   const unmountDevtools =
     options.mountDevtools === false
       ? undefined
       : mountLunaDevtools({
           targetId: options.devtoolsTargetId,
           nodeEnv,
+          panelProps: {
+            walletFallbackMode: options.walletFallbackMode ?? "off",
+          },
         }) ?? undefined;
 
   return {

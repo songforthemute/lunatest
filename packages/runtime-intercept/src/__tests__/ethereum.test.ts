@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { installEthereumInterceptor } from "../interceptors/ethereum";
 import { createLogger } from "../logger";
 import { normalizeRuntimeInterceptConfig } from "../runtime";
+import { createLunaWalletSession } from "@lunatest/contracts";
 
 const target = globalThis as {
   window?: Record<string, unknown>;
@@ -115,6 +116,53 @@ describe("ethereum interceptor", () => {
     await expect(ethereum.request({ method: "wallet_requestPermissions" })).resolves.toBe(
       "forward:wallet_requestPermissions",
     );
+
+    restore();
+  });
+
+  it("handles luna wallet session requests when enabled", async () => {
+    target.window = {};
+    let walletSession = createLunaWalletSession({
+      enabled: true,
+      connected: false,
+      chainId: "0xaa36a7",
+      accounts: ["0x1111111111111111111111111111111111111111"],
+      permissions: [],
+    });
+
+    const restore = installEthereumInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+        },
+      }),
+      createLogger(false),
+      {
+        getWalletSession: () => walletSession,
+        setWalletSession: (next) => {
+          walletSession = createLunaWalletSession({
+            ...walletSession,
+            ...next,
+            accounts: next.accounts ?? walletSession.accounts,
+            permissions: next.permissions ?? walletSession.permissions,
+          });
+          return walletSession;
+        },
+      },
+    );
+
+    const ethereum = target.window?.ethereum as {
+      request: (payload: { method: string; params?: unknown[] }) => Promise<unknown>;
+    };
+
+    await expect(ethereum.request({ method: "eth_accounts" })).resolves.toEqual([]);
+    await expect(ethereum.request({ method: "eth_requestAccounts" })).resolves.toEqual([
+      "0x1111111111111111111111111111111111111111",
+    ]);
+    await expect(ethereum.request({ method: "wallet_getPermissions" })).resolves.toEqual([
+      { parentCapability: "eth_accounts" },
+    ]);
 
     restore();
   });

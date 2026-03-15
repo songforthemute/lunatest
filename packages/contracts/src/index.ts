@@ -58,6 +58,81 @@ export type RoutingConfig = {
   bypassWsPatterns?: EndpointPattern[];
 };
 
+export type LunaWalletPermission = {
+  parentCapability: string;
+};
+
+export type LunaWalletSession = {
+  enabled: boolean;
+  connected: boolean;
+  chainId: string;
+  accounts: string[];
+  permissions: LunaWalletPermission[];
+};
+
+const DEFAULT_LUNA_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111";
+
+export function normalizeWalletPermissions(
+  input?: Array<LunaWalletPermission | string>,
+): LunaWalletPermission[] {
+  const permissions = (input ?? []).map((value) =>
+    typeof value === "string" ? { parentCapability: value } : value,
+  );
+
+  const seen = new Set<string>();
+  const normalized: LunaWalletPermission[] = [];
+
+  for (const permission of permissions) {
+    if (
+      !permission ||
+      typeof permission.parentCapability !== "string" ||
+      permission.parentCapability.length === 0 ||
+      seen.has(permission.parentCapability)
+    ) {
+      continue;
+    }
+
+    seen.add(permission.parentCapability);
+    normalized.push({
+      parentCapability: permission.parentCapability,
+    });
+  }
+
+  return normalized;
+}
+
+export function createLunaWalletSession(
+  input: Partial<LunaWalletSession> = {},
+): LunaWalletSession {
+  const accounts = input.accounts?.length
+    ? [...input.accounts]
+    : [DEFAULT_LUNA_WALLET_ADDRESS];
+  const connected = input.connected ?? false;
+  const basePermissions = normalizeWalletPermissions(input.permissions);
+  const permissions = connected && !basePermissions.some((item) => item.parentCapability === "eth_accounts")
+    ? normalizeWalletPermissions([...basePermissions, "eth_accounts"])
+    : basePermissions;
+
+  return {
+    enabled: input.enabled ?? false,
+    connected,
+    chainId: input.chainId ?? "0x1",
+    accounts,
+    permissions,
+  };
+}
+
+export function extractPermissionKeys(
+  params?: unknown[],
+): string[] {
+  const [requested] = params ?? [];
+  if (!requested || typeof requested !== "object") {
+    return [];
+  }
+
+  return Object.keys(requested as Record<string, unknown>).filter((key) => key.length > 0);
+}
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

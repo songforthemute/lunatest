@@ -15,9 +15,12 @@ pnpm add @lunatest/mcp
 pnpm add -D @lunatest/vitest-plugin
 ```
 
-Package status: `Not yet published` (first stable npm release pending).
+Package status: `Published` (stable packages available on npm).
 
 실사용 예제는 [Library Consumption Guide](./guides/library-consumption.md)에서 확인할 수 있습니다.
+
+Swap 데모(실지갑 + Sepolia + Uniswap V3)는
+[Sepolia Swap Demo Guide](./guides/swap-demo-sepolia-uniswapv3.md)에서 확인할 수 있습니다.
 
 ## 3. Run Checks
 

@@ -2,6 +2,7 @@ import type {
   EndpointPattern,
   EthereumMethodRoute,
   HttpEndpointRoute,
+  LunaWalletSession,
   RouteMock,
   RoutingConfig,
   RoutingMode,
@@ -13,6 +14,7 @@ export type {
   EndpointPattern,
   EthereumMethodRoute,
   HttpEndpointRoute,
+  LunaWalletSession,
   RouteMock,
   RoutingConfig,
   RoutingMode,
@@ -38,6 +40,9 @@ export type MockResponseMap = Record<string, MockResponseInput>;
 export type LunaRuntimeInterceptConfig = {
   enable?: boolean;
   debug?: boolean;
+  wallet?: {
+    session?: Partial<LunaWalletSession>;
+  };
   intercept?: {
     mode?: RoutingMode;
     routes?: RouteMock[];
@@ -49,6 +54,9 @@ export type LunaRuntimeInterceptConfig = {
 export type NormalizedRuntimeInterceptConfig = {
   enable?: boolean;
   debug: boolean;
+  wallet: {
+    session: LunaWalletSession;
+  };
   intercept: {
     mode: RoutingMode;
     routing: {
@@ -70,4 +78,8 @@ export type RuntimeInterceptHandle = {
   appendRouteMocks?: (routes: RouteMock[]) => RouteMock[];
   applyInterceptState?: (partialState: Record<string, unknown>) => Record<string, unknown>;
   getInterceptState?: () => Record<string, unknown>;
+  setWalletSession?: (session: Partial<LunaWalletSession>) => LunaWalletSession;
+  getWalletSession?: () => LunaWalletSession;
+  connectWalletSession?: (address?: string) => LunaWalletSession;
+  disconnectWalletSession?: () => LunaWalletSession;
 };

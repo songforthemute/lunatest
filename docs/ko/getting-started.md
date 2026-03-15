@@ -57,5 +57,6 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=script
 ## 다음 단계
 
 - 라이브러리 소비자 관점 사용법: [라이브러리 소비자 가이드](./guides/library-consumption.md)
+- 실지갑 + 카오스 루프 샘플: [Sepolia 스왑 데모](./guides/swap-demo-sepolia-uniswapv3.md)
 - 실제 테스트 패턴: [시나리오 예제 모음](./guides/scenario-examples.md)
 - 처음부터 끝까지 실행 흐름: [E2E 0→1 워크스루](./guides/e2e-0to1.md)

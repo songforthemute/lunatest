@@ -19,6 +19,56 @@ describe("LunaProvider EIP-1193 contract", () => {
     ]);
   });
 
+  it("supports eth_requestAccounts and exposes accounts permission", async () => {
+    const provider = new LunaProvider({
+      wallet: {
+        connected: false,
+        accounts: ["0xabc"],
+      },
+    });
+
+    await expect(provider.request({ method: "eth_accounts" })).resolves.toEqual([]);
+    await expect(provider.request({ method: "eth_requestAccounts" })).resolves.toEqual([
+      "0xabc",
+    ]);
+    await expect(provider.request({ method: "eth_accounts" })).resolves.toEqual([
+      "0xabc",
+    ]);
+    await expect(provider.request({ method: "wallet_getPermissions" })).resolves.toEqual([
+      { parentCapability: "eth_accounts" },
+    ]);
+  });
+
+  it("supports wallet_requestPermissions and wallet_revokePermissions", async () => {
+    const provider = new LunaProvider({
+      wallet: {
+        connected: false,
+        accounts: ["0xabc"],
+        permissions: [],
+      },
+    });
+
+    await expect(
+      provider.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      }),
+    ).resolves.toEqual([{ parentCapability: "eth_accounts" }]);
+
+    await expect(provider.request({ method: "eth_accounts" })).resolves.toEqual([
+      "0xabc",
+    ]);
+
+    await expect(
+      provider.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }],
+      }),
+    ).resolves.toEqual([{ parentCapability: "eth_accounts" }]);
+
+    await expect(provider.request({ method: "eth_accounts" })).resolves.toEqual([]);
+  });
+
   it("supports eth_getBalance", async () => {
     const provider = new LunaProvider({
       accounts: ["0xabc"],
