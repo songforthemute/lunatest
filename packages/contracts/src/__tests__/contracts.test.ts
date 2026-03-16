@@ -12,6 +12,7 @@ import {
   normalizeWalletPermissions,
   parseProtocolPresetManifest,
   parseWalletPresetManifest,
+  qualifyPresetId,
 } from "../index.js";
 
 describe("contracts utils", () => {
@@ -164,5 +165,10 @@ describe("contracts utils", () => {
       kind: "wallet",
       supportedChains: [11155111],
     });
+  });
+
+  it("qualifies preset ids with source namespace", () => {
+    expect(qualifyPresetId("builtin", "uniswap_v3")).toBe("builtin/uniswap_v3");
+    expect(qualifyPresetId("project", "team/foo")).toBe("project/team/foo");
   });
 });

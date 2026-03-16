@@ -208,8 +208,8 @@ describe("mcp transport", () => {
     expect(protocolApply).toEqual({
       id: "req-protocol-apply",
       result: expect.objectContaining({
-        protocolPresetId: "uniswap_v3",
-        walletPresetId: "demo_sepolia",
+        protocolPresetId: "builtin/uniswap_v3",
+        walletPresetId: "builtin/demo_sepolia",
         interceptState: expect.objectContaining({
           protocol: expect.objectContaining({
             components: expect.objectContaining({
@@ -235,7 +235,7 @@ describe("mcp transport", () => {
     expect(walletApply).toEqual({
       id: "req-wallet-apply",
       result: expect.objectContaining({
-        walletPresetId: "demo_sepolia",
+        walletPresetId: "builtin/demo_sepolia",
         walletSession: expect.objectContaining({
           chainId: "0xaa36a7",
         }),

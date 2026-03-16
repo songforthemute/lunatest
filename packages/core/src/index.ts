@@ -4,13 +4,16 @@ export { LunaProvider } from "./provider/luna-provider.js";
 export type { LunaProviderOptions } from "./provider/luna-provider.js";
 export { loadLunaConfig } from "./config/lua-config.js";
 export {
+  createPresetRegistry,
   getProtocolPreset,
   getWalletPreset,
   listProtocolPresets,
   listWalletPresets,
+  loadProjectPresetSources,
   materializeProtocolPreset,
   materializeWalletPreset,
 } from "./presets/registry.js";
+export type { PresetRegistry, PresetRegistryOptions, ProjectPresetSources } from "./presets/registry.js";
 export {
   applyInterceptState,
   createScenarioRuntime,

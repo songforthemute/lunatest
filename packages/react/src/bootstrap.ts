@@ -7,8 +7,11 @@ import {
 import type { LuaConfig } from "@lunatest/core";
 import {
   loadLunaConfig,
+  createPresetRegistry,
   materializeProtocolPreset,
   materializeWalletPreset,
+  type PresetRegistry,
+  type ProjectPresetSources,
 } from "@lunatest/core";
 import {
   applyInterceptState,
@@ -26,6 +29,8 @@ export type LunaBootstrapOptions = {
   nodeEnv?: string;
   mountDevtools?: boolean;
   devtoolsTargetId?: string;
+  presetRegistry?: PresetRegistry;
+  projectPresetSources?: ProjectPresetSources;
   protocolPresetId?: string;
   protocolPresetParams?: Record<string, unknown>;
   walletPresetId?: string;
@@ -68,6 +73,11 @@ export async function bootstrapLunaRuntime(
 ): Promise<LunaBootstrapResult> {
   const config = await loadLunaConfig(options.source ?? "./lunatest.lua");
   const nodeEnv = resolveNodeEnv(options.nodeEnv);
+  const presetRegistry =
+    options.presetRegistry ??
+    createPresetRegistry({
+      projectSources: options.projectPresetSources,
+    });
   const runtimeConfig = toRuntimeConfig(config, options.configOverride);
   const enabled = enableLunaRuntimeIntercept(runtimeConfig, nodeEnv);
 
@@ -93,6 +103,7 @@ export async function bootstrapLunaRuntime(
     const materialized = await materializeProtocolPreset(
       options.protocolPresetId,
       options.protocolPresetParams,
+      presetRegistry,
     );
     setRouteMocks(materialized.routeMocks);
     applyInterceptState(materialized.interceptState);
@@ -103,6 +114,7 @@ export async function bootstrapLunaRuntime(
     const materialized = await materializeWalletPreset(
       options.walletPresetId,
       options.walletPresetParams,
+      presetRegistry,
     );
     setWalletSession(materialized.walletSession);
   }
@@ -125,6 +137,7 @@ export async function bootstrapLunaRuntime(
           targetId: options.devtoolsTargetId,
           nodeEnv,
           panelProps: {
+            presetRegistry,
             walletFallbackMode: options.walletFallbackMode ?? "off",
           },
         }) ?? undefined;

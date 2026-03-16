@@ -7,7 +7,13 @@ import {
   createScenarioTools,
   type ScenarioDescriptor,
 } from "./tools/scenario.js";
-import type { ExecuteLuaScenarioInput } from "@lunatest/core";
+import {
+  createPresetRegistry,
+  loadProjectPresetSources,
+  type ExecuteLuaScenarioInput,
+  type PresetRegistry,
+  type ProjectPresetSources,
+} from "@lunatest/core";
 
 type JsonRpcRequest = {
   id: string;
@@ -35,6 +41,9 @@ type McpServerOptions = {
   componentStates?: Record<string, string[]>;
   protocols?: string[];
   scenarioAdapter?: ExecuteLuaScenarioInput["adapter"];
+  presetRegistry?: PresetRegistry;
+  projectPresetSources?: ProjectPresetSources;
+  projectRoot?: string;
 };
 
 export function createMcpServer(options: McpServerOptions) {
@@ -42,7 +51,38 @@ export function createMcpServer(options: McpServerOptions) {
     adapter: options.scenarioAdapter,
   });
   const coverageTools = createCoverageTools(options.coverage);
-  const mockTools = createMockTools(options.mockState);
+  let registryPromise: Promise<PresetRegistry> | null = options.presetRegistry
+    ? Promise.resolve(options.presetRegistry)
+    : null;
+
+  const resolveRegistry = async (): Promise<PresetRegistry> => {
+    if (registryPromise) {
+      return registryPromise;
+    }
+
+    registryPromise = (async () => {
+      if (options.projectPresetSources) {
+        return createPresetRegistry({
+          projectSources: options.projectPresetSources,
+        });
+      }
+
+      if (options.projectRoot) {
+        const projectSources = await loadProjectPresetSources(options.projectRoot);
+        return createPresetRegistry({
+          projectSources,
+        });
+      }
+
+      return createPresetRegistry();
+    })();
+
+    return registryPromise;
+  };
+
+  const mockTools = createMockTools(options.mockState, {
+    getRegistry: resolveRegistry,
+  });
   const componentTools = createComponentTools(
     options.componentTree ?? [],
     options.componentStates ?? {},

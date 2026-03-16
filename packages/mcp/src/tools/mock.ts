@@ -1,23 +1,52 @@
 import {
   deepClone,
   deepMerge,
-  type ProtocolPresetManifest,
+  type ProtocolPresetCatalogEntry,
   type ProtocolPresetMaterialization,
-  type WalletPresetManifest,
+  type WalletPresetCatalogEntry,
   type WalletPresetMaterialization,
 } from "@lunatest/contracts";
 import {
+  createPresetRegistry,
   getProtocolPreset as coreGetProtocolPreset,
   getWalletPreset as coreGetWalletPreset,
   listProtocolPresets as coreListProtocolPresets,
   listWalletPresets as coreListWalletPresets,
+  type PresetRegistry,
+  type ProjectPresetSources,
   materializeProtocolPreset as coreMaterializeProtocolPreset,
   materializeWalletPreset as coreMaterializeWalletPreset,
 } from "@lunatest/core";
 
-export function createMockTools(initialState: Record<string, unknown> = {}) {
+type CreateMockToolsOptions = {
+  registry?: PresetRegistry;
+  projectPresetSources?: ProjectPresetSources;
+  getRegistry?: () => Promise<PresetRegistry>;
+};
+
+export function createMockTools(
+  initialState: Record<string, unknown> = {},
+  options: CreateMockToolsOptions = {},
+) {
   let state: Record<string, unknown> = deepClone(initialState);
   let routes: Array<Record<string, unknown>> = [];
+  let cachedRegistry: PresetRegistry | null = options.registry ?? null;
+
+  const resolveRegistry = async (): Promise<PresetRegistry> => {
+    if (cachedRegistry) {
+      return cachedRegistry;
+    }
+
+    if (options.getRegistry) {
+      cachedRegistry = await options.getRegistry();
+      return cachedRegistry;
+    }
+
+    cachedRegistry = createPresetRegistry({
+      projectSources: options.projectPresetSources,
+    });
+    return cachedRegistry;
+  };
 
   return {
     async getState() {
@@ -44,22 +73,22 @@ export function createMockTools(initialState: Record<string, unknown> = {}) {
     },
 
     async listPresets() {
-      return (await coreListProtocolPresets()).map((preset) => preset.id);
+      return (await coreListProtocolPresets(await resolveRegistry())).map((preset) => preset.qualifiedId);
     },
 
-    async listProtocolPresets(): Promise<ProtocolPresetManifest[]> {
-      return coreListProtocolPresets();
+    async listProtocolPresets(): Promise<ProtocolPresetCatalogEntry[]> {
+      return coreListProtocolPresets(await resolveRegistry());
     },
 
-    async getProtocolPreset(id: string): Promise<ProtocolPresetManifest | null> {
-      return coreGetProtocolPreset(id);
+    async getProtocolPreset(id: string): Promise<ProtocolPresetCatalogEntry | null> {
+      return coreGetProtocolPreset(id, await resolveRegistry());
     },
 
     async applyProtocolPreset(
       id: string,
       params: Record<string, unknown> = {},
     ): Promise<ProtocolPresetMaterialization> {
-      const materialized = await coreMaterializeProtocolPreset(id, params);
+      const materialized = await coreMaterializeProtocolPreset(id, params, await resolveRegistry());
       state = deepMerge(state, {
         walletSession: materialized.walletSession,
         ...materialized.interceptState,
@@ -68,19 +97,19 @@ export function createMockTools(initialState: Record<string, unknown> = {}) {
       return materialized;
     },
 
-    async listWalletPresets(): Promise<WalletPresetManifest[]> {
-      return coreListWalletPresets();
+    async listWalletPresets(): Promise<WalletPresetCatalogEntry[]> {
+      return coreListWalletPresets(await resolveRegistry());
     },
 
-    async getWalletPreset(id: string): Promise<WalletPresetManifest | null> {
-      return coreGetWalletPreset(id);
+    async getWalletPreset(id: string): Promise<WalletPresetCatalogEntry | null> {
+      return coreGetWalletPreset(id, await resolveRegistry());
     },
 
     async applyWalletPreset(
       id: string,
       params: Record<string, unknown> = {},
     ): Promise<WalletPresetMaterialization> {
-      const materialized = await coreMaterializeWalletPreset(id, params);
+      const materialized = await coreMaterializeWalletPreset(id, params, await resolveRegistry());
       state = deepMerge(state, {
         walletSession: materialized.walletSession,
       });

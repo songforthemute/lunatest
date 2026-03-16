@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { bootstrapLunaRuntime } from "@lunatest/react";
+import teamSwapPresetSource from "../lunatest/presets/protocol/team_swap.lua?raw";
+import teamWalletPresetSource from "../lunatest/presets/wallet/team_wallet.lua?raw";
 
 import { App } from "./app";
 import "./styles.css";
@@ -16,9 +18,17 @@ void bootstrapLunaRuntime({
   source: "./lunatest.lua",
   nodeEnv,
   mountDevtools: true,
-  protocolPresetId: "uniswap_v3",
+  projectPresetSources: {
+    protocol: {
+      team_swap: teamSwapPresetSource,
+    },
+    wallet: {
+      team_wallet: teamWalletPresetSource,
+    },
+  },
+  protocolPresetId: "project/team_swap",
   walletFallbackMode: "manual-toggle",
-  walletPresetId: "demo_sepolia",
+  walletPresetId: "project/team_wallet",
   walletPresetParams: {
     address: "0x1111111111111111111111111111111111111111",
     chainId: 11155111,

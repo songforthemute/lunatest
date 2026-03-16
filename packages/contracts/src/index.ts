@@ -84,6 +84,7 @@ export type LunaWalletSession = {
 };
 
 export type PresetKind = "dex" | "lending" | "wallet";
+export type PresetSource = "builtin" | "project";
 
 export type PresetParamType =
   | "chainId"
@@ -158,6 +159,16 @@ export type ProtocolPresetMaterialization = {
   interceptState: Record<string, unknown>;
   routeMocks: RouteMock[];
   builtinScenarios: PresetScenarioDescriptor[];
+};
+
+export type ProtocolPresetCatalogEntry = ProtocolPresetManifest & {
+  qualifiedId: string;
+  source: PresetSource;
+};
+
+export type WalletPresetCatalogEntry = WalletPresetManifest & {
+  qualifiedId: string;
+  source: PresetSource;
 };
 
 const DEFAULT_LUNA_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111";
@@ -292,6 +303,11 @@ function expectRouteMocks(value: unknown, field: string): RouteMock[] {
 }
 
 function expectParamSchema(value: unknown, field: string): PresetParamDescriptor[] {
+  const emptyRecord = asRecord(value);
+  if (emptyRecord && Object.keys(emptyRecord).length === 0) {
+    return [];
+  }
+
   if (!Array.isArray(value)) {
     throw new Error(`Invalid preset field: ${field}`);
   }
@@ -327,6 +343,11 @@ function expectParamSchema(value: unknown, field: string): PresetParamDescriptor
 }
 
 function expectScenarioDescriptors(value: unknown, field: string): PresetScenarioDescriptor[] {
+  const emptyRecord = asRecord(value);
+  if (emptyRecord && Object.keys(emptyRecord).length === 0) {
+    return [];
+  }
+
   if (!Array.isArray(value)) {
     throw new Error(`Invalid preset field: ${field}`);
   }
@@ -385,11 +406,14 @@ export function parseProtocolPresetManifest(value: unknown): ProtocolPresetManif
     defaultRouteMocks: expectRouteMocks(row.defaultRouteMocks, "defaultRouteMocks"),
     builtinScenarios: expectScenarioDescriptors(row.builtinScenarios, "builtinScenarios"),
     paramsSchema: expectParamSchema(row.paramsSchema, "paramsSchema"),
-    recommendedControls: Array.isArray(row.recommendedControls)
-      ? row.recommendedControls.map((item, index) =>
-          expectString(item, `recommendedControls[${index}]`),
-        )
-      : [],
+    recommendedControls:
+      Array.isArray(row.recommendedControls)
+        ? row.recommendedControls.map((item, index) =>
+            expectString(item, `recommendedControls[${index}]`),
+          )
+        : asRecord(row.recommendedControls) && Object.keys(asRecord(row.recommendedControls)!).length === 0
+          ? []
+          : [],
   };
 }
 
@@ -412,12 +436,19 @@ export function parseWalletPresetManifest(value: unknown): WalletPresetManifest 
     supportedChains: expectNumberArray(row.supportedChains, "supportedChains"),
     defaultSession: defaultSession as Partial<LunaWalletSession>,
     paramsSchema: row.paramsSchema ? expectParamSchema(row.paramsSchema, "paramsSchema") : undefined,
-    recommendedControls: Array.isArray(row.recommendedControls)
-      ? row.recommendedControls.map((item, index) =>
-          expectString(item, `recommendedControls[${index}]`),
-        )
-      : undefined,
+    recommendedControls:
+      Array.isArray(row.recommendedControls)
+        ? row.recommendedControls.map((item, index) =>
+            expectString(item, `recommendedControls[${index}]`),
+          )
+        : asRecord(row.recommendedControls) && Object.keys(asRecord(row.recommendedControls)!).length === 0
+          ? []
+          : undefined,
   };
+}
+
+export function qualifyPresetId(source: PresetSource, id: string): string {
+  return `${source}/${id}`;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

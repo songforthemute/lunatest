@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
     Parameters<(source: string | URL) => Promise<LuaConfig>>,
     ReturnType<(source: string | URL) => Promise<LuaConfig>>
   >(),
+  createPresetRegistryMock: vi.fn(),
   materializeProtocolPresetMock: vi.fn(),
   materializeWalletPresetMock: vi.fn(),
   enableLunaRuntimeInterceptMock: vi.fn(),
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@lunatest/core", () => ({
   loadLunaConfig: mocks.loadLunaConfigMock,
+  createPresetRegistry: mocks.createPresetRegistryMock,
   materializeProtocolPreset: mocks.materializeProtocolPresetMock,
   materializeWalletPreset: mocks.materializeWalletPresetMock,
 }));
@@ -52,6 +54,7 @@ describe("bootstrapLunaRuntime", () => {
   it("returns disabled result when runtime intercept is not enabled", async () => {
     const config = createConfig();
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(false);
 
     const result = await bootstrapLunaRuntime();
@@ -90,6 +93,7 @@ describe("bootstrapLunaRuntime", () => {
     });
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
     mocks.mountLunaDevtoolsMock.mockReturnValueOnce(() => undefined);
 
@@ -116,6 +120,7 @@ describe("bootstrapLunaRuntime", () => {
       targetId: undefined,
       nodeEnv: "development",
       panelProps: {
+        presetRegistry: { tag: "registry" },
         walletFallbackMode: "off",
       },
     });
@@ -146,6 +151,7 @@ describe("bootstrapLunaRuntime", () => {
     ];
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
 
     const result = await bootstrapLunaRuntime({
@@ -167,6 +173,7 @@ describe("bootstrapLunaRuntime", () => {
     const config = createConfig();
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
     mocks.materializeProtocolPresetMock.mockResolvedValueOnce({
       protocolPresetId: "uniswap_v3",
@@ -192,10 +199,12 @@ describe("bootstrapLunaRuntime", () => {
     expect(mocks.materializeProtocolPresetMock).toHaveBeenCalledWith(
       "uniswap_v3",
       undefined,
+      { tag: "registry" },
     );
     expect(mocks.materializeWalletPresetMock).toHaveBeenCalledWith(
       "empty_wallet",
       undefined,
+      { tag: "registry" },
     );
     expect(mocks.setWalletSessionMock).toHaveBeenCalledTimes(2);
   });
@@ -204,6 +213,7 @@ describe("bootstrapLunaRuntime", () => {
     const config = createConfig();
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
     mocks.mountLunaDevtoolsMock.mockReturnValueOnce(() => undefined);
 
@@ -232,7 +242,33 @@ describe("bootstrapLunaRuntime", () => {
       targetId: undefined,
       nodeEnv: "development",
       panelProps: {
+        presetRegistry: { tag: "registry" },
         walletFallbackMode: "manual-toggle",
+      },
+    });
+  });
+
+  it("builds registry from injected project preset sources", async () => {
+    const config = createConfig();
+
+    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "project-registry" });
+    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
+
+    await bootstrapLunaRuntime({
+      nodeEnv: "development",
+      projectPresetSources: {
+        protocol: {
+          "team/swap": "return { manifest = { id = 'team/swap' }, materialize = function() return {} end }",
+        },
+      },
+    });
+
+    expect(mocks.createPresetRegistryMock).toHaveBeenCalledWith({
+      projectSources: {
+        protocol: {
+          "team/swap": "return { manifest = { id = 'team/swap' }, materialize = function() return {} end }",
+        },
       },
     });
   });
