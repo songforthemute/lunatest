@@ -16,10 +16,12 @@ void bootstrapLunaRuntime({
   source: "./lunatest.lua",
   nodeEnv,
   mountDevtools: true,
+  protocolPresetId: "uniswap_v3",
   walletFallbackMode: "manual-toggle",
-  walletPreset: {
+  walletPresetId: "demo_sepolia",
+  walletPresetParams: {
     address: "0x1111111111111111111111111111111111111111",
-    chainId: "0xaa36a7",
+    chainId: 11155111,
   },
 }).catch((error) => {
   console.error("[lunatest] bootstrap failed", error);

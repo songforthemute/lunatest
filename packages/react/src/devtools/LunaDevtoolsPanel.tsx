@@ -1,6 +1,21 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-import { executeLuaScenario, loadLunaConfig } from "@lunatest/core";
+import {
+  executeLuaScenario,
+  getProtocolPreset,
+  getWalletPreset,
+  listProtocolPresets,
+  listWalletPresets,
+  loadLunaConfig,
+  materializeProtocolPreset,
+  materializeWalletPreset,
+} from "@lunatest/core";
+import type {
+  PresetParamDescriptor,
+  PresetScenarioDescriptor,
+  ProtocolPresetManifest,
+  WalletPresetManifest,
+} from "@lunatest/contracts";
 import {
   applyInterceptState,
   connectWalletSession,
@@ -27,6 +42,26 @@ type LunaDevtoolsPanelProps = {
 
 function toPrettyJson(input: unknown): string {
   return JSON.stringify(input, null, 2);
+}
+
+function buildDefaultParamValues(
+  schema: PresetParamDescriptor[],
+): Record<string, string> {
+  return Object.fromEntries(
+    schema.map((item) => [item.key, item.default === undefined ? "" : String(item.default)]),
+  );
+}
+
+function parsePresetValue(descriptor: PresetParamDescriptor, value: string): unknown {
+  if (descriptor.type === "number" || descriptor.type === "chainId") {
+    return Number(value);
+  }
+
+  if (descriptor.type === "boolean") {
+    return value === "true";
+  }
+
+  return value;
 }
 
 export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
@@ -72,6 +107,14 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
   const [status, setStatus] = useState<string>("idle");
   const [error, setError] = useState<string | null>(null);
   const [diff, setDiff] = useState<string | null>(null);
+  const [protocolPresets, setProtocolPresets] = useState<ProtocolPresetManifest[]>([]);
+  const [walletPresets, setWalletPresets] = useState<WalletPresetManifest[]>([]);
+  const [selectedProtocolPresetId, setSelectedProtocolPresetId] = useState("");
+  const [selectedWalletPresetId, setSelectedWalletPresetId] = useState("");
+  const [selectedBuiltinScenarioId, setSelectedBuiltinScenarioId] = useState("");
+  const [presetParamValues, setPresetParamValues] = useState<Record<string, string>>({});
+  const [presetParamsJson, setPresetParamsJson] = useState("{}");
+  const [materializedPreview, setMaterializedPreview] = useState<string>("");
   const [walletSession, setWalletSessionState] = useState(() => {
     try {
       return getWalletSession();
@@ -86,6 +129,103 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
     } catch {
       setWalletSessionState(null);
     }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBuiltIns(): Promise<void> {
+      try {
+        const [protocols, wallets] = await Promise.all([
+          listProtocolPresets(),
+          listWalletPresets(),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setProtocolPresets(protocols);
+        setWalletPresets(wallets);
+        setSelectedProtocolPresetId((current) => current || protocols[0]?.id || "");
+        setSelectedWalletPresetId((current) => current || wallets[0]?.id || "");
+      } catch (cause) {
+        if (!cancelled) {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        }
+      }
+    }
+
+    void loadBuiltIns();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedProtocolPreset = useMemo(
+    () => protocolPresets.find((item) => item.id === selectedProtocolPresetId) ?? null,
+    [protocolPresets, selectedProtocolPresetId],
+  );
+
+  const selectedWalletPreset = useMemo(
+    () => walletPresets.find((item) => item.id === selectedWalletPresetId) ?? null,
+    [walletPresets, selectedWalletPresetId],
+  );
+
+  const recommendedDescriptors = useMemo(() => {
+    const descriptors = new Map<string, PresetParamDescriptor>();
+
+    if (selectedProtocolPreset) {
+      const keys = new Set(selectedProtocolPreset.recommendedControls);
+      for (const descriptor of selectedProtocolPreset.paramsSchema) {
+        if (keys.has(descriptor.key)) {
+          descriptors.set(descriptor.key, descriptor);
+        }
+      }
+    }
+
+    if (selectedWalletPreset?.paramsSchema) {
+      const keys = new Set(selectedWalletPreset.recommendedControls ?? []);
+      for (const descriptor of selectedWalletPreset.paramsSchema) {
+        if (keys.has(descriptor.key) && !descriptors.has(descriptor.key)) {
+          descriptors.set(descriptor.key, descriptor);
+        }
+      }
+    }
+
+    return Array.from(descriptors.values());
+  }, [selectedProtocolPreset, selectedWalletPreset]);
+
+  useEffect(() => {
+    if (!selectedProtocolPreset) {
+      return;
+    }
+
+    setPresetParamValues(buildDefaultParamValues(selectedProtocolPreset.paramsSchema));
+    setSelectedBuiltinScenarioId(selectedProtocolPreset.builtinScenarios[0]?.id ?? "");
+    if (!selectedWalletPresetId) {
+      setSelectedWalletPresetId(selectedProtocolPreset.defaultWalletPreset.id);
+    }
+  }, [selectedProtocolPreset, selectedWalletPresetId]);
+
+  const buildPresetParams = () => {
+    const params: Record<string, unknown> = {};
+
+    for (const descriptor of recommendedDescriptors) {
+      const current = presetParamValues[descriptor.key];
+      if (current === undefined || current === "") {
+        continue;
+      }
+
+      params[descriptor.key] = parsePresetValue(descriptor, current);
+    }
+
+    const advanced = JSON.parse(presetParamsJson) as Record<string, unknown>;
+    return {
+      ...params,
+      ...advanced,
+    };
   };
 
   const handleRun = async () => {
@@ -190,6 +330,63 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
     refreshWalletSession();
   };
 
+  const handleApplyProtocolPreset = async () => {
+    if (!selectedProtocolPresetId) {
+      return;
+    }
+
+    setError(null);
+    setStatus("applying-protocol-preset");
+    try {
+      const params = buildPresetParams();
+      const materialized = await materializeProtocolPreset(selectedProtocolPresetId, params);
+      let nextWalletSession = materialized.walletSession;
+
+      if (selectedWalletPresetId && selectedWalletPresetId !== materialized.walletPresetId) {
+        const walletMaterialized = await materializeWalletPreset(selectedWalletPresetId, params);
+        nextWalletSession = walletMaterialized.walletSession;
+      }
+
+      setWalletSession(nextWalletSession);
+      setRouteMocks(materialized.routeMocks);
+      applyInterceptState(materialized.interceptState);
+      setMaterializedPreview(toPrettyJson(materialized));
+      setSelectedWalletPresetId(materialized.walletPresetId);
+
+      const scenario =
+        materialized.builtinScenarios.find((item) => item.id === selectedBuiltinScenarioId) ??
+        materialized.builtinScenarios[0];
+      if (scenario) {
+        setLuaScript(scenario.lua);
+      }
+
+      refreshWalletSession();
+      setStatus("protocol-preset-applied");
+    } catch (cause) {
+      setStatus("failed");
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
+  const handleApplyWalletPreset = async () => {
+    if (!selectedWalletPresetId) {
+      return;
+    }
+
+    setError(null);
+    setStatus("applying-wallet-preset");
+    try {
+      const materialized = await materializeWalletPreset(selectedWalletPresetId, buildPresetParams());
+      setWalletSession(materialized.walletSession);
+      setMaterializedPreview(toPrettyJson(materialized));
+      refreshWalletSession();
+      setStatus("wallet-preset-applied");
+    } catch (cause) {
+      setStatus("failed");
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
   return (
     <aside
       data-lunatest-devtools
@@ -228,6 +425,99 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       <button type="button" onClick={handleRun}>
         Run Scenario
       </button>
+
+      <hr />
+
+      <h4 style={{ margin: 0, marginBottom: 8 }}>Protocol Preset</h4>
+      <label htmlFor="lunatest-protocol-preset">Protocol Preset</label>
+      <select
+        id="lunatest-protocol-preset"
+        value={selectedProtocolPresetId}
+        onChange={(event) => setSelectedProtocolPresetId(event.currentTarget.value)}
+        style={{ width: "100%", marginBottom: 8 }}
+      >
+        {protocolPresets.map((preset) => (
+          <option key={preset.id} value={preset.id}>
+            {preset.label}
+          </option>
+        ))}
+      </select>
+
+      <label htmlFor="lunatest-wallet-preset">Wallet Preset</label>
+      <select
+        id="lunatest-wallet-preset"
+        value={selectedWalletPresetId}
+        onChange={(event) => setSelectedWalletPresetId(event.currentTarget.value)}
+        style={{ width: "100%", marginBottom: 8 }}
+      >
+        {walletPresets.map((preset) => (
+          <option key={preset.id} value={preset.id}>
+            {preset.label}
+          </option>
+        ))}
+      </select>
+
+      {recommendedDescriptors.length > 0 ? (
+        <>
+          <h4 style={{ margin: 0, marginBottom: 8 }}>Recommended Controls</h4>
+          {recommendedDescriptors.map((descriptor) => (
+            <div key={descriptor.key} style={{ marginBottom: 8 }}>
+              <label htmlFor={`preset-control-${descriptor.key}`}>{descriptor.label}</label>
+              <input
+                id={`preset-control-${descriptor.key}`}
+                value={presetParamValues[descriptor.key] ?? ""}
+                onChange={(event) =>
+                  setPresetParamValues((current) => ({
+                    ...current,
+                    [descriptor.key]: event.currentTarget.value,
+                  }))
+                }
+                style={{ width: "100%" }}
+              />
+            </div>
+          ))}
+        </>
+      ) : null}
+
+      <label htmlFor="lunatest-preset-params">Advanced Preset Params (JSON)</label>
+      <textarea
+        id="lunatest-preset-params"
+        value={presetParamsJson}
+        onChange={(event) => setPresetParamsJson(event.currentTarget.value)}
+        style={{ width: "100%", minHeight: 90, marginBottom: 8 }}
+      />
+
+      {selectedProtocolPreset?.builtinScenarios?.length ? (
+        <>
+          <label htmlFor="lunatest-builtin-scenario">Built-in Scenario</label>
+          <select
+            id="lunatest-builtin-scenario"
+            value={selectedBuiltinScenarioId}
+            onChange={(event) => setSelectedBuiltinScenarioId(event.currentTarget.value)}
+            style={{ width: "100%", marginBottom: 8 }}
+          >
+            {selectedProtocolPreset.builtinScenarios.map((scenario: PresetScenarioDescriptor) => (
+              <option key={scenario.id} value={scenario.id}>
+                {scenario.label}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : null}
+
+      <button type="button" onClick={handleApplyProtocolPreset}>
+        Apply Protocol Preset
+      </button>
+      <button type="button" style={{ marginLeft: 8 }} onClick={handleApplyWalletPreset}>
+        Apply Wallet Preset
+      </button>
+
+      {materializedPreview ? (
+        <>
+          <p style={{ marginTop: 10, marginBottom: 4 }}>materialized:</p>
+          <pre style={{ marginTop: 0, whiteSpace: "pre-wrap" }}>{materializedPreview}</pre>
+        </>
+      ) : null}
 
       {props.walletFallbackMode === "manual-toggle" ? (
         <>

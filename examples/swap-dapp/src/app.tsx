@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MaxUint256, formatUnits, parseUnits, type Provider } from "ethers";
-import { loadLunaConfig } from "@lunatest/core";
+import { loadLunaConfig, materializeProtocolPreset } from "@lunatest/core";
 import {
   applyInterceptState,
   getWalletSession,
@@ -32,7 +32,6 @@ import {
 import { createDemoQuote } from "./lib/demoQuote";
 import {
   applyLunaWalletAssetState,
-  createDemoLunaWalletAssets,
   patchLunaWalletAssetState,
 } from "./lib/lunaWallet";
 import { resolveSwapViewState } from "./lib/stateMachine";
@@ -314,6 +313,26 @@ export function App() {
 
       const pair = toTokenPairSeed(config);
       if (session.kind === "luna") {
+        const protocolPreset = await materializeProtocolPreset("uniswap_v3", {
+          chainId: SEPOLIA_CHAIN_ID,
+          tokenIn: pair.tokenIn.address,
+          tokenOut: pair.tokenOut.address,
+          feeTier: config.poolFee,
+          quoter: "v2",
+        });
+        const currentWalletSession = getWalletSession();
+        setWalletSession({
+          ...protocolPreset.walletSession,
+          enabled: currentWalletSession.enabled,
+          connected: currentWalletSession.connected,
+          accounts: currentWalletSession.accounts,
+          permissions: currentWalletSession.permissions,
+        });
+        if (protocolPreset.routeMocks.length > 0) {
+          setRouteMocks(protocolPreset.routeMocks);
+        }
+        applyInterceptState(protocolPreset.interceptState);
+
         const shouldSkipRpc = isPlaceholderRpcUrl(config.sepoliaRpcUrl);
         let gas = 30;
         try {
@@ -352,12 +371,7 @@ export function App() {
           // Luna Wallet 데모 경로는 RPC가 불안정해도 진행 가능해야 한다.
         }
 
-        const assets = createDemoLunaWalletAssets({
-          tokenIn: tokenInRuntime,
-          tokenOut: tokenOutRuntime,
-        });
-        setWalletSession({ assets });
-        const seeded = applyLunaWalletAssetState(assets, {
+        const seeded = applyLunaWalletAssetState(protocolPreset.walletSession.assets, {
           tokenIn: tokenInRuntime,
           tokenOut: tokenOutRuntime,
         });

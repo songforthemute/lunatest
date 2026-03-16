@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
     Parameters<(source: string | URL) => Promise<LuaConfig>>,
     ReturnType<(source: string | URL) => Promise<LuaConfig>>
   >(),
+  materializeProtocolPresetMock: vi.fn(),
+  materializeWalletPresetMock: vi.fn(),
   enableLunaRuntimeInterceptMock: vi.fn(),
   setRouteMocksMock: vi.fn(),
   applyInterceptStateMock: vi.fn(),
@@ -19,6 +21,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@lunatest/core", () => ({
   loadLunaConfig: mocks.loadLunaConfigMock,
+  materializeProtocolPreset: mocks.materializeProtocolPresetMock,
+  materializeWalletPreset: mocks.materializeWalletPresetMock,
 }));
 
 vi.mock("@lunatest/runtime-intercept", () => ({
@@ -157,6 +161,43 @@ describe("bootstrapLunaRuntime", () => {
     expect(mocks.setRouteMocksMock).toHaveBeenCalledWith(overrideRoutes);
     expect(mocks.mountLunaDevtoolsMock).not.toHaveBeenCalled();
     expect(result.unmountDevtools).toBeUndefined();
+  });
+
+  it("applies registry-backed protocol and wallet presets before devtools mount", async () => {
+    const config = createConfig();
+
+    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
+    mocks.materializeProtocolPresetMock.mockResolvedValueOnce({
+      protocolPresetId: "uniswap_v3",
+      walletPresetId: "demo_sepolia",
+      resolvedParams: {},
+      walletSession: { enabled: false, connected: false, chainId: "0xaa36a7", accounts: [], permissions: [], assets: { nativeBalance: "0", tokens: {} } },
+      interceptState: { chain: { id: 11155111 } },
+      routeMocks: [],
+      builtinScenarios: [],
+    });
+    mocks.materializeWalletPresetMock.mockResolvedValueOnce({
+      walletPresetId: "empty_wallet",
+      resolvedParams: {},
+      walletSession: { enabled: false, connected: false, chainId: "0x1", accounts: [], permissions: [], assets: { nativeBalance: "0", tokens: {} } },
+    });
+
+    await bootstrapLunaRuntime({
+      nodeEnv: "development",
+      protocolPresetId: "uniswap_v3",
+      walletPresetId: "empty_wallet",
+    });
+
+    expect(mocks.materializeProtocolPresetMock).toHaveBeenCalledWith(
+      "uniswap_v3",
+      undefined,
+    );
+    expect(mocks.materializeWalletPresetMock).toHaveBeenCalledWith(
+      "empty_wallet",
+      undefined,
+    );
+    expect(mocks.setWalletSessionMock).toHaveBeenCalledTimes(2);
   });
 
   it("initializes wallet preset and passes fallback mode to devtools", async () => {

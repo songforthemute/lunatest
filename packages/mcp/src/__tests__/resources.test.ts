@@ -15,10 +15,10 @@ describe("mcp resources and prompts", () => {
     expect(resources.map((resource) => resource.uri)).toEqual([
       "lunatest://scenarios",
       "lunatest://coverage",
-      "lunatest://components",
-      "lunatest://mocks",
-      "lunatest://protocols",
-      "lunatest://guide",
+        "lunatest://components",
+        "lunatest://mocks",
+        "lunatest://protocols",
+        "lunatest://guide",
     ]);
   });
 

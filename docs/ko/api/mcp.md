@@ -17,6 +17,15 @@
 
 보통은 `createMcpServer`로 서버를 만든 뒤 `runStdioServer`로 연결해 사용합니다.
 
+Preset registry 연동 도구:
+
+- `mock.listProtocolPresets`
+- `mock.getProtocolPreset`
+- `mock.applyProtocolPreset`
+- `mock.listWalletPresets`
+- `mock.getWalletPreset`
+- `mock.applyWalletPreset`
+
 ## stdio 서버 예시
 
 ```ts

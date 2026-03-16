@@ -51,16 +51,16 @@ export function createMcpServer(options: McpServerOptions) {
 
   const getResources = async () => {
     const scenarios = await scenarioTools.list();
-      const coverage = await coverageTools.report();
-      const components = await componentTools.tree();
-      return createResourceCatalog({
-        scenarios,
-        coverage,
-        components,
-        protocols:
-          options.protocols ?? ["uniswap_v2", "uniswap_v3", "curve", "aave"],
-      });
-    };
+    const coverage = await coverageTools.report();
+    const components = await componentTools.tree();
+    const protocols = await mockTools.listProtocolPresets();
+    return createResourceCatalog({
+      scenarios,
+      coverage,
+      components,
+      protocols: options.protocols ?? protocols.map((preset) => preset.id),
+    });
+  };
 
   return {
     async handleRequest(request: JsonRpcRequest): Promise<JsonRpcResponse> {
@@ -205,6 +205,54 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await mockTools.listPresets(),
+          };
+        }
+
+        if (request.method === "mock.listProtocolPresets") {
+          return {
+            id: request.id,
+            result: await mockTools.listProtocolPresets(),
+          };
+        }
+
+        if (request.method === "mock.getProtocolPreset") {
+          return {
+            id: request.id,
+            result: await mockTools.getProtocolPreset(String(request.params?.id ?? "")),
+          };
+        }
+
+        if (request.method === "mock.applyProtocolPreset") {
+          return {
+            id: request.id,
+            result: await mockTools.applyProtocolPreset(
+              String(request.params?.id ?? ""),
+              (request.params?.params as Record<string, unknown>) ?? {},
+            ),
+          };
+        }
+
+        if (request.method === "mock.listWalletPresets") {
+          return {
+            id: request.id,
+            result: await mockTools.listWalletPresets(),
+          };
+        }
+
+        if (request.method === "mock.getWalletPreset") {
+          return {
+            id: request.id,
+            result: await mockTools.getWalletPreset(String(request.params?.id ?? "")),
+          };
+        }
+
+        if (request.method === "mock.applyWalletPreset") {
+          return {
+            id: request.id,
+            result: await mockTools.applyWalletPreset(
+              String(request.params?.id ?? ""),
+              (request.params?.params as Record<string, unknown>) ?? {},
+            ),
           };
         }
 

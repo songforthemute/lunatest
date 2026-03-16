@@ -10,3 +10,12 @@
 - `component.*`
 
 기본 제공 리소스 6종, 프롬프트 4종을 함께 제공합니다.
+
+Preset registry 연동 도구:
+
+- `mock.listProtocolPresets`
+- `mock.getProtocolPreset`
+- `mock.applyProtocolPreset`
+- `mock.listWalletPresets`
+- `mock.getWalletPreset`
+- `mock.applyWalletPreset`

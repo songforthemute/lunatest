@@ -16,6 +16,8 @@ describe("LunaDevtoolsPanel", () => {
 
     expect(html).toContain("Runtime QA");
     expect(html).toContain("Run Scenario");
+    expect(html).toContain("Protocol Preset");
+    expect(html).toContain("Wallet Preset");
     expect(html).toContain("Apply Routes");
     expect(html).toContain("Patch State");
     expect(html).toContain("Luna Wallet");

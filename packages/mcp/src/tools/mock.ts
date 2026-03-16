@@ -1,9 +1,23 @@
-import { deepClone, deepMerge } from "@lunatest/contracts";
+import {
+  deepClone,
+  deepMerge,
+  type ProtocolPresetManifest,
+  type ProtocolPresetMaterialization,
+  type WalletPresetManifest,
+  type WalletPresetMaterialization,
+} from "@lunatest/contracts";
+import {
+  getProtocolPreset as coreGetProtocolPreset,
+  getWalletPreset as coreGetWalletPreset,
+  listProtocolPresets as coreListProtocolPresets,
+  listWalletPresets as coreListWalletPresets,
+  materializeProtocolPreset as coreMaterializeProtocolPreset,
+  materializeWalletPreset as coreMaterializeWalletPreset,
+} from "@lunatest/core";
 
 export function createMockTools(initialState: Record<string, unknown> = {}) {
   let state: Record<string, unknown> = deepClone(initialState);
   let routes: Array<Record<string, unknown>> = [];
-  const presets = ["uniswap_v2", "uniswap_v3", "curve", "aave"];
 
   return {
     async getState() {
@@ -30,7 +44,47 @@ export function createMockTools(initialState: Record<string, unknown> = {}) {
     },
 
     async listPresets() {
-      return [...presets];
+      return (await coreListProtocolPresets()).map((preset) => preset.id);
+    },
+
+    async listProtocolPresets(): Promise<ProtocolPresetManifest[]> {
+      return coreListProtocolPresets();
+    },
+
+    async getProtocolPreset(id: string): Promise<ProtocolPresetManifest | null> {
+      return coreGetProtocolPreset(id);
+    },
+
+    async applyProtocolPreset(
+      id: string,
+      params: Record<string, unknown> = {},
+    ): Promise<ProtocolPresetMaterialization> {
+      const materialized = await coreMaterializeProtocolPreset(id, params);
+      state = deepMerge(state, {
+        walletSession: materialized.walletSession,
+        ...materialized.interceptState,
+      });
+      routes = deepClone(materialized.routeMocks as unknown as Array<Record<string, unknown>>);
+      return materialized;
+    },
+
+    async listWalletPresets(): Promise<WalletPresetManifest[]> {
+      return coreListWalletPresets();
+    },
+
+    async getWalletPreset(id: string): Promise<WalletPresetManifest | null> {
+      return coreGetWalletPreset(id);
+    },
+
+    async applyWalletPreset(
+      id: string,
+      params: Record<string, unknown> = {},
+    ): Promise<WalletPresetMaterialization> {
+      const materialized = await coreMaterializeWalletPreset(id, params);
+      state = deepMerge(state, {
+        walletSession: materialized.walletSession,
+      });
+      return materialized;
     },
   };
 }

@@ -175,4 +175,71 @@ describe("mcp transport", () => {
       },
     });
   });
+
+  it("exposes protocol and wallet preset tools from registry", async () => {
+    const server = createMcpServer({});
+
+    const protocolList = await server.handleRequest({
+      id: "req-protocol-list",
+      method: "mock.listProtocolPresets",
+      params: {},
+    });
+
+    expect(protocolList).toEqual({
+      id: "req-protocol-list",
+      result: expect.arrayContaining([
+        expect.objectContaining({ id: "uniswap_v3" }),
+        expect.objectContaining({ id: "curve" }),
+      ]),
+    });
+
+    const protocolApply = await server.handleRequest({
+      id: "req-protocol-apply",
+      method: "mock.applyProtocolPreset",
+      params: {
+        id: "uniswap_v3",
+        params: {
+          chainId: 11155111,
+          quoter: "v1",
+        },
+      },
+    });
+
+    expect(protocolApply).toEqual({
+      id: "req-protocol-apply",
+      result: expect.objectContaining({
+        protocolPresetId: "uniswap_v3",
+        walletPresetId: "demo_sepolia",
+        interceptState: expect.objectContaining({
+          protocol: expect.objectContaining({
+            components: expect.objectContaining({
+              quoter: "v1",
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const walletApply = await server.handleRequest({
+      id: "req-wallet-apply",
+      method: "mock.applyWalletPreset",
+      params: {
+        id: "demo_sepolia",
+        params: {
+          address: "0x1111111111111111111111111111111111111111",
+          chainId: 11155111,
+        },
+      },
+    });
+
+    expect(walletApply).toEqual({
+      id: "req-wallet-apply",
+      result: expect.objectContaining({
+        walletPresetId: "demo_sepolia",
+        walletSession: expect.objectContaining({
+          chainId: "0xaa36a7",
+        }),
+      }),
+    });
+  });
 });

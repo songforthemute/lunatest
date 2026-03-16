@@ -10,6 +10,8 @@ import {
   isRecord,
   normalizeAddress,
   normalizeWalletPermissions,
+  parseProtocolPresetManifest,
+  parseWalletPresetManifest,
 } from "../index.js";
 
 describe("contracts utils", () => {
@@ -98,5 +100,69 @@ describe("contracts utils", () => {
       symbol: undefined,
     });
     expect(normalizeAddress("0xABC")).toBe("0xabc");
+  });
+
+  it("parses protocol preset manifest", () => {
+    expect(
+      parseProtocolPresetManifest({
+        id: "uniswap_v3",
+        label: "Uniswap V3",
+        kind: "dex",
+        supportedChains: [1, 11155111],
+        protocol: "uniswap",
+        version: "v3",
+        components: {
+          quoter: "v2",
+          router: "swap_router_02",
+        },
+        defaultWalletPreset: {
+          id: "demo_sepolia",
+        },
+        defaultInterceptState: {
+          chain: { id: 11155111 },
+        },
+        defaultRouteMocks: [],
+        builtinScenarios: [
+          {
+            id: "approval_required",
+            label: "Approval Required",
+            lua: "scenario { name = 'approval_required' }",
+          },
+        ],
+        paramsSchema: [
+          {
+            key: "chainId",
+            label: "Chain",
+            type: "chainId",
+            default: 11155111,
+          },
+        ],
+        recommendedControls: ["chainId"],
+      }),
+    ).toMatchObject({
+      id: "uniswap_v3",
+      components: {
+        quoter: "v2",
+      },
+    });
+  });
+
+  it("parses wallet preset manifest", () => {
+    expect(
+      parseWalletPresetManifest({
+        id: "demo_sepolia",
+        label: "Demo Sepolia Wallet",
+        kind: "wallet",
+        supportedChains: [11155111],
+        defaultSession: {
+          chainId: "0xaa36a7",
+        },
+        recommendedControls: ["address"],
+      }),
+    ).toMatchObject({
+      id: "demo_sepolia",
+      kind: "wallet",
+      supportedChains: [11155111],
+    });
   });
 });

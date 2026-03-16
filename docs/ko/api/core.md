@@ -7,11 +7,20 @@
 - `LunaProvider`
 - `LunaProviderOptions`
 - `loadLunaConfig(source)`
+- `listProtocolPresets()`
+- `getProtocolPreset(id)`
+- `materializeProtocolPreset(id, params)`
+- `listWalletPresets()`
+- `getWalletPreset(id)`
+- `materializeWalletPreset(id, params?)`
 - `createScenarioRuntime(config)`
 - `LuaConfig`
 - `RouteMock`
 
 개발 서버 브라우저 인터셉트는 [API: @lunatest/runtime-intercept](./runtime-intercept.md)에서 확인할 수 있습니다.
+
+Preset registry는 built-in Lua manifest를 catalog/API로 승격한 계층입니다.  
+`materializeProtocolPreset()`은 `walletSession`, `interceptState`, `routeMocks`, `builtinScenarios`를 함께 반환합니다.
 
 ## `LunaProviderOptions`
 
