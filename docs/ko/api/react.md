@@ -46,6 +46,11 @@ void bootstrapLunaRuntime({
 
 `walletFallbackMode`는 인브라우저 위젯에 Luna Wallet 토글을 노출할지 결정합니다.  
 `walletPreset`은 주소, 체인, 권한, seeded asset state를 초기값으로 주입합니다.
+`enable` 또는 `configOverride.enable`을 따로 주지 않으면 `bootstrapLunaRuntime()`는 development에서만 자동 활성화됩니다.  
+production에서 켜려면 `enable: true` 또는 `configOverride: { enable: true }`를 명시해야 합니다.
+
+반환값에는 `enabled`, `configLoaded`, `config?`, `unmountDevtools?`가 들어갑니다.  
+production 선제 게이트에서 막힌 경우에는 `configLoaded: false`가 반환되고 Lua source도 읽지 않습니다.
 
 세밀한 제어가 필요하면 `enableLunaIntercept` + `mountLunaDevtools`를 직접 조합하는 고급 모드를 사용하면 됩니다.
 

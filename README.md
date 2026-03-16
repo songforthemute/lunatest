@@ -206,6 +206,8 @@ void bootstrapLunaRuntime({
 });
 ```
 
+Production bootstrap is explicit opt-in. If you want runtime intercept outside development, pass `enable: true` or `configOverride: { enable: true }`.
+
 ### 6) Vitest matcher
 
 ```ts

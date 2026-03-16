@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { LuaConfig } from "@lunatest/core";
+import type { LuaConfig } from "@lunatest/core/browser";
 import type { RouteMock } from "@lunatest/contracts";
 
 import { bootstrapLunaRuntime } from "../bootstrap";
@@ -14,13 +14,14 @@ const mocks = vi.hoisted(() => ({
   materializeProtocolPresetMock: vi.fn(),
   materializeWalletPresetMock: vi.fn(),
   enableLunaRuntimeInterceptMock: vi.fn(),
+  resolveEnabledMock: vi.fn(),
   setRouteMocksMock: vi.fn(),
   applyInterceptStateMock: vi.fn(),
   setWalletSessionMock: vi.fn(),
   mountLunaDevtoolsMock: vi.fn(),
 }));
 
-vi.mock("@lunatest/core", () => ({
+vi.mock("@lunatest/core/browser", () => ({
   loadLunaConfig: mocks.loadLunaConfigMock,
   createPresetRegistry: mocks.createPresetRegistryMock,
   materializeProtocolPreset: mocks.materializeProtocolPresetMock,
@@ -29,6 +30,7 @@ vi.mock("@lunatest/core", () => ({
 
 vi.mock("@lunatest/runtime-intercept", () => ({
   enableLunaRuntimeIntercept: mocks.enableLunaRuntimeInterceptMock,
+  resolveEnabled: mocks.resolveEnabledMock,
   setRouteMocks: mocks.setRouteMocksMock,
   applyInterceptState: mocks.applyInterceptStateMock,
   setWalletSession: mocks.setWalletSessionMock,
@@ -52,22 +54,54 @@ afterEach(() => {
 
 describe("bootstrapLunaRuntime", () => {
   it("returns disabled result when runtime intercept is not enabled", async () => {
-    const config = createConfig();
-    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
-    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
-    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(false);
+    mocks.resolveEnabledMock.mockReturnValueOnce(false);
 
-    const result = await bootstrapLunaRuntime();
+    const result = await bootstrapLunaRuntime({
+      nodeEnv: "production",
+    });
 
-    expect(mocks.loadLunaConfigMock).toHaveBeenCalledWith("./lunatest.lua");
+    expect(mocks.loadLunaConfigMock).not.toHaveBeenCalled();
+    expect(mocks.createPresetRegistryMock).not.toHaveBeenCalled();
+    expect(mocks.enableLunaRuntimeInterceptMock).not.toHaveBeenCalled();
     expect(result).toEqual({
       enabled: false,
-      config,
+      configLoaded: false,
     });
     expect(mocks.setRouteMocksMock).not.toHaveBeenCalled();
     expect(mocks.applyInterceptStateMock).not.toHaveBeenCalled();
     expect(mocks.setWalletSessionMock).not.toHaveBeenCalled();
     expect(mocks.mountLunaDevtoolsMock).not.toHaveBeenCalled();
+  });
+
+  it("loads config in production when enable is explicitly true", async () => {
+    const config = createConfig();
+    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
+
+    const result = await bootstrapLunaRuntime({
+      nodeEnv: "production",
+      enable: true,
+      mountDevtools: false,
+    });
+
+    expect(mocks.loadLunaConfigMock).toHaveBeenCalledWith("./lunatest.lua");
+    expect(mocks.enableLunaRuntimeInterceptMock).toHaveBeenCalledWith(
+      {
+        enable: true,
+        intercept: {
+          mode: "strict",
+          mockResponses: {},
+        },
+      },
+      "production",
+    );
+    expect(result).toEqual({
+      enabled: true,
+      configLoaded: true,
+      config,
+      unmountDevtools: undefined,
+    });
   });
 
   it("loads config and applies routes/state in enabled development mode", async () => {
@@ -94,6 +128,7 @@ describe("bootstrapLunaRuntime", () => {
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
     mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
     mocks.mountLunaDevtoolsMock.mockReturnValueOnce(() => undefined);
 
@@ -125,6 +160,7 @@ describe("bootstrapLunaRuntime", () => {
       },
     });
     expect(result.enabled).toBe(true);
+    expect(result.configLoaded).toBe(true);
     expect(typeof result.unmountDevtools).toBe("function");
   });
 
@@ -152,6 +188,7 @@ describe("bootstrapLunaRuntime", () => {
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
     mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
 
     const result = await bootstrapLunaRuntime({
@@ -167,6 +204,7 @@ describe("bootstrapLunaRuntime", () => {
     expect(mocks.setRouteMocksMock).toHaveBeenCalledWith(overrideRoutes);
     expect(mocks.mountLunaDevtoolsMock).not.toHaveBeenCalled();
     expect(result.unmountDevtools).toBeUndefined();
+    expect(result.configLoaded).toBe(true);
   });
 
   it("applies registry-backed protocol and wallet presets before devtools mount", async () => {
@@ -174,6 +212,7 @@ describe("bootstrapLunaRuntime", () => {
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
     mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
     mocks.materializeProtocolPresetMock.mockResolvedValueOnce({
       protocolPresetId: "uniswap_v3",
@@ -214,6 +253,7 @@ describe("bootstrapLunaRuntime", () => {
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
     mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
     mocks.mountLunaDevtoolsMock.mockReturnValueOnce(() => undefined);
 
@@ -253,6 +293,7 @@ describe("bootstrapLunaRuntime", () => {
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
     mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "project-registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
     mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
 
     await bootstrapLunaRuntime({

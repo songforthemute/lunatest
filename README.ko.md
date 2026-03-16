@@ -183,6 +183,8 @@ void bootstrapLunaRuntime({
 });
 ```
 
+production에서는 자동 활성화되지 않습니다. 개발 환경 외에서 런타임 인터셉트를 켜려면 `enable: true` 또는 `configOverride: { enable: true }`를 명시해야 합니다.
+
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
 
 한국어 문서 인덱스: `docs/ko/index.md`

@@ -4,7 +4,7 @@ import {
   type LunaWalletAssetState,
   type LunaWalletPermission,
 } from "@lunatest/contracts";
-import type { LuaConfig } from "@lunatest/core";
+import type { LuaConfig } from "@lunatest/core/browser";
 import {
   loadLunaConfig,
   createPresetRegistry,
@@ -12,10 +12,11 @@ import {
   materializeWalletPreset,
   type PresetRegistry,
   type ProjectPresetSources,
-} from "@lunatest/core";
+} from "@lunatest/core/browser";
 import {
   applyInterceptState,
   enableLunaRuntimeIntercept,
+  resolveEnabled,
   setWalletSession,
   setRouteMocks,
   type LunaRuntimeInterceptConfig,
@@ -25,6 +26,7 @@ import { mountLunaDevtools } from "./devtools/mount.js";
 import { resolveNodeEnv } from "./node-env.js";
 
 export type LunaBootstrapOptions = {
+  enable?: boolean;
   source?: string | URL;
   nodeEnv?: string;
   mountDevtools?: boolean;
@@ -47,15 +49,18 @@ export type LunaBootstrapOptions = {
 
 export type LunaBootstrapResult = {
   enabled: boolean;
+  configLoaded: boolean;
   unmountDevtools?: () => void;
-  config: LuaConfig;
+  config?: LuaConfig;
 };
 
 function toRuntimeConfig(
   config: LuaConfig,
+  enable: boolean | undefined,
   configOverride: Partial<LunaRuntimeInterceptConfig> | undefined,
 ): LunaRuntimeInterceptConfig {
   return {
+    enable,
     ...configOverride,
     intercept: {
       ...configOverride?.intercept,
@@ -68,23 +73,53 @@ function toRuntimeConfig(
   };
 }
 
+function resolveBootstrapEnabled(
+  options: LunaBootstrapOptions,
+  nodeEnv: string | undefined,
+): boolean {
+  if (typeof options.enable === "boolean") {
+    return options.enable;
+  }
+
+  return resolveEnabled(
+    {
+      enable: options.configOverride?.enable,
+    },
+    nodeEnv,
+  );
+}
+
 export async function bootstrapLunaRuntime(
   options: LunaBootstrapOptions = {},
 ): Promise<LunaBootstrapResult> {
-  const config = await loadLunaConfig(options.source ?? "./lunatest.lua");
   const nodeEnv = resolveNodeEnv(options.nodeEnv);
+  const bootstrapEnabled = resolveBootstrapEnabled(options, nodeEnv);
+
+  if (!bootstrapEnabled) {
+    return {
+      enabled: false,
+      configLoaded: false,
+    };
+  }
+
+  const config = await loadLunaConfig(options.source ?? "./lunatest.lua");
   const presetRegistry =
     options.presetRegistry ??
     createPresetRegistry({
       projectSources: options.projectPresetSources,
     });
-  const runtimeConfig = toRuntimeConfig(config, options.configOverride);
+  const runtimeConfig = toRuntimeConfig(
+    config,
+    options.enable ?? options.configOverride?.enable,
+    options.configOverride,
+  );
   const enabled = enableLunaRuntimeIntercept(runtimeConfig, nodeEnv);
 
   if (!enabled) {
     return {
       enabled: false,
       config,
+      configLoaded: true,
     };
   }
 
@@ -144,6 +179,7 @@ export async function bootstrapLunaRuntime(
 
   return {
     enabled: true,
+    configLoaded: true,
     unmountDevtools,
     config,
   };

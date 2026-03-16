@@ -88,10 +88,21 @@ void bootstrapLunaRuntime({
 });
 ```
 
+Production note:
+
+- automatic activation happens only in `development`
+- to force-enable in production, pass `enable: true` or `configOverride: { enable: true }`
+
 Activation rule:
 
 - `enable?: boolean` is explicit override (`lunatest.lua` or config override)
 - if omitted, intercept is enabled only when the resolved `nodeEnv` is `"development"`
+
+If your browser app directly imports Lua parsing or preset registry helpers, prefer:
+
+```ts
+import { loadLunaConfig, createPresetRegistry } from "@lunatest/core/browser";
+```
 
 ## React Example
 

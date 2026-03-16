@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
-import { loadLunaConfig } from "@lunatest/core";
+import { loadLunaConfig } from "@lunatest/core/browser";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SAMPLE_LUA_PATH = path.resolve(TEST_DIR, "../../../lunatest.lua");

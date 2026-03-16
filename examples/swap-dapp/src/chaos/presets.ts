@@ -1,5 +1,5 @@
 import { asRecord } from "@lunatest/contracts";
-import { loadLunaConfig, type LuaConfig } from "@lunatest/core";
+import { loadLunaConfig, type LuaConfig } from "@lunatest/core/browser";
 import type { RouteMock } from "@lunatest/runtime-intercept";
 import type { ChaosPreset } from "../types";
 

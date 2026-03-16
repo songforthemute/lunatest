@@ -4,6 +4,21 @@ function seemsInlineLua(input: string): boolean {
   return input.includes("\n") || input.includes("scenario {") || input.includes("scenario{");
 }
 
+function canUseBrowserFetch(): boolean {
+  return typeof document !== "undefined" && typeof fetch === "function";
+}
+
+function getBuiltinModule<T>(specifier: string): T | null {
+  if (
+    typeof process === "undefined" ||
+    typeof process.getBuiltinModule !== "function"
+  ) {
+    return null;
+  }
+
+  return process.getBuiltinModule(specifier) as T | null;
+}
+
 export async function readLuaSource(source: LuaSource): Promise<string> {
   if (source instanceof URL) {
     if (source.protocol === "http:" || source.protocol === "https:") {
@@ -23,19 +38,20 @@ export async function readLuaSource(source: LuaSource): Promise<string> {
       throw new Error(`Unsupported Lua source URL protocol: ${source.protocol}`);
     }
 
-    const [{ fileURLToPath }, { readFile }] = await Promise.all([
-      import("node:url"),
-      import("node:fs/promises"),
-    ]);
+    const urlModule = getBuiltinModule<typeof import("node:url")>("url");
+    const fsModule = getBuiltinModule<typeof import("node:fs/promises")>("fs/promises");
+    if (!urlModule || !fsModule) {
+      throw new Error(`File URL source is unavailable in this runtime: ${source.toString()}`);
+    }
 
-    return readFile(fileURLToPath(source), "utf8");
+    return fsModule.readFile(urlModule.fileURLToPath(source), "utf8");
   }
 
   if (seemsInlineLua(source)) {
     return source;
   }
 
-  if (typeof document !== "undefined" && typeof fetch === "function") {
+  if (canUseBrowserFetch()) {
     const response = await fetch(source);
     if (!response.ok) {
       throw new Error(`Failed to load Lua source: ${source} (${response.status})`);
@@ -44,10 +60,14 @@ export async function readLuaSource(source: LuaSource): Promise<string> {
     return response.text();
   }
 
-  try {
-    const { readFile } = await import("node:fs/promises");
-    return await readFile(source, "utf8");
-  } catch {
-    return source;
+  const fsModule = getBuiltinModule<typeof import("node:fs/promises")>("fs/promises");
+  if (fsModule) {
+    try {
+      return await fsModule.readFile(source, "utf8");
+    } catch {
+      return source;
+    }
   }
+
+  return source;
 }

@@ -90,10 +90,21 @@ void bootstrapLunaRuntime({
 });
 ```
 
+production에서는 기본 자동 활성화가 되지 않습니다.
+
+- 자동 활성화: `development`에서만 동작
+- production 강제 활성화: `enable: true` 또는 `configOverride: { enable: true }`
+
 활성화 규칙은 다음과 같습니다.
 
 - `enable` 값을 직접 넣으면 그 값이 최우선입니다.
 - `enable`을 생략하면 `nodeEnv`가 `"development"`일 때만 자동 활성화됩니다.
+
+브라우저 앱에서 Lua 파싱이나 preset registry helper를 직접 가져다 쓸 때는 아래 경로를 권장합니다.
+
+```ts
+import { loadLunaConfig, createPresetRegistry } from "@lunatest/core/browser";
+```
 
 ## React 통합 예시
 

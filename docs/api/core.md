@@ -7,6 +7,7 @@
 - `LunaProvider`
 - `LunaProviderOptions`
 - `loadLunaConfig(source)`
+- `@lunatest/core/browser`
 - `listProtocolPresets()`
 - `getProtocolPreset(id)`
 - `materializeProtocolPreset(id, params)`
@@ -26,6 +27,9 @@
 
 Preset registry는 built-in Lua manifest를 catalog/API로 승격한 계층입니다.  
 `materializeProtocolPreset()`은 `walletSession`, `interceptState`, `routeMocks`, `builtinScenarios`를 함께 반환합니다.
+
+브라우저 앱에서 Lua config/preset registry를 직접 소비할 때는 `@lunatest/core/browser` subpath를 권장합니다.  
+Node 전용 helper인 `loadProjectPresetSources()`는 root `@lunatest/core`에만 남고 browser subpath에서는 노출되지 않습니다.
 
 Local preset diagnostics도 같은 계층에서 확인할 수 있습니다.
 

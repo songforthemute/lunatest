@@ -1,7 +1,5 @@
-export const sdkName = "@lunatest/core";
+export const sdkName = "@lunatest/core/browser";
 
-export { LunaProvider } from "./provider/luna-provider.js";
-export type { LunaProviderOptions } from "./provider/luna-provider.js";
 export { loadLunaConfig } from "./config/lua-config.js";
 export {
   createPresetRegistry,
@@ -16,7 +14,6 @@ export {
   materializeWalletPreset,
 } from "./presets/registry.js";
 export type { PresetRegistry, PresetRegistryOptions, ProjectPresetSources } from "./presets/registry.js";
-export { loadProjectPresetSources } from "./presets/project-sources.node.js";
 export {
   applyInterceptState,
   createScenarioRuntime,

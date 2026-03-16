@@ -7,10 +7,10 @@ import {
   getWalletPreset,
   listProtocolPresets,
   listWalletPresets,
-  loadProjectPresetSources,
   materializeProtocolPreset,
   materializeWalletPreset,
 } from "../registry";
+import { loadProjectPresetSources } from "../project-sources.node";
 import { writeFile, mkdir } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";

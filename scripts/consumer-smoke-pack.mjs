@@ -118,8 +118,10 @@ import { loadLunaConfig, executeLuaScenario } from "@lunatest/core";
 import { bootstrapLunaRuntime } from "@lunatest/react";
 import { setRouteMocks } from "@lunatest/runtime-intercept";
 import { createMcpServer } from "@lunatest/mcp";
+import { loadLunaConfig as loadLunaConfigBrowser } from "@lunatest/core/browser";
 
 if (typeof loadLunaConfig !== "function") throw new Error("loadLunaConfig export missing");
+if (typeof loadLunaConfigBrowser !== "function") throw new Error("browser loadLunaConfig export missing");
 if (typeof executeLuaScenario !== "function") throw new Error("executeLuaScenario export missing");
 if (typeof bootstrapLunaRuntime !== "function") throw new Error("bootstrapLunaRuntime export missing");
 if (typeof setRouteMocks !== "function") throw new Error("setRouteMocks export missing");

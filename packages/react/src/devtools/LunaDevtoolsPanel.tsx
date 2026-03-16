@@ -10,7 +10,7 @@ import {
   materializeProtocolPreset,
   materializeWalletPreset,
   type PresetRegistry,
-} from "@lunatest/core";
+} from "@lunatest/core/browser";
 import type {
   PresetDiagnostic,
   PresetParamDescriptor,

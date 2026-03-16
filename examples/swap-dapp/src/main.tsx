@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 import teamSwapPresetSource from "../lunatest/presets/protocol/team_swap.lua?raw";
 import teamWalletPresetSource from "../lunatest/presets/wallet/team_wallet.lua?raw";
 
@@ -33,7 +33,7 @@ void bootstrapLunaRuntime({
     address: "0x1111111111111111111111111111111111111111",
     chainId: 11155111,
   },
-}).catch((error) => {
+}).catch((error: unknown) => {
   console.error("[lunatest] bootstrap failed", error);
 });
 

@@ -10,6 +10,7 @@
     "pack:check-integrity": "node scripts/check-pack-integrity.mjs",
     "consumer-smoke:pack": "node scripts/consumer-smoke-pack.mjs",
     "consumer-smoke:npm": "node scripts/consumer-smoke-npm.mjs",
+    "consumer-smoke:npm:next": "node scripts/consumer-smoke-npm.mjs --channel=next --stable-tag=latest --next-tag=next",
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",

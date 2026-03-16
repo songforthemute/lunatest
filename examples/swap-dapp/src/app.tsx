@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MaxUint256, formatUnits, parseUnits, type Provider } from "ethers";
-import { loadLunaConfig } from "@lunatest/core";
+import { loadLunaConfig } from "@lunatest/core/browser";
 import {
   applyInterceptState,
   getWalletSession,

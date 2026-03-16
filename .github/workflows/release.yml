@@ -42,3 +42,5 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
       - if: steps.changesets.outputs.published == 'true'
         run: pnpm consumer-smoke:npm -- --tag=latest
+      - if: steps.changesets.outputs.published == 'true'
+        run: pnpm consumer-smoke:npm:next
