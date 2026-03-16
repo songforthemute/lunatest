@@ -1,0 +1,17 @@
+# Release Notes Template
+
+Changesets custom changelog generator source:
+
+- config: `.changeset/config.json`
+- generator: `.changeset/changelog.cjs`
+
+This file defines the section labels used by the generator.
+
+## Summary
+- What changed for users?
+
+## Breaking
+- None
+
+## Packages
+- `@lunatest/<package-name>@<version>`: <change type / short note>
