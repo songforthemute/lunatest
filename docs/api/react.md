@@ -21,7 +21,7 @@ React 앱에서는 `LunaTestProvider` + `useLunaTest` 조합을 기본 패턴으
 ## `bootstrapLunaRuntime(options?)`
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 
 const nodeEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
@@ -44,6 +44,7 @@ void bootstrapLunaRuntime({
 });
 ```
 
+`@lunatest/react/browser`는 browser-only bootstrap/devtools 경로를 위한 권장 import입니다.
 `walletFallbackMode`는 인브라우저 위젯에서 Luna Wallet 토글 UI를 노출할지 결정합니다.
 `walletPreset`은 주소/체인/권한/seeded asset state를 초기값으로 주입합니다.
 `enable` 또는 `configOverride.enable`을 주지 않으면 `bootstrapLunaRuntime()`는 development에서만 자동 활성화됩니다.

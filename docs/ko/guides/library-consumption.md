@@ -77,7 +77,7 @@ scenario {
 ### 2) 엔트리 파일(`src/main.tsx`)에서 1줄 부트스트랩
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 
 const nodeEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
@@ -104,6 +104,12 @@ production에서는 기본 자동 활성화가 되지 않습니다.
 
 ```ts
 import { loadLunaConfig, createPresetRegistry } from "@lunatest/core/browser";
+```
+
+browser bootstrap/devtools만 필요할 때는 아래 경로를 권장합니다.
+
+```ts
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 ```
 
 ## React 통합 예시

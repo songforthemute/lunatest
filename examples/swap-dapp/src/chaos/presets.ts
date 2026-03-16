@@ -1,11 +1,19 @@
 import { asRecord } from "@lunatest/contracts";
-import { loadLunaConfig, type LuaConfig } from "@lunatest/core/browser";
 import type { RouteMock } from "@lunatest/runtime-intercept";
 import type { ChaosPreset } from "../types";
 
-type LuaConfigWithPresets = LuaConfig & {
+type LuaConfigShape = {
   presets?: Record<string, unknown>;
 };
+
+type LuaConfigWithPresets = LuaConfigShape & {
+  presets?: Record<string, unknown>;
+};
+
+async function loadLuaConfigFromBrowser(luaSource: string) {
+  const module = await import("@lunatest/core/browser");
+  return module.loadLunaConfig(luaSource) as Promise<LuaConfigShape>;
+}
 
 const HIGH_SLIPPAGE_LUA = `scenario {
   name = "high_slippage_80",
@@ -154,7 +162,7 @@ export async function loadLuaSource(path = "./lunatest.lua"): Promise<string> {
 }
 
 export async function parseChaosPresetsFromLua(luaSource: string): Promise<ChaosPreset[]> {
-  const parsed = (await loadLunaConfig(luaSource)) as LuaConfigWithPresets;
+  const parsed = (await loadLuaConfigFromBrowser(luaSource)) as LuaConfigWithPresets;
   const presets = asRecord(parsed.presets);
   if (!presets) {
     return DEFAULT_CHAOS_PRESETS;

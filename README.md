@@ -193,7 +193,7 @@ scenario {
 `src/main.tsx` (one-line bootstrap + bundler-independent env detection):
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 
 const nodeEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
@@ -206,7 +206,7 @@ void bootstrapLunaRuntime({
 });
 ```
 
-Production bootstrap is explicit opt-in. If you want runtime intercept outside development, pass `enable: true` or `configOverride: { enable: true }`.
+Production bootstrap is explicit opt-in. If you want runtime intercept outside development, pass `enable: true` or `configOverride: { enable: true }`. For browser-only bootstrap/devtools, prefer the `@lunatest/react/browser` entry.
 
 ### 6) Vitest matcher
 

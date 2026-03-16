@@ -75,7 +75,7 @@ scenario {
 Enable once in app entry (`src/main.tsx`):
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 
 const nodeEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
@@ -102,6 +102,12 @@ If your browser app directly imports Lua parsing or preset registry helpers, pre
 
 ```ts
 import { loadLunaConfig, createPresetRegistry } from "@lunatest/core/browser";
+```
+
+If you only need browser bootstrap/devtools, prefer:
+
+```ts
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 ```
 
 ## React Example

@@ -170,7 +170,7 @@ scenario {
 `src/main.tsx` 1줄 부트스트랩 패턴(번들러 독립 env 감지):
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 
 const nodeEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
@@ -183,7 +183,7 @@ void bootstrapLunaRuntime({
 });
 ```
 
-production에서는 자동 활성화되지 않습니다. 개발 환경 외에서 런타임 인터셉트를 켜려면 `enable: true` 또는 `configOverride: { enable: true }`를 명시해야 합니다.
+production에서는 자동 활성화되지 않습니다. 개발 환경 외에서 런타임 인터셉트를 켜려면 `enable: true` 또는 `configOverride: { enable: true }`를 명시해야 합니다. browser-only bootstrap/devtools에는 `@lunatest/react/browser` 경로를 권장합니다.
 
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
 

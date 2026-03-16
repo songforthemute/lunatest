@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MaxUint256, formatUnits, parseUnits, type Provider } from "ethers";
-import { loadLunaConfig } from "@lunatest/core/browser";
 import {
   applyInterceptState,
   getWalletSession,
@@ -118,6 +117,11 @@ function readInterceptStateSafe(): Record<string, unknown> {
   } catch {
     return {};
   }
+}
+
+async function loadLuaConfigFromBrowser(luaSource: string) {
+  const module = await import("@lunatest/core/browser");
+  return module.loadLunaConfig(luaSource);
 }
 
 export function App() {
@@ -684,7 +688,7 @@ export function App() {
       },
     ) => {
       const before = readInterceptStateSafe();
-      const parsed = await loadLunaConfig(lua);
+      const parsed = await loadLuaConfigFromBrowser(lua);
 
       if (parsed.intercept?.routes && parsed.intercept.routes.length > 0) {
         setRouteMocks(parsed.intercept.routes);

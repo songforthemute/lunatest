@@ -63,7 +63,7 @@ scenario {
 ## 3) 엔트리 파일에 1줄 추가 (`src/main.tsx`)
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react";
+import { bootstrapLunaRuntime } from "@lunatest/react/browser";
 
 const nodeEnv =
   (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
