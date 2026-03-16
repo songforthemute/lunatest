@@ -1,10 +1,12 @@
 import {
   asRecord,
   createLunaWalletSession,
+  createPresetDiagnostic,
   deepMerge,
   parseProtocolPresetManifest,
   parseWalletPresetManifest,
   qualifyPresetId,
+  type PresetDiagnostic,
   type PresetParamDescriptor,
   type PresetSource,
   type ProtocolPresetCatalogEntry,
@@ -26,14 +28,24 @@ export type ProjectPresetSources = {
 };
 
 export type PresetRegistry = {
-  protocolSources: Record<string, { source: PresetSource; input: PresetSourceInput }>;
-  walletSources: Record<string, { source: PresetSource; input: PresetSourceInput }>;
-  protocolCache: Map<string, Promise<LoadedProtocolPreset>>;
-  walletCache: Map<string, Promise<LoadedWalletPreset>>;
+  protocolSources: Record<string, { source: PresetSource; input: PresetSourceInput; localId: string }>;
+  walletSources: Record<string, { source: PresetSource; input: PresetSourceInput; localId: string }>;
+  protocolCache: Map<string, Promise<LoadedProtocolPreset | null>>;
+  walletCache: Map<string, Promise<LoadedWalletPreset | null>>;
+  diagnostics: Map<string, PresetDiagnostic>;
+  protocolQualifiedOwners: Map<string, string>;
+  walletQualifiedOwners: Map<string, string>;
+  hasProjectSources: boolean;
 };
 
 export type PresetRegistryOptions = {
   projectSources?: ProjectPresetSources;
+};
+
+export type ValidatePresetContext = {
+  source: PresetSource;
+  expectedId: string;
+  registry?: PresetRegistry;
 };
 
 type LoadedProtocolPreset = {
@@ -91,29 +103,51 @@ function resolveParamDefaults(
   return resolved;
 }
 
+function getSourcePath(input: PresetSourceInput): string | undefined {
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  if (typeof input === "string" && !input.includes("\n")) {
+    return input;
+  }
+
+  return undefined;
+}
+
+function diagnosticKey(diagnostic: PresetDiagnostic): string {
+  return [
+    diagnostic.source,
+    diagnostic.phase,
+    diagnostic.code,
+    diagnostic.qualifiedId ?? "none",
+    diagnostic.path ?? "none",
+  ].join(":");
+}
+
+function addDiagnostic(registry: PresetRegistry, diagnostic: PresetDiagnostic): void {
+  registry.diagnostics.set(diagnosticKey(diagnostic), diagnostic);
+}
+
 function buildSourceMap(
   builtins: Record<string, URL>,
   project: Record<string, PresetSourceInput> | undefined,
-): Record<string, { source: PresetSource; input: PresetSourceInput }> {
-  const sources: Record<string, { source: PresetSource; input: PresetSourceInput }> = {};
+): Record<string, { source: PresetSource; input: PresetSourceInput; localId: string }> {
+  const sources: Record<string, { source: PresetSource; input: PresetSourceInput; localId: string }> = {};
 
   for (const [id, input] of Object.entries(builtins)) {
     sources[qualifyPresetId("builtin", id)] = {
       source: "builtin",
       input,
+      localId: id,
     };
   }
 
-  const seenProjectIds = new Set<string>();
   for (const [id, input] of Object.entries(project ?? {})) {
-    const qualifiedId = qualifyPresetId("project", id);
-    if (seenProjectIds.has(qualifiedId)) {
-      throw new Error(`Duplicate project preset id: ${qualifiedId}`);
-    }
-    seenProjectIds.add(qualifiedId);
-    sources[qualifiedId] = {
+    sources[qualifyPresetId("project", id)] = {
       source: "project",
       input,
+      localId: id,
     };
   }
 
@@ -165,6 +199,247 @@ function resolveQualifiedId(
   return null;
 }
 
+function validateRecommendedControls(
+  qualifiedId: string,
+  source: PresetSource,
+  path: string | undefined,
+  recommendedControls: string[],
+  schema: PresetParamDescriptor[],
+): PresetDiagnostic[] {
+  const schemaKeys = new Set(schema.map((item) => item.key));
+  const diagnostics: PresetDiagnostic[] = [];
+
+  for (const control of recommendedControls) {
+    if (!schemaKeys.has(control)) {
+      diagnostics.push(
+        createPresetDiagnostic({
+          code: "preset_recommended_control_unknown",
+          message: `recommendedControls references missing param: ${control}`,
+          severity: "error",
+          phase: "manifest",
+          source,
+          qualifiedId,
+          path,
+          hint: "Add the key to paramsSchema or remove it from recommendedControls.",
+        }),
+      );
+    }
+  }
+
+  return diagnostics;
+}
+
+function validateProtocolEntry(
+  registry: PresetRegistry,
+  entry: ProtocolPresetCatalogEntry,
+  sourcePath: string | undefined,
+  expectedId: string,
+): PresetDiagnostic[] {
+  const diagnostics = validateRecommendedControls(
+    entry.qualifiedId,
+    entry.source,
+    sourcePath,
+    entry.recommendedControls,
+    entry.paramsSchema,
+  );
+
+  if (entry.id !== expectedId) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_id_mismatch",
+        message: `manifest.id does not match discovered id: expected ${expectedId}, got ${entry.id}`,
+        severity: "error",
+        phase: "manifest",
+        source: entry.source,
+        qualifiedId: entry.qualifiedId,
+        path: sourcePath,
+        hint: "Match manifest.id to the file-based discovery id.",
+      }),
+    );
+  }
+
+  if (!resolveQualifiedId(registry, entry.defaultWalletPreset.id, "wallet")) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_wallet_reference_missing",
+        message: `defaultWalletPreset.id not found: ${entry.defaultWalletPreset.id}`,
+        severity: "error",
+        phase: "manifest",
+        source: entry.source,
+        qualifiedId: entry.qualifiedId,
+        path: sourcePath,
+        hint: "Create the referenced wallet preset or point to an existing qualified id.",
+      }),
+    );
+  }
+
+  const existingOwner = registry.protocolQualifiedOwners.get(entry.qualifiedId);
+  const owner = sourcePath ?? expectedId;
+  if (existingOwner && existingOwner !== owner) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_duplicate_qualified_id",
+        message: `duplicate protocol preset qualifiedId: ${entry.qualifiedId}`,
+        severity: "error",
+        phase: "registry",
+        source: entry.source,
+        qualifiedId: entry.qualifiedId,
+        path: sourcePath,
+        hint: "Rename manifest.id or change the project-local preset id.",
+      }),
+    );
+  }
+
+  return diagnostics;
+}
+
+function validateWalletEntry(
+  registry: PresetRegistry,
+  entry: WalletPresetCatalogEntry,
+  sourcePath: string | undefined,
+  expectedId: string,
+): PresetDiagnostic[] {
+  const diagnostics = validateRecommendedControls(
+    entry.qualifiedId,
+    entry.source,
+    sourcePath,
+    entry.recommendedControls ?? [],
+    entry.paramsSchema ?? [],
+  );
+
+  if (entry.id !== expectedId) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_id_mismatch",
+        message: `manifest.id does not match discovered id: expected ${expectedId}, got ${entry.id}`,
+        severity: "error",
+        phase: "manifest",
+        source: entry.source,
+        qualifiedId: entry.qualifiedId,
+        path: sourcePath,
+        hint: "Match manifest.id to the file-based discovery id.",
+      }),
+    );
+  }
+
+  const existingOwner = registry.walletQualifiedOwners.get(entry.qualifiedId);
+  const owner = sourcePath ?? expectedId;
+  if (existingOwner && existingOwner !== owner) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_duplicate_qualified_id",
+        message: `duplicate wallet preset qualifiedId: ${entry.qualifiedId}`,
+        severity: "error",
+        phase: "registry",
+        source: entry.source,
+        qualifiedId: entry.qualifiedId,
+        path: sourcePath,
+        hint: "Rename manifest.id or change the project-local preset id.",
+      }),
+    );
+  }
+
+  return diagnostics;
+}
+
+export async function validateProtocolPresetSource(
+  source: PresetSourceInput,
+  context: ValidatePresetContext,
+): Promise<{ entry: ProtocolPresetCatalogEntry | null; diagnostics: PresetDiagnostic[]; materialize?: LoadedProtocolPreset["materialize"] }> {
+  const diagnostics: PresetDiagnostic[] = [];
+  const path = getSourcePath(source);
+
+  try {
+    const module = await loadLuaPresetModule(source);
+    const entry = toProtocolEntry(parseProtocolPresetManifest(module.manifest), context.source);
+    diagnostics.push(
+      ...validateProtocolEntry(
+        context.registry ?? createPresetRegistry(),
+        entry,
+        path,
+        context.expectedId,
+      ),
+    );
+
+    if (diagnostics.some((item) => item.severity === "error")) {
+      return { entry: null, diagnostics };
+    }
+
+    return {
+      entry,
+      diagnostics,
+      materialize: async (params = {}) => (await module.materialize(params)) as Record<string, unknown>,
+    };
+  } catch (error) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_manifest_invalid",
+        message: error instanceof Error ? error.message : String(error),
+        severity: "error",
+        phase: "manifest",
+        source: context.source,
+        qualifiedId: qualifyPresetId(context.source, context.expectedId),
+        path,
+        hint: "Check manifest fields and Lua syntax.",
+      }),
+    );
+
+    return {
+      entry: null,
+      diagnostics,
+    };
+  }
+}
+
+export async function validateWalletPresetSource(
+  source: PresetSourceInput,
+  context: ValidatePresetContext,
+): Promise<{ entry: WalletPresetCatalogEntry | null; diagnostics: PresetDiagnostic[]; materialize?: LoadedWalletPreset["materialize"] }> {
+  const diagnostics: PresetDiagnostic[] = [];
+  const path = getSourcePath(source);
+
+  try {
+    const module = await loadLuaPresetModule(source);
+    const entry = toWalletEntry(parseWalletPresetManifest(module.manifest), context.source);
+    diagnostics.push(
+      ...validateWalletEntry(
+        context.registry ?? createPresetRegistry(),
+        entry,
+        path,
+        context.expectedId,
+      ),
+    );
+
+    if (diagnostics.some((item) => item.severity === "error")) {
+      return { entry: null, diagnostics };
+    }
+
+    return {
+      entry,
+      diagnostics,
+      materialize: async (params = {}) => (await module.materialize(params)) as Record<string, unknown>,
+    };
+  } catch (error) {
+    diagnostics.push(
+      createPresetDiagnostic({
+        code: "preset_manifest_invalid",
+        message: error instanceof Error ? error.message : String(error),
+        severity: "error",
+        phase: "manifest",
+        source: context.source,
+        qualifiedId: qualifyPresetId(context.source, context.expectedId),
+        path,
+        hint: "Check manifest fields and Lua syntax.",
+      }),
+    );
+
+    return {
+      entry: null,
+      diagnostics,
+    };
+  }
+}
+
 async function loadProtocolPreset(
   registry: PresetRegistry,
   id: string,
@@ -179,15 +454,23 @@ async function loadProtocolPreset(
     registry.protocolCache.set(
       qualifiedId,
       (async () => {
-        const module = await loadLuaPresetModule(sourceInfo.input);
+        const validated = await validateProtocolPresetSource(sourceInfo.input, {
+          source: sourceInfo.source,
+          expectedId: sourceInfo.localId,
+          registry,
+        });
+        for (const diagnostic of validated.diagnostics) {
+          addDiagnostic(registry, diagnostic);
+        }
+
+        if (!validated.entry || !validated.materialize) {
+          return null;
+        }
+
+        registry.protocolQualifiedOwners.set(validated.entry.qualifiedId, sourceInfo.localId);
         return {
-          entry: toProtocolEntry(
-            parseProtocolPresetManifest(module.manifest),
-            sourceInfo.source,
-          ),
-          async materialize(params = {}) {
-            return (await module.materialize(params)) as Record<string, unknown>;
-          },
+          entry: validated.entry,
+          materialize: validated.materialize,
         };
       })(),
     );
@@ -210,15 +493,23 @@ async function loadWalletPreset(
     registry.walletCache.set(
       qualifiedId,
       (async () => {
-        const module = await loadLuaPresetModule(sourceInfo.input);
+        const validated = await validateWalletPresetSource(sourceInfo.input, {
+          source: sourceInfo.source,
+          expectedId: sourceInfo.localId,
+          registry,
+        });
+        for (const diagnostic of validated.diagnostics) {
+          addDiagnostic(registry, diagnostic);
+        }
+
+        if (!validated.entry || !validated.materialize) {
+          return null;
+        }
+
+        registry.walletQualifiedOwners.set(validated.entry.qualifiedId, sourceInfo.localId);
         return {
-          entry: toWalletEntry(
-            parseWalletPresetManifest(module.manifest),
-            sourceInfo.source,
-          ),
-          async materialize(params = {}) {
-            return (await module.materialize(params)) as Record<string, unknown>;
-          },
+          entry: validated.entry,
+          materialize: validated.materialize,
         };
       })(),
     );
@@ -302,12 +593,35 @@ export async function loadProjectPresetSources(
 export function createPresetRegistry(
   options: PresetRegistryOptions = {},
 ): PresetRegistry {
-  return {
+  const registry: PresetRegistry = {
     protocolSources: buildSourceMap(BUILTIN_PROTOCOL_SOURCES, options.projectSources?.protocol),
     walletSources: buildSourceMap(BUILTIN_WALLET_SOURCES, options.projectSources?.wallet),
     protocolCache: new Map(),
     walletCache: new Map(),
+    diagnostics: new Map(),
+    protocolQualifiedOwners: new Map(),
+    walletQualifiedOwners: new Map(),
+    hasProjectSources: Boolean(
+      (options.projectSources?.protocol && Object.keys(options.projectSources.protocol).length > 0) ||
+      (options.projectSources?.wallet && Object.keys(options.projectSources.wallet).length > 0),
+    ),
   };
+
+  if (options.projectSources && !registry.hasProjectSources) {
+    addDiagnostic(
+      registry,
+      createPresetDiagnostic({
+        code: "local_preset_sources_empty",
+        message: "No project-local preset sources were provided.",
+        severity: "info",
+        phase: "discovery",
+        source: "project",
+        hint: "Create ./lunatest/presets/protocol or ./lunatest/presets/wallet, or inject preset sources via bootstrap.",
+      }),
+    );
+  }
+
+  return registry;
 }
 
 function getRegistry(registry?: PresetRegistry): PresetRegistry {
@@ -320,6 +634,21 @@ function getRegistry(registry?: PresetRegistry): PresetRegistry {
   }
 
   return defaultRegistry;
+}
+
+async function ensureRegistryLoaded(registry: PresetRegistry): Promise<void> {
+  await Promise.all([
+    ...Object.keys(registry.protocolSources).map((id) => loadProtocolPreset(registry, id)),
+    ...Object.keys(registry.walletSources).map((id) => loadWalletPreset(registry, id)),
+  ]);
+}
+
+export async function getPresetDiagnostics(
+  registry?: PresetRegistry,
+): Promise<PresetDiagnostic[]> {
+  const activeRegistry = getRegistry(registry);
+  await ensureRegistryLoaded(activeRegistry);
+  return Array.from(activeRegistry.diagnostics.values());
 }
 
 export async function listProtocolPresets(
@@ -371,23 +700,51 @@ export async function materializeWalletPreset(
   params: Record<string, unknown> = {},
   registry?: PresetRegistry,
 ): Promise<WalletPresetMaterialization> {
-  const preset = await loadWalletPreset(getRegistry(registry), id);
+  const activeRegistry = getRegistry(registry);
+  const preset = await loadWalletPreset(activeRegistry, id);
   if (!preset) {
     throw new Error(`Wallet preset not found: ${id}`);
   }
 
   const resolvedParams = resolveParamDefaults(preset.entry.paramsSchema ?? [], params);
   const raw = await preset.materialize(resolvedParams);
-  const rawSession = asRecord(raw.defaultSession) ?? {};
+  const rawSession = asRecord(raw.defaultSession);
+  if (raw.defaultSession !== undefined && !rawSession) {
+    addDiagnostic(
+      activeRegistry,
+      createPresetDiagnostic({
+        code: "preset_materialize_invalid_default_session",
+        message: "wallet materialize() returned invalid defaultSession",
+        severity: "error",
+        phase: "materialize",
+        source: preset.entry.source,
+        qualifiedId: preset.entry.qualifiedId,
+        hint: "Return a table for defaultSession.",
+      }),
+    );
+    throw new Error(`Wallet preset ${id} returned invalid defaultSession`);
+  }
+
   const walletSession = createLunaWalletSession(
     deepMerge(
       preset.entry.defaultSession as Record<string, unknown>,
-      rawSession,
+      rawSession ?? {},
     ),
   );
 
   const chainId = toChainNumber(resolvedParams.chainId ?? walletSession.chainId);
   if (chainId !== null && !preset.entry.supportedChains.includes(chainId)) {
+    addDiagnostic(
+      activeRegistry,
+      createPresetDiagnostic({
+        code: "preset_unsupported_chain",
+        message: `wallet preset does not support chain ${chainId}`,
+        severity: "error",
+        phase: "materialize",
+        source: preset.entry.source,
+        qualifiedId: preset.entry.qualifiedId,
+      }),
+    );
     throw new Error(`Wallet preset ${id} does not support chain ${chainId}`);
   }
 
@@ -412,6 +769,17 @@ export async function materializeProtocolPreset(
   const resolvedParams = resolveParamDefaults(preset.entry.paramsSchema, params);
   const chainId = toChainNumber(resolvedParams.chainId);
   if (chainId !== null && !preset.entry.supportedChains.includes(chainId)) {
+    addDiagnostic(
+      activeRegistry,
+      createPresetDiagnostic({
+        code: "preset_unsupported_chain",
+        message: `protocol preset does not support chain ${chainId}`,
+        severity: "error",
+        phase: "materialize",
+        source: preset.entry.source,
+        qualifiedId: preset.entry.qualifiedId,
+      }),
+    );
     throw new Error(`Protocol preset ${id} does not support chain ${chainId}`);
   }
 
@@ -429,6 +797,26 @@ export async function materializeProtocolPreset(
     walletReference,
     asRecord(raw.walletSessionOverrides),
   );
+
+  if (
+    raw.routeMocks !== undefined &&
+    !Array.isArray(raw.routeMocks) &&
+    !(asRecord(raw.routeMocks) && Object.keys(asRecord(raw.routeMocks)!).length === 0)
+  ) {
+    addDiagnostic(
+      activeRegistry,
+      createPresetDiagnostic({
+        code: "preset_materialize_invalid_route_mocks",
+        message: "protocol materialize() returned invalid routeMocks",
+        severity: "error",
+        phase: "materialize",
+        source: preset.entry.source,
+        qualifiedId: preset.entry.qualifiedId,
+        hint: "Return an array of route mocks or an empty table.",
+      }),
+    );
+    throw new Error(`Protocol preset ${id} returned invalid routeMocks`);
+  }
 
   return {
     protocolPresetId: preset.entry.qualifiedId,

@@ -7,6 +7,10 @@ If you want a full 0→1 reference app (real wallet + Sepolia + Uniswap V3 + Lua
 - `examples/swap-dapp`
 - [Sepolia Swap Demo Guide](./swap-demo-sepolia-uniswapv3.md)
 
+If you want to add your own team-specific protocol or wallet presets, see:
+
+- [Local Preset Authoring Guide](./local-preset-authoring.md)
+
 ## Package Selection
 
 - `@lunatest/core`: EIP-1193-compatible provider/runtime base
@@ -172,6 +176,7 @@ expect({ pass: true }).toLunaPass();
 ## Next References
 
 - `docs/getting-started.md`
+- `docs/guides/local-preset-authoring.md`
 - `docs/guides/wagmi-setup.md`
 - `docs/guides/ethers-setup.md`
 - `docs/guides/web3js-setup.md`

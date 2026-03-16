@@ -9,6 +9,10 @@
 - `examples/swap-dapp`
 - [Sepolia 스왑 데모 가이드](./swap-demo-sepolia-uniswapv3.md)
 
+팀 전용 protocol / wallet preset을 직접 붙이고 싶다면 아래 문서를 같이 보면 됩니다.
+
+- [Local Preset 작성 가이드](./local-preset-authoring.md)
+
 ## 어떤 패키지를 고르면 되나
 
 - `@lunatest/core`: EIP-1193 provider를 직접 제어하고 싶을 때
@@ -156,6 +160,7 @@ await runStdioServer({
 
 ## 다음으로 보면 좋은 문서
 
+- [Local Preset 작성 가이드](./local-preset-authoring.md)
 - [E2E 0→1 워크스루](./e2e-0to1.md)
 - [시나리오 예제 모음](./scenario-examples.md)
 - [React 통합 가이드](./react-integration.md)

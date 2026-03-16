@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createPresetRegistry,
+  getPresetDiagnostics,
   getProtocolPreset,
   getWalletPreset,
   listProtocolPresets,
@@ -148,6 +149,60 @@ describe("preset registry", () => {
     );
     expect(wallets.map((item) => item.qualifiedId)).toEqual(
       expect.arrayContaining(["project/team_wallet", "builtin/demo_sepolia"]),
+    );
+  });
+
+  it("collects diagnostics for malformed local presets and keeps catalog healthy", async () => {
+    const tempRoot = await fsMkdtemp();
+    await mkdir(path.join(tempRoot, "lunatest/presets/protocol"), { recursive: true });
+
+    await writeFile(
+      path.join(tempRoot, "lunatest/presets/protocol/bad_swap.lua"),
+      `return {
+        manifest = {
+          id = "bad_swap",
+          label = "Bad Swap",
+          kind = "dex",
+          supportedChains = { 11155111 },
+          protocol = "teamdex",
+          version = "v1",
+          components = { quoter = "local" },
+          defaultWalletPreset = { id = "missing_wallet" },
+          defaultInterceptState = {},
+          defaultRouteMocks = {},
+          builtinScenarios = {},
+          paramsSchema = {
+            { key = "tokenIn", label = "Token In", type = "address" },
+          },
+          recommendedControls = { "tokenOut" },
+        },
+        materialize = function()
+          return {}
+        end,
+      }`,
+    );
+
+    const registry = createPresetRegistry({
+      projectSources: await loadProjectPresetSources(tempRoot),
+    });
+
+    const protocols = await listProtocolPresets(registry);
+    const diagnostics = await getPresetDiagnostics(registry);
+
+    expect(protocols.map((item) => item.qualifiedId)).not.toContain("project/bad_swap");
+    expect(diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: "preset_recommended_control_unknown",
+          qualifiedId: "project/bad_swap",
+          source: "project",
+        }),
+        expect.objectContaining({
+          code: "preset_wallet_reference_missing",
+          qualifiedId: "project/bad_swap",
+          source: "project",
+        }),
+      ]),
     );
   });
 });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   asRecord,
   createLunaWalletSession,
+  createPresetDiagnostic,
   createLunaWalletAssetState,
   deepMerge,
   extractPermissionKeys,
@@ -170,5 +171,25 @@ describe("contracts utils", () => {
   it("qualifies preset ids with source namespace", () => {
     expect(qualifyPresetId("builtin", "uniswap_v3")).toBe("builtin/uniswap_v3");
     expect(qualifyPresetId("project", "team/foo")).toBe("project/team/foo");
+  });
+
+  it("creates preset diagnostic object", () => {
+    expect(
+      createPresetDiagnostic({
+        code: "preset_manifest_invalid",
+        message: "missing protocol",
+        severity: "error",
+        phase: "manifest",
+        source: "project",
+        qualifiedId: "project/team_swap",
+      }),
+    ).toEqual({
+      code: "preset_manifest_invalid",
+      message: "missing protocol",
+      severity: "error",
+      phase: "manifest",
+      source: "project",
+      qualifiedId: "project/team_swap",
+    });
   });
 });

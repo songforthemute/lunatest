@@ -11,10 +11,23 @@ describe("LunaDevtoolsPanel", () => {
       React.createElement(LunaDevtoolsPanel, {
         title: "Runtime QA",
         walletFallbackMode: "manual-toggle",
+        initialPresetDiagnostics: [
+          {
+            code: "preset_manifest_invalid",
+            message: "missing protocol",
+            severity: "error",
+            phase: "manifest",
+            source: "project",
+            qualifiedId: "project/bad_swap",
+            hint: "check manifest.protocol",
+          },
+        ],
       }),
     );
 
     expect(html).toContain("Runtime QA");
+    expect(html).toContain("Diagnostics (");
+    expect(html).toContain("project/bad_swap");
     expect(html).toContain("Run Scenario");
     expect(html).toContain("Protocol Preset");
     expect(html).toContain("Wallet Preset");

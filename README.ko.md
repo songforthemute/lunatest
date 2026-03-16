@@ -55,6 +55,7 @@ pnpm release:publish:next
 - 아키텍처: `docs/concepts/architecture.md`
 - CI 게이트: `docs/guides/ci-integration.md`
 - Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
+- Local preset 작성: `docs/guides/local-preset-authoring.md`
 
 ## 저장소 구조
 

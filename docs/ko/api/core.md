@@ -10,9 +10,12 @@
 - `listProtocolPresets()`
 - `getProtocolPreset(id)`
 - `materializeProtocolPreset(id, params)`
+- `validateProtocolPresetSource(source, context?)`
 - `listWalletPresets()`
 - `getWalletPreset(id)`
 - `materializeWalletPreset(id, params?)`
+- `validateWalletPresetSource(source, context?)`
+- `getPresetDiagnostics(registry?)`
 - `createScenarioRuntime(config)`
 - `LuaConfig`
 - `RouteMock`
@@ -21,6 +24,11 @@
 
 Preset registry는 built-in Lua manifest를 catalog/API로 승격한 계층입니다.  
 `materializeProtocolPreset()`은 `walletSession`, `interceptState`, `routeMocks`, `builtinScenarios`를 함께 반환합니다.
+
+local preset 진단도 같은 계층에서 확인할 수 있습니다.
+
+- `validateProtocolPresetSource()` / `validateWalletPresetSource()`는 개별 source를 검증합니다.
+- `getPresetDiagnostics()`는 registry에 로드된 built-in / project-local preset의 structured diagnostics를 돌려줍니다.
 
 ## `LunaProviderOptions`
 

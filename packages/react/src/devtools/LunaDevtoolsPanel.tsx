@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   createPresetRegistry,
   executeLuaScenario,
+  getPresetDiagnostics,
   listProtocolPresets,
   listWalletPresets,
   loadLunaConfig,
@@ -11,6 +12,7 @@ import {
   type PresetRegistry,
 } from "@lunatest/core";
 import type {
+  PresetDiagnostic,
   PresetParamDescriptor,
   PresetScenarioDescriptor,
   ProtocolPresetCatalogEntry,
@@ -37,6 +39,7 @@ type LunaDevtoolsPanelProps = {
   ) => Promise<{ pass: boolean; error?: string; diff?: string }> | { pass: boolean; error?: string; diff?: string };
   onSetRouteMocks?: (routes: RouteMock[]) => void | Promise<void>;
   onPatchState?: (patch: Record<string, unknown>) => void | Promise<void>;
+  initialPresetDiagnostics?: PresetDiagnostic[];
   presetRegistry?: PresetRegistry;
   walletFallbackMode?: "off" | "manual-toggle";
 };
@@ -142,6 +145,9 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
   const [presetParamValues, setPresetParamValues] = useState<Record<string, string>>({});
   const [presetParamsJson, setPresetParamsJson] = useState("{}");
   const [materializedPreview, setMaterializedPreview] = useState<string>("");
+  const [presetDiagnostics, setPresetDiagnostics] = useState<PresetDiagnostic[]>(
+    props.initialPresetDiagnostics ?? [],
+  );
   const [walletSession, setWalletSessionState] = useState(() => {
     try {
       return getWalletSession();
@@ -155,6 +161,16 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       setWalletSessionState(getWalletSession());
     } catch {
       setWalletSessionState(null);
+    }
+  };
+
+  const refreshPresetDiagnostics = async () => {
+    try {
+      const diagnostics = await getPresetDiagnostics(presetRegistry);
+      const projectDiagnostics = diagnostics.filter((item) => item.source === "project");
+      setPresetDiagnostics(projectDiagnostics.length > 0 ? projectDiagnostics : diagnostics);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
 
@@ -176,6 +192,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
         setWalletPresets(wallets);
         setSelectedProtocolPresetId((current) => current || protocols[0]?.qualifiedId || "");
         setSelectedWalletPresetId((current) => current || wallets[0]?.qualifiedId || "");
+        await refreshPresetDiagnostics();
       } catch (cause) {
         if (!cancelled) {
           setError(cause instanceof Error ? cause.message : String(cause));
@@ -303,6 +320,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
         setDiff(executed.diff);
       }
       refreshWalletSession();
+      await refreshPresetDiagnostics();
     } catch (cause) {
       setStatus("failed");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -322,6 +340,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       }
       setStatus("routes-updated");
       refreshWalletSession();
+      await refreshPresetDiagnostics();
     } catch (cause) {
       setStatus("failed");
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -355,6 +374,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
     setError(null);
     setDiff(null);
     refreshWalletSession();
+    void refreshPresetDiagnostics();
   };
 
   const handleApplyProtocolPreset = async () => {
@@ -388,6 +408,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       }
 
       refreshWalletSession();
+      await refreshPresetDiagnostics();
       setStatus("protocol-preset-applied");
     } catch (cause) {
       setStatus("failed");
@@ -407,6 +428,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       setWalletSession(materialized.walletSession);
       setMaterializedPreview(toPrettyJson(materialized));
       refreshWalletSession();
+      await refreshPresetDiagnostics();
       setStatus("wallet-preset-applied");
     } catch (cause) {
       setStatus("failed");
@@ -452,6 +474,40 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       <button type="button" onClick={handleRun}>
         Run Scenario
       </button>
+
+      <hr />
+
+      <h4 style={{ margin: 0, marginBottom: 8 }}>
+        Diagnostics ({presetDiagnostics.length})
+      </h4>
+      {presetDiagnostics.length === 0 ? (
+        <p style={{ margin: 0, marginBottom: 10, color: "#334155" }}>
+          No preset diagnostics.
+        </p>
+      ) : (
+        <div style={{ marginBottom: 12 }}>
+          {presetDiagnostics.map((diagnostic) => (
+            <div
+              key={`${diagnostic.code}:${diagnostic.qualifiedId ?? "none"}`}
+              style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: 8,
+                padding: 8,
+                marginBottom: 8,
+              }}
+            >
+              <p style={{ margin: 0, marginBottom: 4 }}>
+                [{diagnostic.source}] {diagnostic.code}
+              </p>
+              <p style={{ margin: 0, marginBottom: 4 }}>{diagnostic.message}</p>
+              {diagnostic.qualifiedId ? (
+                <p style={{ margin: 0, marginBottom: 4 }}>preset: {diagnostic.qualifiedId}</p>
+              ) : null}
+              {diagnostic.hint ? <p style={{ margin: 0 }}>hint: {diagnostic.hint}</p> : null}
+            </div>
+          ))}
+        </div>
+      )}
 
       <hr />
 

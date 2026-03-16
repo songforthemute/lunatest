@@ -6,10 +6,13 @@ export { loadLunaConfig } from "./config/lua-config.js";
 export {
   createPresetRegistry,
   getProtocolPreset,
+  getPresetDiagnostics,
   getWalletPreset,
   listProtocolPresets,
   listWalletPresets,
   loadProjectPresetSources,
+  validateProtocolPresetSource,
+  validateWalletPresetSource,
   materializeProtocolPreset,
   materializeWalletPreset,
 } from "./presets/registry.js";

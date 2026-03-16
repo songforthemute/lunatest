@@ -19,3 +19,8 @@ Preset registry 연동 도구:
 - `mock.listWalletPresets`
 - `mock.getWalletPreset`
 - `mock.applyWalletPreset`
+- `mock.listPresetDiagnostics`
+- `mock.getPresetDiagnostic`
+
+`mock.listPresetDiagnostics`는 malformed local preset를 structured diagnostic 형태로 반환합니다.
+유효하지 않은 preset은 list/apply catalog에는 포함되지 않고 diagnostics로만 노출됩니다.

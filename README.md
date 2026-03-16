@@ -69,6 +69,7 @@ pnpm release:publish:next
 - getting started: `docs/getting-started.md`
 - CI and gates: `docs/guides/ci-integration.md`
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
+- local preset authoring: `docs/guides/local-preset-authoring.md`
 
 ## Repository Structure
 

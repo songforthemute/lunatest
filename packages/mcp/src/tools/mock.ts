@@ -1,6 +1,7 @@
 import {
   deepClone,
   deepMerge,
+  type PresetDiagnostic,
   type ProtocolPresetCatalogEntry,
   type ProtocolPresetMaterialization,
   type WalletPresetCatalogEntry,
@@ -8,6 +9,7 @@ import {
 } from "@lunatest/contracts";
 import {
   createPresetRegistry,
+  getPresetDiagnostics as coreGetPresetDiagnostics,
   getProtocolPreset as coreGetProtocolPreset,
   getWalletPreset as coreGetWalletPreset,
   listProtocolPresets as coreListProtocolPresets,
@@ -74,6 +76,15 @@ export function createMockTools(
 
     async listPresets() {
       return (await coreListProtocolPresets(await resolveRegistry())).map((preset) => preset.qualifiedId);
+    },
+
+    async listPresetDiagnostics(): Promise<PresetDiagnostic[]> {
+      return coreGetPresetDiagnostics(await resolveRegistry());
+    },
+
+    async getPresetDiagnostic(code: string): Promise<PresetDiagnostic | null> {
+      const diagnostics = await coreGetPresetDiagnostics(await resolveRegistry());
+      return diagnostics.find((item) => item.code === code) ?? null;
     },
 
     async listProtocolPresets(): Promise<ProtocolPresetCatalogEntry[]> {

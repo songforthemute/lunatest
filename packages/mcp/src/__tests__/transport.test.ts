@@ -242,4 +242,50 @@ describe("mcp transport", () => {
       }),
     });
   });
+
+  it("exposes structured preset diagnostics for malformed local presets", async () => {
+    const server = createMcpServer({
+      projectPresetSources: {
+        protocol: {
+          bad_swap: `return {
+            manifest = {
+              id = "bad_swap",
+              label = "Bad Swap",
+              kind = "dex",
+              supportedChains = { 11155111 },
+              protocol = "teamdex",
+              version = "v1",
+              components = { quoter = "local" },
+              defaultWalletPreset = { id = "missing_wallet" },
+              defaultInterceptState = {},
+              defaultRouteMocks = {},
+              builtinScenarios = {},
+              paramsSchema = {},
+              recommendedControls = { "tokenIn" },
+            },
+            materialize = function()
+              return {}
+            end,
+          }`,
+        },
+      },
+    });
+
+    const diagnostics = await server.handleRequest({
+      id: "req-diagnostics",
+      method: "mock.listPresetDiagnostics",
+      params: {},
+    });
+
+    expect(diagnostics).toEqual({
+      id: "req-diagnostics",
+      result: expect.arrayContaining([
+        expect.objectContaining({
+          code: "preset_wallet_reference_missing",
+          qualifiedId: "project/bad_swap",
+          source: "project",
+        }),
+      ]),
+    });
+  });
 });

@@ -85,6 +85,8 @@ export type LunaWalletSession = {
 
 export type PresetKind = "dex" | "lending" | "wallet";
 export type PresetSource = "builtin" | "project";
+export type PresetDiagnosticSeverity = "info" | "warning" | "error";
+export type PresetDiagnosticPhase = "discovery" | "manifest" | "materialize" | "registry";
 
 export type PresetParamType =
   | "chainId"
@@ -169,6 +171,17 @@ export type ProtocolPresetCatalogEntry = ProtocolPresetManifest & {
 export type WalletPresetCatalogEntry = WalletPresetManifest & {
   qualifiedId: string;
   source: PresetSource;
+};
+
+export type PresetDiagnostic = {
+  code: string;
+  message: string;
+  severity: PresetDiagnosticSeverity;
+  phase: PresetDiagnosticPhase;
+  source: PresetSource;
+  qualifiedId?: string;
+  path?: string;
+  hint?: string;
 };
 
 const DEFAULT_LUNA_WALLET_ADDRESS = "0x1111111111111111111111111111111111111111";
@@ -449,6 +462,14 @@ export function parseWalletPresetManifest(value: unknown): WalletPresetManifest 
 
 export function qualifyPresetId(source: PresetSource, id: string): string {
   return `${source}/${id}`;
+}
+
+export function createPresetDiagnostic(
+  input: PresetDiagnostic,
+): PresetDiagnostic {
+  return {
+    ...input,
+  };
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

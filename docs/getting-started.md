@@ -22,6 +22,9 @@ Package status: `Published` (stable packages available on npm).
 Swap 데모(실지갑 + Sepolia + Uniswap V3)는
 [Sepolia Swap Demo Guide](./guides/swap-demo-sepolia-uniswapv3.md)에서 확인할 수 있습니다.
 
+팀 전용 protocol / wallet preset을 직접 작성하려면
+[Local Preset Authoring Guide](./guides/local-preset-authoring.md)를 참고하세요.
+
 ## 3. Run Checks
 
 ```bash

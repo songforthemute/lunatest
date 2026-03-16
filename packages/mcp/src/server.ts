@@ -255,6 +255,20 @@ export function createMcpServer(options: McpServerOptions) {
           };
         }
 
+        if (request.method === "mock.listPresetDiagnostics") {
+          return {
+            id: request.id,
+            result: await mockTools.listPresetDiagnostics(),
+          };
+        }
+
+        if (request.method === "mock.getPresetDiagnostic") {
+          return {
+            id: request.id,
+            result: await mockTools.getPresetDiagnostic(String(request.params?.code ?? "")),
+          };
+        }
+
         if (request.method === "mock.getProtocolPreset") {
           return {
             id: request.id,
