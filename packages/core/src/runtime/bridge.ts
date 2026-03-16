@@ -20,6 +20,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function cloneSupported(value: unknown): unknown {
+  if (value === undefined) {
+    return undefined;
+  }
+
   if (
     value === null ||
     typeof value === "string" ||
@@ -30,7 +34,13 @@ function cloneSupported(value: unknown): unknown {
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => cloneSupported(item));
+    return value.map((item) => {
+      if (item === undefined) {
+        throw new Error("Unsupported value type in array: undefined");
+      }
+
+      return cloneSupported(item);
+    });
   }
 
   if (isPlainObject(value)) {
@@ -38,7 +48,7 @@ function cloneSupported(value: unknown): unknown {
 
     for (const [key, nested] of Object.entries(value)) {
       if (nested === undefined) {
-        throw new Error(`Unsupported value type at ${key}: undefined`);
+        continue;
       }
 
       Object.defineProperty(cloned, key, {

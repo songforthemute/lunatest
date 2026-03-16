@@ -36,6 +36,14 @@ async function withLuaScenarioFile(): Promise<string> {
   return file;
 }
 
+async function withBrokenLuaScenarioFile(): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), "lunatest-cli-broken-"));
+  tempDirs.push(dir);
+  const file = join(dir, "broken.lua");
+  await writeFile(file, "this is not lua", "utf8");
+  return file;
+}
+
 describe("cli", () => {
   it("runs run command with scenario path", async () => {
     const file = await withLuaScenarioFile();
@@ -111,5 +119,21 @@ describe("cli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain("unknown command");
+  });
+
+  it("fails explicit missing scenario path", async () => {
+    const result = await executeCommand(["run", "--scenario", "./definitely-missing.lua"]);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("Scenario source not found");
+  });
+
+  it("applies filter before executing scenario contents", async () => {
+    const file = await withBrokenLuaScenarioFile();
+    const result = await executeCommand(["run", "no-match", "--scenario", file]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain("passed=0");
+    expect(result.output).toContain("failed=0");
   });
 });

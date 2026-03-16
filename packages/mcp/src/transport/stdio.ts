@@ -6,13 +6,13 @@ import type { createMcpServer } from "../server.js";
 type McpServer = ReturnType<typeof createMcpServer>;
 
 type JsonRpcLikeRequest = {
-  id: string;
+  id?: string | number;
   method: string;
-  params?: Record<string, unknown>;
+  params?: unknown;
 };
 
 type JsonRpcLikeResponse = {
-  id: string;
+  id: string | number;
   result?: unknown;
   error?: {
     message: string;
@@ -61,19 +61,17 @@ export function parseJsonRpcLine(rawLine: string): JsonRpcLikeRequest | JsonRpcL
   const id = parsed.id;
   const method = parsed.method;
 
-  if (typeof id !== "string" || typeof method !== "string") {
-    return invalidRequestResponse("JSON-RPC request requires string id and method");
+  if (
+    typeof method !== "string" ||
+    (id !== undefined && typeof id !== "string" && typeof id !== "number")
+  ) {
+    return invalidRequestResponse("JSON-RPC request requires method and optional string|number id");
   }
-
-  const params =
-    parsed.params !== undefined && isRecord(parsed.params)
-      ? (parsed.params as Record<string, unknown>)
-      : undefined;
 
   return {
     id,
     method,
-    params,
+    params: parsed.params,
   };
 }
 
@@ -86,7 +84,20 @@ export async function processJsonRpcLine(
     return parsed;
   }
 
-  return server.handleRequest(parsed);
+  const response = await server.handleRequest({
+    id: parsed.id === undefined ? "__notification__" : String(parsed.id),
+    method: parsed.method,
+    params: parsed.params,
+  });
+
+  if (parsed.id === undefined) {
+    return null;
+  }
+
+  return {
+    ...response,
+    id: parsed.id,
+  };
 }
 
 export async function runStdioServer(options: StdioServerOptions): Promise<void> {

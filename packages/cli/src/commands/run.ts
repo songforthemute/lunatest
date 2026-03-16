@@ -1,4 +1,5 @@
 import { executeLuaScenario } from "@lunatest/core";
+import { readFile } from "node:fs/promises";
 
 import { resolveScenarioSources } from "./scenario-sources.js";
 
@@ -13,12 +14,26 @@ export async function runCommand(options: RunCommandOptions): Promise<string> {
     scenario: options.scenario,
     luaConfigPath: options.luaConfigPath,
   });
+  const filteredSources = options.filter
+    ? await (async () => {
+        const matched: string[] = [];
+
+        for (const source of sources) {
+          const scenarioName = await readScenarioName(source);
+          if (scenarioName.includes(options.filter!)) {
+            matched.push(source);
+          }
+        }
+
+        return matched;
+      })()
+    : sources;
 
   let passed = 0;
   let failed = 0;
-  const lines: string[] = ["Scenario Summary", `sources=${sources.length}`];
+  const lines: string[] = ["Scenario Summary", `sources=${filteredSources.length}`];
 
-  for (const source of sources) {
+  for (const source of filteredSources) {
     const execution = await executeLuaScenario({
       source,
       adapter: {
@@ -43,11 +58,7 @@ export async function runCommand(options: RunCommandOptions): Promise<string> {
         },
       },
     });
-
     const targetName = execution.scenarioName;
-    if (options.filter && !targetName.includes(options.filter)) {
-      continue;
-    }
 
     if (execution.pass) {
       passed += 1;
@@ -70,4 +81,10 @@ export async function runCommand(options: RunCommandOptions): Promise<string> {
   lines.push(`failed=${failed}`);
 
   return lines.join("\n");
+}
+
+async function readScenarioName(source: string): Promise<string> {
+  const code = await readFile(source, "utf8");
+  const matched = code.match(/name\s*=\s*["']([^"']+)["']/u);
+  return matched?.[1] ?? source;
 }

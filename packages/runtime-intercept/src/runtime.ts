@@ -349,8 +349,9 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
         return false;
       }
 
+      const nextRestorers: Array<() => void> = [];
       try {
-        restorers = [
+        nextRestorers.push(
           installEthereumInterceptor(
             normalizedConfig,
             logger,
@@ -359,12 +360,13 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
               setWalletSession: setWalletSessionInternal,
             },
           ),
-          installFetchInterceptor(normalizedConfig, logger),
-          installXhrInterceptor(normalizedConfig, logger),
-          installWebSocketInterceptor(normalizedConfig, logger),
-        ];
+        );
+        nextRestorers.push(installFetchInterceptor(normalizedConfig, logger));
+        nextRestorers.push(installXhrInterceptor(normalizedConfig, logger));
+        nextRestorers.push(installWebSocketInterceptor(normalizedConfig, logger));
+        restorers = nextRestorers;
       } catch (error) {
-        for (const restore of restorers.reverse()) {
+        for (const restore of nextRestorers.reverse()) {
           restore();
         }
         restorers = [];

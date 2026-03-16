@@ -222,4 +222,80 @@ describe("playwright plugin", () => {
     expect(route.continued).toBe(true);
     expect(route.aborted).not.toBe(true);
   });
+
+  it("matches wildcard url patterns", async () => {
+    let handler: ((route: MockRoute) => Promise<void>) | null = null;
+    const fixture = createLunaFixture({
+      routing: {
+        mode: "strict",
+        httpEndpoints: [
+          {
+            urlPattern: "https://api.example/*",
+            method: "GET",
+            responseKey: "prices",
+          },
+        ],
+      },
+      mockResponses: {
+        prices: {
+          status: 200,
+          body: {
+            ok: true,
+          },
+        },
+      },
+    });
+
+    await fixture.installRouting({
+      async route(_pattern, nextHandler) {
+        handler = nextHandler;
+      },
+    });
+
+    const route = createMockRoute({
+      url: "https://api.example/prices",
+      method: "GET",
+    });
+
+    await handler?.(route);
+    expect(route.fulfilled).toBeDefined();
+    expect(JSON.parse(route.fulfilled?.body ?? "{}")).toEqual({ ok: true });
+  });
+
+  it("continues matched permissive rpc route when mock is missing", async () => {
+    let handler: ((route: MockRoute) => Promise<void>) | null = null;
+    const fixture = createLunaFixture({
+      routing: {
+        mode: "permissive",
+        rpcEndpoints: [
+          {
+            urlPattern: "https://rpc.example",
+            methods: ["eth_chainId"],
+            responseKey: "missing",
+          },
+        ],
+      },
+      mockResponses: {},
+    });
+
+    await fixture.installRouting({
+      async route(_pattern, nextHandler) {
+        handler = nextHandler;
+      },
+    });
+
+    const route = createMockRoute({
+      url: "https://rpc.example",
+      method: "POST",
+      postData: {
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      },
+    });
+
+    await handler?.(route);
+    expect(route.continued).toBe(true);
+    expect(route.fulfilled).toBeUndefined();
+  });
 });

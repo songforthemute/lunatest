@@ -28,18 +28,23 @@ type InterceptFetchSnapshot = {
   mockResponses: MockResponseMap;
 };
 
-function extractRequest(input: RequestInfo | URL, init?: RequestInit): {
+async function extractRequest(input: RequestInfo | URL, init?: RequestInit): Promise<{
   url: string;
   method: string;
   payload: unknown;
-} {
+}> {
   const method = (init?.method ?? "GET").toUpperCase();
 
   if (typeof Request !== "undefined" && input instanceof Request) {
+    const cloned = input.clone();
+    const rawBody =
+      init?.body ??
+      (cloned.bodyUsed ? null : await cloned.text().then((value) => value || null).catch(() => null));
+
     return {
       url: input.url,
       method: (init?.method ?? input.method ?? "GET").toUpperCase(),
-      payload: readBodyPayload(init?.body ?? null),
+      payload: typeof rawBody === "string" ? readBodyPayload(rawBody) : readBodyPayload(rawBody ?? null),
     };
   }
 
@@ -73,7 +78,7 @@ export function createInterceptedFetch(options: {
   baseFetch?: FetchLike;
 }): FetchLike {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const request = extractRequest(input, init);
+    const request = await extractRequest(input, init);
     const snapshot = options.getSnapshot();
     const routingMode = snapshot.mode;
     const rpcEndpoints = snapshot.routing.rpcEndpoints ?? [];
@@ -109,6 +114,14 @@ export function createInterceptedFetch(options: {
           method: request.method,
         });
         throw new Error(`Luna runtime intercept blocked RPC request: ${request.url}`);
+      }
+
+      if (response === undefined) {
+        if (!options.baseFetch) {
+          throw noBaseFetchError(request.url);
+        }
+
+        return options.baseFetch(input, init);
       }
 
       const rpcPayload = isRecord(request.payload)
@@ -169,6 +182,14 @@ export function createInterceptedFetch(options: {
           method: request.method,
         });
         throw new Error(`Luna runtime intercept blocked HTTP request: ${request.url}`);
+      }
+
+      if (response === undefined) {
+        if (!options.baseFetch) {
+          throw noBaseFetchError(request.url);
+        }
+
+        return options.baseFetch(input, init);
       }
 
       const normalized = isHttpResponseShape(response)

@@ -30,4 +30,21 @@ describe("bridge", () => {
     expect(Object.prototype.hasOwnProperty.call(roundTrip, "__proto__")).toBe(true);
     expect(roundTrip.__proto__).toBe("");
   });
+
+  it("allows undefined top-level values", () => {
+    expect(toLuaArgs(undefined)).toBeUndefined();
+    expect(fromLuaValue(undefined)).toBeUndefined();
+  });
+
+  it("omits undefined object fields", () => {
+    const result = toLuaArgs({
+      present: 1,
+      missing: undefined,
+    }) as Record<string, unknown>;
+
+    expect(result).toEqual({
+      present: 1,
+    });
+    expect("missing" in result).toBe(false);
+  });
 });

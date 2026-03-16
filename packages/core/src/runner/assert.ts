@@ -10,7 +10,37 @@ function format(value: unknown): string {
 }
 
 function deepEqual(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+      return false;
+    }
+
+    return left.every((item, index) => deepEqual(item, right[index]));
+  }
+
+  if (
+    typeof left === "object" &&
+    left !== null &&
+    typeof right === "object" &&
+    right !== null
+  ) {
+    const leftRecord = left as Record<string, unknown>;
+    const rightRecord = right as Record<string, unknown>;
+    const leftKeys = Object.keys(leftRecord).sort();
+    const rightKeys = Object.keys(rightRecord).sort();
+
+    if (!deepEqual(leftKeys, rightKeys)) {
+      return false;
+    }
+
+    return leftKeys.every((key) => deepEqual(leftRecord[key], rightRecord[key]));
+  }
+
+  return false;
 }
 
 function buildResult(expected: unknown, actual: unknown): AssertionResult {

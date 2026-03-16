@@ -1,5 +1,5 @@
-export { createLunaFixture } from "./fixture";
-export { createLunaCommands } from "./commands";
+export { createLunaFixture } from "./fixture.js";
+export { createLunaCommands } from "./commands.js";
 export type {
   HttpEndpointRoute,
   InitScriptTarget,
@@ -9,4 +9,4 @@ export type {
   RoutingConfig,
   RoutingMode,
   RpcEndpointRoute,
-} from "./fixture";
+} from "./fixture.js";

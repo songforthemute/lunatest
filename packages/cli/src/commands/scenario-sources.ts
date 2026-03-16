@@ -28,6 +28,10 @@ export async function resolveScenarioSources(input: {
   }
 
   if (!GLOB_CHARS.test(target)) {
+    if (!(await canAccess(target))) {
+      throw new Error(`Scenario source not found: ${target}`);
+    }
+
     return [target];
   }
 

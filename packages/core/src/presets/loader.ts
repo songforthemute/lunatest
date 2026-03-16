@@ -34,9 +34,7 @@ export async function loadLuaPresetModule(source: string | URL): Promise<LuaPres
   return {
     manifest,
     async materialize(params: Record<string, unknown> = {}) {
-      const result = await runtime.call("__lunatest_preset_materialize", {
-        params,
-      });
+      const result = await runtime.call("__lunatest_preset_materialize", params);
 
       if (!asRecord(result)) {
         throw new Error("Lua preset materialize() must return a table");

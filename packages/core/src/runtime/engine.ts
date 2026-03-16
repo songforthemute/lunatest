@@ -73,9 +73,11 @@ export async function createRuntime(rawOptions: RuntimeOptions = {}): Promise<Ru
         throw new Error(`Function not found: ${targetName}`);
       }
 
-      const normalizedArgs = toLuaArgs(args) as Record<string, unknown>;
-      const orderedArgs = Object.values(normalizedArgs);
-      const result = await Promise.resolve(target(...orderedArgs));
+      const normalizedArgs = toLuaArgs(args);
+      const result =
+        isPlainObject(normalizedArgs) && Object.keys(normalizedArgs).length === 0
+          ? await Promise.resolve(target())
+          : await Promise.resolve(target(normalizedArgs));
 
       return fromLuaValue(result);
     },
@@ -108,4 +110,8 @@ export async function createRuntime(rawOptions: RuntimeOptions = {}): Promise<Ru
       await bootstrapEngine();
     },
   };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

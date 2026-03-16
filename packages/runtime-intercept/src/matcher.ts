@@ -13,7 +13,10 @@ function patternToRegExp(pattern: string): RegExp {
 
 export function matchesPattern(value: string, pattern: EndpointPattern): boolean {
   if (pattern instanceof RegExp) {
-    return pattern.test(value);
+    pattern.lastIndex = 0;
+    const matched = pattern.test(value);
+    pattern.lastIndex = 0;
+    return matched;
   }
 
   if (pattern.includes("*")) {

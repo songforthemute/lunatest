@@ -35,6 +35,15 @@ describe("assertion engine", () => {
     expect(result.pass).toBe(true);
   });
 
+  it("treats object key order as equal", () => {
+    const result = assertUI(
+      { button: { disabled: true, label: "Swap" } },
+      { button: { label: "Swap", disabled: true } },
+    );
+
+    expect(result.pass).toBe(true);
+  });
+
   it("supports transition assertion", () => {
     const result = assertTransition(
       ["need_approval", "approve_pending", "complete"],

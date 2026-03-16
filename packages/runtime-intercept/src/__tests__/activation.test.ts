@@ -12,8 +12,16 @@ import {
   setRouteMocks,
 } from "../runtime";
 
+const originalFetch = globalThis.fetch;
+
 afterEach(() => {
   disableLunaRuntimeIntercept();
+  delete (globalThis as { window?: unknown }).window;
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    writable: true,
+    value: originalFetch,
+  });
 });
 
 describe("runtime activation", () => {
@@ -223,5 +231,43 @@ describe("runtime activation", () => {
     expect(runtime.enable("production")).toBe(true);
     runtime.disable();
     expect(runtime.isEnabled()).toBe(false);
+  });
+
+  it("rolls back installed interceptors when enable fails mid-install", () => {
+    const target = globalThis as typeof globalThis & {
+      window?: Record<string, unknown>;
+    };
+    const originalEthereum = {
+      request: async () => "forwarded",
+    };
+    const originalFetch = globalThis.fetch;
+
+    target.window = {
+      ethereum: originalEthereum,
+    };
+
+    Object.defineProperty(globalThis, "fetch", {
+      configurable: true,
+      get() {
+        return originalFetch;
+      },
+      set() {
+        throw new Error("fetch install failed");
+      },
+    });
+
+    expect(() =>
+      enableLunaRuntimeIntercept(
+        {
+          enable: true,
+          intercept: {
+            mode: "strict",
+          },
+        },
+        "production",
+      ),
+    ).toThrow("fetch install failed");
+
+    expect(target.window?.ethereum).toBe(originalEthereum);
   });
 });

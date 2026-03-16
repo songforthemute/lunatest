@@ -3,7 +3,7 @@ import { PassThrough } from "node:stream";
 import { describe, expect, it } from "vitest";
 
 import { createMcpServer } from "../server";
-import { runStdioServer } from "../transport/stdio";
+import { parseJsonRpcLine, runStdioServer } from "../transport/stdio";
 
 function readOutput(stream: PassThrough): string {
   const chunks: Buffer[] = [];
@@ -73,5 +73,25 @@ describe("mcp stdio transport", () => {
 
     expect(parsed.id).toBe("req-404");
     expect(parsed.error?.message).toContain("Unsupported method");
+  });
+
+  it("accepts numeric ids and preserves positional params", () => {
+    const parsed = parseJsonRpcLine('{"id":1,"method":"scenario.run","params":[1,2]}');
+
+    expect(parsed).toEqual({
+      id: 1,
+      method: "scenario.run",
+      params: [1, 2],
+    });
+  });
+
+  it("treats notifications as requests without response id", () => {
+    const parsed = parseJsonRpcLine('{"method":"scenario.list"}');
+
+    expect(parsed).toEqual({
+      id: undefined,
+      method: "scenario.list",
+      params: undefined,
+    });
   });
 });

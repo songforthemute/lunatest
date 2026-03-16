@@ -229,44 +229,53 @@ export function installXhrInterceptor(
           method: this.method,
           payload,
           endpointType: "rpc",
-        }).then((response) => {
-          if (response === undefined && config.intercept.mode === "strict") {
-            logger.debug("xhr.rpc.blocked", {
+        })
+          .then((response) => {
+            if (response === undefined && config.intercept.mode === "strict") {
+              logger.debug("xhr.rpc.blocked", {
+                url: this.url,
+                method: this.method,
+              });
+              this.fail(`Luna runtime intercept blocked RPC request: ${this.url}`);
+              return;
+            }
+
+            if (response === undefined) {
+              this.forwardToBase();
+              return;
+            }
+
+            const rpcPayload = isRecord(payload) ? (payload as JsonRpcPayload) : {};
+            const envelope = isRpcResponseShape(response)
+              ? {
+                  jsonrpc: "2.0",
+                  id: rpcPayload.id ?? null,
+                  ...(response.error !== undefined
+                    ? { error: response.error }
+                    : { result: response.result }),
+                }
+              : {
+                  jsonrpc: "2.0",
+                  id: rpcPayload.id ?? null,
+                  result: response,
+                };
+
+            logger.debug("xhr.rpc.hit", {
               url: this.url,
               method: this.method,
+              key: rpcEndpoint.responseKey,
             });
-            this.fail(`Luna runtime intercept blocked RPC request: ${this.url}`);
-            return;
-          }
 
-          if (response === undefined) {
-            this.forwardToBase();
-            return;
-          }
+            this.fulfill(200, { "content-type": "application/json" }, JSON.stringify(envelope));
+          })
+          .catch((error) => {
+            if (config.intercept.mode === "permissive") {
+              this.forwardToBase();
+              return;
+            }
 
-          const rpcPayload = isRecord(payload) ? (payload as JsonRpcPayload) : {};
-          const envelope = isRpcResponseShape(response)
-            ? {
-                jsonrpc: "2.0",
-                id: rpcPayload.id ?? null,
-                ...(response.error !== undefined
-                  ? { error: response.error }
-                  : { result: response.result }),
-              }
-            : {
-                jsonrpc: "2.0",
-                id: rpcPayload.id ?? null,
-                result: response,
-              };
-
-          logger.debug("xhr.rpc.hit", {
-            url: this.url,
-            method: this.method,
-            key: rpcEndpoint.responseKey,
+            this.fail(error instanceof Error ? error.message : String(error));
           });
-
-          this.fulfill(200, { "content-type": "application/json" }, JSON.stringify(envelope));
-        });
 
         return;
       }
@@ -289,54 +298,63 @@ export function installXhrInterceptor(
           method: this.method,
           payload,
           endpointType: "http",
-        }).then((response) => {
-          if (response === undefined && config.intercept.mode === "strict") {
-            logger.debug("xhr.http.blocked", {
+        })
+          .then((response) => {
+            if (response === undefined && config.intercept.mode === "strict") {
+              logger.debug("xhr.http.blocked", {
+                url: this.url,
+                method: this.method,
+              });
+              this.fail(`Luna runtime intercept blocked HTTP request: ${this.url}`);
+              return;
+            }
+
+            if (response === undefined) {
+              this.forwardToBase();
+              return;
+            }
+
+            const normalized = isHttpResponseShape(response)
+              ? {
+                  status: typeof response.status === "number" ? response.status : 200,
+                  headers: toHeaderRecord(response.headers),
+                  body: "body" in response ? response.body : null,
+                }
+              : {
+                  status: 200,
+                  headers: {},
+                  body: response,
+                };
+
+            const payloadText = stringifyUnknown(normalized.body);
+            const contentType =
+              typeof normalized.body === "string"
+                ? normalized.headers["content-type"] ?? "text/plain"
+                : normalized.headers["content-type"] ?? "application/json";
+
+            logger.debug("xhr.http.hit", {
               url: this.url,
               method: this.method,
+              key: httpEndpoint.responseKey,
             });
-            this.fail(`Luna runtime intercept blocked HTTP request: ${this.url}`);
-            return;
-          }
 
-          if (response === undefined) {
-            this.forwardToBase();
-            return;
-          }
+            this.fulfill(
+              normalized.status,
+              {
+                ...normalized.headers,
+                "content-type": contentType,
+              },
+              payloadText,
+            );
+          })
+          .catch((error) => {
+            if (config.intercept.mode === "permissive") {
+              this.forwardToBase();
+              return;
+            }
 
-          const normalized = isHttpResponseShape(response)
-            ? {
-                status: typeof response.status === "number" ? response.status : 200,
-                headers: toHeaderRecord(response.headers),
-                body: "body" in response ? response.body : null,
-              }
-            : {
-                status: 200,
-                headers: {},
-                body: response,
-              };
-
-          const payloadText = stringifyUnknown(normalized.body);
-          const contentType =
-            typeof normalized.body === "string"
-              ? normalized.headers["content-type"] ?? "text/plain"
-              : normalized.headers["content-type"] ?? "application/json";
-
-          logger.debug("xhr.http.hit", {
-            url: this.url,
-            method: this.method,
-            key: httpEndpoint.responseKey,
+            this.fail(error instanceof Error ? error.message : String(error));
           });
-
-          this.fulfill(
-            normalized.status,
-            {
-              ...normalized.headers,
-              "content-type": contentType,
-            },
-            payloadText,
-          );
-        });
 
         return;
       }
@@ -383,6 +401,7 @@ export function installXhrInterceptor(
       };
 
       base.open?.(this.method, this.url, this.async);
+      base.responseType = this.responseType;
       for (const [name, value] of this.requestHeaders.entries()) {
         base.setRequestHeader?.(name, value);
       }

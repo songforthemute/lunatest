@@ -78,6 +78,7 @@ export function installEthereumInterceptor(
   },
 ): () => void {
   const target = globalThis as unknown as { window?: Record<string, unknown> };
+  const createdSyntheticWindow = !target.window;
   if (!target.window) {
     target.window = globalThis as unknown as Record<string, unknown>;
   }
@@ -358,7 +359,9 @@ export function installEthereumInterceptor(
   logger.debug("ethereum.installed");
 
   return () => {
-    if (originalEthereum === undefined) {
+    if (createdSyntheticWindow && originalEthereum === undefined) {
+      delete target.window;
+    } else if (originalEthereum === undefined) {
       delete (win as Record<string, unknown>).ethereum;
     } else {
       Object.defineProperty(win, "ethereum", {

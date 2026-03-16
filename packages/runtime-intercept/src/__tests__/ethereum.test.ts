@@ -166,4 +166,22 @@ describe("ethereum interceptor", () => {
 
     restore();
   });
+
+  it("removes synthetic window after restore", async () => {
+    target.window = undefined;
+
+    const restore = installEthereumInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+        },
+      }),
+      createLogger(false),
+    );
+
+    restore();
+
+    expect("window" in target).toBe(false);
+  });
 });

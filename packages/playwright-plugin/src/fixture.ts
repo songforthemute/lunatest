@@ -75,8 +75,8 @@ export type LunaFixtureOptions = {
 function patternToRegExp(pattern: string): RegExp {
   const escaped = pattern
     .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
-    .replace(/\\\*\\\*/g, ".*")
-    .replace(/\\\*/g, ".*");
+    .replace(/\*\*/g, ".*")
+    .replace(/\*/g, ".*");
   return new RegExp(`^${escaped}$`);
 }
 
@@ -238,6 +238,11 @@ export function createLunaFixture(options: LunaFixtureOptions = {}): LunaFixture
             return;
           }
 
+          if (response === undefined) {
+            await route.continue();
+            return;
+          }
+
           const rpcPayload = isRecord(payload) ? (payload as JsonRpcPayload) : {};
           const envelope = isRpcResponseShape(response)
             ? {
@@ -281,6 +286,11 @@ export function createLunaFixture(options: LunaFixtureOptions = {}): LunaFixture
 
           if (response === undefined && routingMode === "strict") {
             await route.abort();
+            return;
+          }
+
+          if (response === undefined) {
+            await route.continue();
             return;
           }
 

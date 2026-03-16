@@ -14,11 +14,12 @@ import {
   type PresetRegistry,
   type ProjectPresetSources,
 } from "@lunatest/core";
+import { isRecord } from "@lunatest/contracts";
 
 type JsonRpcRequest = {
   id: string;
   method: string;
-  params?: Record<string, unknown>;
+  params?: unknown;
 };
 
 type JsonRpcResponse = {
@@ -104,6 +105,10 @@ export function createMcpServer(options: McpServerOptions) {
 
   return {
     async handleRequest(request: JsonRpcRequest): Promise<JsonRpcResponse> {
+      const params = isRecord(request.params)
+        ? (request.params as Record<string, unknown>)
+        : undefined;
+
       try {
         if (request.method === "scenario.list") {
           return {
@@ -115,7 +120,7 @@ export function createMcpServer(options: McpServerOptions) {
         if (request.method === "scenario.get") {
           return {
             id: request.id,
-            result: await scenarioTools.get(String(request.params?.id ?? "")),
+            result: await scenarioTools.get(String(params?.id ?? "")),
           };
         }
 
@@ -124,17 +129,17 @@ export function createMcpServer(options: McpServerOptions) {
             id: request.id,
             result: await scenarioTools.create({
               id:
-                request.params?.id === undefined
+                params?.id === undefined
                   ? undefined
-                  : String(request.params.id),
+                  : String(params.id),
               name:
-                request.params?.name === undefined
+                params?.name === undefined
                   ? undefined
-                  : String(request.params.name),
+                  : String(params.name),
               lua:
-                request.params?.lua === undefined
+                params?.lua === undefined
                   ? undefined
-                  : String(request.params.lua),
+                  : String(params.lua),
             }),
           };
         }
@@ -144,13 +149,13 @@ export function createMcpServer(options: McpServerOptions) {
             id: request.id,
             result: await scenarioTools.run({
               id:
-                request.params?.id === undefined
+                params?.id === undefined
                   ? undefined
-                  : String(request.params.id),
+                  : String(params.id),
               lua:
-                request.params?.lua === undefined
+                params?.lua === undefined
                   ? undefined
-                  : String(request.params.lua),
+                  : String(params.lua),
             }),
           };
         }
@@ -159,9 +164,9 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await scenarioTools.runAll(
-              request.params?.filter === undefined
+              params?.filter === undefined
                 ? undefined
-                : String(request.params.filter),
+                : String(params.filter),
             ),
           };
         }
@@ -170,11 +175,11 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await scenarioTools.mutate({
-              id: String(request.params?.id ?? ""),
+              id: String(params?.id ?? ""),
               count:
-                request.params?.count === undefined
+                params?.count === undefined
                   ? undefined
-                  : Number(request.params.count),
+                  : Number(params.count),
             }),
           };
         }
@@ -211,7 +216,7 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await mockTools.setState(
-              (request.params?.state as Record<string, unknown>) ?? {},
+              (params?.state as Record<string, unknown>) ?? {},
             ),
           };
         }
@@ -220,7 +225,7 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await mockTools.patchState(
-              (request.params?.state as Record<string, unknown>) ?? {},
+              (params?.state as Record<string, unknown>) ?? {},
             ),
           };
         }
@@ -229,7 +234,7 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await mockTools.setRoutes(
-              (request.params?.routes as Array<Record<string, unknown>>) ?? [],
+              (params?.routes as Array<Record<string, unknown>>) ?? [],
             ),
           };
         }
@@ -265,14 +270,14 @@ export function createMcpServer(options: McpServerOptions) {
         if (request.method === "mock.getPresetDiagnostic") {
           return {
             id: request.id,
-            result: await mockTools.getPresetDiagnostic(String(request.params?.code ?? "")),
+            result: await mockTools.getPresetDiagnostic(String(params?.code ?? "")),
           };
         }
 
         if (request.method === "mock.getProtocolPreset") {
           return {
             id: request.id,
-            result: await mockTools.getProtocolPreset(String(request.params?.id ?? "")),
+            result: await mockTools.getProtocolPreset(String(params?.id ?? "")),
           };
         }
 
@@ -280,8 +285,8 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await mockTools.applyProtocolPreset(
-              String(request.params?.id ?? ""),
-              (request.params?.params as Record<string, unknown>) ?? {},
+              String(params?.id ?? ""),
+              (params?.params as Record<string, unknown>) ?? {},
             ),
           };
         }
@@ -296,7 +301,7 @@ export function createMcpServer(options: McpServerOptions) {
         if (request.method === "mock.getWalletPreset") {
           return {
             id: request.id,
-            result: await mockTools.getWalletPreset(String(request.params?.id ?? "")),
+            result: await mockTools.getWalletPreset(String(params?.id ?? "")),
           };
         }
 
@@ -304,8 +309,8 @@ export function createMcpServer(options: McpServerOptions) {
           return {
             id: request.id,
             result: await mockTools.applyWalletPreset(
-              String(request.params?.id ?? ""),
-              (request.params?.params as Record<string, unknown>) ?? {},
+              String(params?.id ?? ""),
+              (params?.params as Record<string, unknown>) ?? {},
             ),
           };
         }
@@ -320,7 +325,7 @@ export function createMcpServer(options: McpServerOptions) {
         if (request.method === "component.states") {
           return {
             id: request.id,
-            result: await componentTools.states(String(request.params?.name ?? "")),
+            result: await componentTools.states(String(params?.name ?? "")),
           };
         }
 
@@ -333,7 +338,7 @@ export function createMcpServer(options: McpServerOptions) {
         }
 
         if (request.method === "resource.get") {
-          const target = String(request.params?.uri ?? "");
+          const target = String(params?.uri ?? "");
           const resources = await getResources();
           return {
             id: request.id,
@@ -349,13 +354,13 @@ export function createMcpServer(options: McpServerOptions) {
         }
 
         if (request.method === "prompt.get") {
-          const target = String(request.params?.id ?? "");
+          const target = String(params?.id ?? "");
           const prompt = prompts.find((item) => item.id === target);
           if (!prompt) {
             throw new Error(`Prompt not found: ${target}`);
           }
 
-          const input = request.params?.input;
+          const input = params?.input;
           const normalizedInput =
             input === undefined || input === null ? "" : (input as string | string[]);
 

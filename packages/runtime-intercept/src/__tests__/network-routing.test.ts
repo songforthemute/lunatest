@@ -88,7 +88,7 @@ describe("network routing", () => {
         routing: {
           rpcEndpoints: [
             {
-              urlPattern: "https://rpc.example",
+              urlPattern: "https://rpc.example/",
               methods: ["eth_chainId"],
               responseKey: "chain-id",
             },
@@ -101,7 +101,7 @@ describe("network routing", () => {
       logger: createLogger(false),
     });
 
-    const response = await fetch("https://rpc.example", {
+    const response = await fetch("https://rpc.example/", {
       method: "POST",
       body: JSON.stringify({
         id: 7,
@@ -116,6 +116,39 @@ describe("network routing", () => {
       jsonrpc: "2.0",
       result: "0x1",
     });
+  });
+
+  it("matches Request payload when filtering RPC methods", async () => {
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example",
+              methods: ["eth_chainId"],
+              responseKey: "chain-id",
+            },
+          ],
+        },
+        mockResponses: {
+          "chain-id": { result: "0x1" },
+        },
+      }),
+      logger: createLogger(false),
+    });
+
+    const request = new Request("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    const response = await fetch(request);
+    await expect(response.json()).resolves.toMatchObject({ result: "0x1" });
   });
 
   it("blocks unmatched fetch request in strict mode", async () => {
@@ -155,6 +188,39 @@ describe("network routing", () => {
 
     expect(baseFetch).toHaveBeenCalledTimes(1);
     await expect(response.text()).resolves.toBe("ok");
+  });
+
+  it("forwards matched rpc request in permissive mode when mock is missing", async () => {
+    const baseFetch = vi.fn(async () => new Response("fallback", { status: 200 }));
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "permissive",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example",
+              methods: ["eth_chainId"],
+              responseKey: "missing",
+            },
+          ],
+        },
+        mockResponses: {},
+      }),
+      logger: createLogger(false),
+      baseFetch,
+    });
+
+    const response = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    expect(baseFetch).toHaveBeenCalledTimes(1);
+    await expect(response.text()).resolves.toBe("fallback");
   });
 
   it("applies latest snapshot on every fetch call", async () => {
@@ -287,6 +353,73 @@ describe("network routing", () => {
     });
     expect(FakeXMLHttpRequest.instances).toHaveLength(0);
 
+    restore();
+  });
+
+  it("forwards matched permissive XHR route when mock rejects", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/quote",
+                method: "GET",
+                responseKey: "quote",
+              },
+            ],
+          },
+          mockResponses: {
+            quote: () => {
+              throw new Error("boom");
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.open("GET", "https://api.example/quote");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(FakeXMLHttpRequest.instances.at(-1)?.isSent).toBe(true);
+    restore();
+  });
+
+  it("preserves responseType when forwarding XHR to base", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/quote",
+                method: "GET",
+                responseKey: "missing",
+              },
+            ],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("GET", "https://api.example/quote");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(FakeXMLHttpRequest.instances.at(-1)?.responseType).toBe("json");
     restore();
   });
 

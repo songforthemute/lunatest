@@ -1,2 +1,2 @@
-export { createLunaVitestPlugin } from "./plugin";
-export { toLunaPass } from "./matchers";
+export { createLunaVitestPlugin } from "./plugin.js";
+export { toLunaPass } from "./matchers.js";
