@@ -477,7 +477,21 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function deepClone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  if (value instanceof RegExp) {
+    return new RegExp(value.source, value.flags) as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => deepClone(item)) as T;
+  }
+
+  if (isRecord(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, deepClone(nested)]),
+    ) as T;
+  }
+
+  return value;
 }
 
 export function deepMerge(

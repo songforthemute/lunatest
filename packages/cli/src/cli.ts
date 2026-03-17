@@ -106,7 +106,7 @@ export async function executeCommand(args: string[]): Promise<CliExecutionResult
     await program.parseAsync(args, { from: "user" });
   } catch (error) {
     if (error instanceof CommanderError) {
-      exitCode = error.exitCode || 1;
+      exitCode = error.exitCode ?? 1;
       if (output.trim().length === 0) {
         output = error.message;
       }

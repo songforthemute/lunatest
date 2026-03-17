@@ -298,4 +298,49 @@ describe("playwright plugin", () => {
     expect(route.continued).toBe(true);
     expect(route.fulfilled).toBeUndefined();
   });
+
+  it("resets RegExp state before matching route patterns", async () => {
+    let handler: ((route: MockRoute) => Promise<void>) | null = null;
+    const fixture = createLunaFixture({
+      routing: {
+        mode: "strict",
+        httpEndpoints: [
+          {
+            urlPattern: /prices/g,
+            method: "GET",
+            responseKey: "prices",
+          },
+        ],
+      },
+      mockResponses: {
+        prices: {
+          status: 200,
+          body: {
+            ok: true,
+          },
+        },
+      },
+    });
+
+    await fixture.installRouting({
+      async route(_pattern, nextHandler) {
+        handler = nextHandler;
+      },
+    });
+
+    const first = createMockRoute({
+      url: "https://api.example/prices",
+      method: "GET",
+    });
+    const second = createMockRoute({
+      url: "https://api.example/prices",
+      method: "GET",
+    });
+
+    await handler?.(first);
+    await handler?.(second);
+
+    expect(first.fulfilled).toBeDefined();
+    expect(second.fulfilled).toBeDefined();
+  });
 });

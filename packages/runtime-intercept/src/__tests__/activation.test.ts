@@ -233,6 +233,25 @@ describe("runtime activation", () => {
     expect(runtime.isEnabled()).toBe(false);
   });
 
+  it("rejects invalid http route mock payload", () => {
+    const runtime = createLunaRuntimeIntercept({
+      enable: true,
+      intercept: {
+        mode: "strict",
+      },
+    });
+
+    expect(() =>
+      runtime.setRouteMocks?.([
+        {
+          endpointType: "http",
+          urlPattern: 123,
+          responseKey: "quote",
+        } as unknown as Parameters<NonNullable<typeof runtime.setRouteMocks>>[0][number],
+      ]),
+    ).toThrow("Invalid route mock payload");
+  });
+
   it("rolls back installed interceptors when enable fails mid-install", () => {
     const target = globalThis as typeof globalThis & {
       window?: Record<string, unknown>;

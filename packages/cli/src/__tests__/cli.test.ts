@@ -136,4 +136,11 @@ describe("cli", () => {
     expect(result.output).toContain("passed=0");
     expect(result.output).toContain("failed=0");
   });
+
+  it("preserves exit code 0 for help output", async () => {
+    const result = await executeCommand(["--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain("Usage:");
+  });
 });

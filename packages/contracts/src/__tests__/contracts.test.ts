@@ -5,6 +5,7 @@ import {
   createLunaWalletSession,
   createPresetDiagnostic,
   createLunaWalletAssetState,
+  deepClone,
   deepMerge,
   extractPermissionKeys,
   getLunaWalletTokenAsset,
@@ -191,5 +192,19 @@ describe("contracts utils", () => {
       source: "project",
       qualifiedId: "project/team_swap",
     });
+  });
+
+  it("preserves RegExp values in deepClone", () => {
+    const input = {
+      route: {
+        urlPattern: /quote\/.*/gi,
+      },
+    };
+
+    const cloned = deepClone(input);
+
+    expect(cloned.route.urlPattern).toBeInstanceOf(RegExp);
+    expect(cloned.route.urlPattern.source).toBe("quote\\/.*");
+    expect(cloned.route.urlPattern.flags).toBe("gi");
   });
 });

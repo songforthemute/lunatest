@@ -80,7 +80,24 @@ function isRouteMock(route: unknown): route is RouteMock {
   }
 
   if (route.endpointType === "rpc" || route.endpointType === "http" || route.endpointType === "ws") {
-    return "urlPattern" in route;
+    const pattern = route.urlPattern;
+    if (!(typeof pattern === "string" || pattern instanceof RegExp)) {
+      return false;
+    }
+
+    if (route.endpointType === "http" && route.method !== undefined) {
+      return typeof route.method === "string" && route.method.length > 0;
+    }
+
+    if (route.endpointType === "rpc" && route.methods !== undefined) {
+      return Array.isArray(route.methods) && route.methods.every((method) => typeof method === "string");
+    }
+
+    if (route.endpointType === "ws" && route.match !== undefined) {
+      return typeof route.match === "string" || route.match instanceof RegExp;
+    }
+
+    return true;
   }
 
   return false;

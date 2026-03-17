@@ -82,7 +82,10 @@ function patternToRegExp(pattern: string): RegExp {
 
 function matchesPattern(url: string, pattern: string | RegExp): boolean {
   if (pattern instanceof RegExp) {
-    return pattern.test(url);
+    pattern.lastIndex = 0;
+    const matched = pattern.test(url);
+    pattern.lastIndex = 0;
+    return matched;
   }
 
   if (pattern.includes("*")) {
