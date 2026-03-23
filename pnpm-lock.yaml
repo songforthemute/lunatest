@@ -100,9 +100,15 @@ importers:
 
   packages/cli:
     dependencies:
+      '@lunatest/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@lunatest/core':
         specifier: workspace:*
         version: link:../core
+      '@lunatest/mcp':
+        specifier: workspace:*
+        version: link:../mcp
       '@lunatest/runtime-intercept':
         specifier: workspace:*
         version: link:../runtime-intercept

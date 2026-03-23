@@ -6,7 +6,9 @@ describe("mcp flow", () => {
   it("runs create -> run -> gaps flow", async () => {
     const server = createMcpServer({
       scenarios: [],
-      coverage: { total: 2, covered: 1 },
+      coverageCatalog: {
+        features: ["swap", "approve"],
+      },
       scenarioAdapter: {
         resolveUi: async () => ({}),
       },
@@ -28,6 +30,12 @@ describe("mcp flow", () => {
         id: "swap-1",
         name: "swap happy path",
         lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
+        coverage: {
+          features: ["swap"],
+          states: [],
+          components: [],
+        },
+        tags: undefined,
       },
     });
 
@@ -57,7 +65,7 @@ describe("mcp flow", () => {
 
     expect(gaps).toEqual({
       id: "3",
-      result: [{ id: "gap-1", reason: "scenario not covered" }],
+      result: [{ kind: "feature", id: "approve", reason: "scenario not covered" }],
     });
   });
 });

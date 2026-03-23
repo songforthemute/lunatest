@@ -16,7 +16,13 @@ export function createResourceCatalog(options: {
   scenarios: ScenarioDescriptor[];
   coverage: Record<string, unknown>;
   components: unknown;
-  protocols: string[];
+  protocols: Array<{
+    id: string;
+    label: string;
+    source: string;
+    kind: string;
+    supportedChains: number[];
+  }>;
 }): McpResource[] {
   return [
     scenariosResource(options.scenarios),

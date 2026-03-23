@@ -1,10 +1,12 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
 import { executeCommand } from "../cli";
+import { loadConfig } from "../config";
+import { watchCommand } from "../commands/watch";
 
 const tempDirs: string[] = [];
 
@@ -44,6 +46,77 @@ async function withBrokenLuaScenarioFile(): Promise<string> {
   return file;
 }
 
+async function withConfiguredProject(): Promise<{
+  cwd: string;
+  scenarioFile: string;
+}> {
+  const dir = await mkdtemp(join(tmpdir(), "lunatest-cli-project-"));
+  tempDirs.push(dir);
+
+  const scenarioDir = join(dir, "scenarios");
+  await mkdir(scenarioDir, { recursive: true });
+  const scenarioFile = join(scenarioDir, "swap.lua");
+  await writeFile(
+    scenarioFile,
+    `scenario {
+  name = "swap-smoke",
+  given = { wallet = { connected = true } },
+  when = { action = "swap" },
+  then_ui = { quotePanel = { visible = true } },
+  coverage = {
+    features = { "swap" },
+    states = { "quoteLoaded" },
+    components = { "quotePanel" },
+  }
+}
+`,
+    "utf8",
+  );
+
+  const adapterScript = join(dir, "adapter.mjs");
+  await writeFile(
+    adapterScript,
+    `
+const chunks = [];
+for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
+const input = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+if (!Array.isArray(input.prompts)) throw new Error("prompts missing");
+process.stdout.write(JSON.stringify([
+  {
+    name: "generated-edge-case",
+    lua: "scenario { name = 'generated-edge-case', given = { wallet = { connected = true } }, when = { action = 'swap' }, then_ui = { quotePanel = { visible = true } } }",
+    coverage: { features: ["swap"], states: ["quoteLoaded"], components: ["quotePanel"] }
+  }
+]));
+`,
+    "utf8",
+  );
+
+  await writeFile(
+    join(dir, "lunatest.config.json"),
+    JSON.stringify(
+      {
+        scenarioDir: "scenarios",
+        luaConfigPath: "lunatest.lua",
+        coverageCatalog: {
+          features: ["swap", "approve"],
+          states: ["quoteLoaded", "approvalPending"],
+          components: ["quotePanel", "actionButtonRow"],
+        },
+        ai: {
+          command: "node",
+          args: ["./adapter.mjs"],
+        },
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
+  return { cwd: dir, scenarioFile };
+}
+
 describe("cli", () => {
   it("runs run command with scenario path", async () => {
     const file = await withLuaScenarioFile();
@@ -66,17 +139,25 @@ describe("cli", () => {
   });
 
   it("runs watch command", async () => {
-    const result = await executeCommand(["watch"]);
+    const { cwd } = await withConfiguredProject();
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 150);
+    const result = await executeCommand(["watch"], {
+      cwd,
+      signal: controller.signal,
+    });
 
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain("Watch mode");
+    expect(result.output).toContain("Scenario Summary");
   });
 
   it("runs coverage command", async () => {
-    const result = await executeCommand(["coverage"]);
+    const { cwd } = await withConfiguredProject();
+    const result = await executeCommand(["coverage"], { cwd });
 
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain("\"ratio\": 1");
+    expect(result.output).toContain("\"known\"");
+    expect(result.output).toContain("\"missing\"");
   });
 
   it("runs devtools command with --open", async () => {
@@ -87,17 +168,22 @@ describe("cli", () => {
   });
 
   it("runs doctor command", async () => {
-    const result = await executeCommand(["doctor"]);
+    const { cwd } = await withConfiguredProject();
+    const result = await executeCommand(["doctor"], { cwd });
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("Doctor");
+    expect(result.output).toContain("config_path=");
+    expect(result.output).toContain("ai_adapter=node");
   });
 
   it("runs gen command with --ai", async () => {
-    const result = await executeCommand(["gen", "--ai"]);
+    const { cwd } = await withConfiguredProject();
+    const result = await executeCommand(["gen", "--ai"], { cwd });
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("AI generation complete");
+    expect(result.output).toContain("created=1");
   });
 
   it("fails gen command without --ai", async () => {
@@ -142,5 +228,53 @@ describe("cli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("Usage:");
+  });
+
+  it("reruns watch when scenario file changes", async () => {
+    const { cwd, scenarioFile } = await withConfiguredProject();
+    const config = await loadConfig(cwd);
+    const controller = new AbortController();
+    const updates: string[] = [];
+
+    setTimeout(async () => {
+      await writeFile(
+        scenarioFile,
+        `scenario {
+  name = "swap-updated",
+  given = { wallet = { connected = true } },
+  when = { action = "swap" },
+  then_ui = { quotePanel = { visible = true } }
+}
+`,
+        "utf8",
+      );
+      setTimeout(() => controller.abort(), 250);
+    }, 100);
+
+    const output = await watchCommand({
+      config,
+      signal: controller.signal,
+      debounceMs: 50,
+      onUpdate(chunk) {
+        updates.push(chunk);
+      },
+    });
+
+    expect(updates.length).toBeGreaterThanOrEqual(2);
+    expect(output).toContain("swap-updated");
+  });
+
+  it("fails gen when AI adapter returns invalid JSON", async () => {
+    const { cwd } = await withConfiguredProject();
+    await writeFile(
+      join(cwd, "adapter.mjs"),
+      `process.stdout.write("not-json");`,
+      "utf8",
+    );
+
+    const result = await executeCommand(["gen", "--ai"], { cwd });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("Unexpected token");
   });
 });

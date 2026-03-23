@@ -112,17 +112,12 @@ export function installWebSocketInterceptor(
     private readonly listeners = new Map<string, Set<RuntimeWebSocketListener>>();
     private readonly baseSocket: WebSocketLike;
     private readonly socketUrl: string;
-    private readonly bypassed: boolean;
-    private readonly candidateRoutes: WsEndpointRoute[];
 
     constructor(url: string | URL, protocols?: string | string[]) {
       const normalizedUrl = typeof url === "string" ? url : url.toString();
-      const bypassed = config.intercept.routing.bypassWsPatterns.some((pattern) =>
-        matchesPattern(normalizedUrl, pattern),
-      );
-      const candidateRoutes = config.intercept.routing.wsEndpoints.filter((endpoint) =>
-        matchesPattern(normalizedUrl, endpoint.urlPattern),
-      );
+      const snapshot = this.getRouteSnapshot(normalizedUrl);
+      const bypassed = snapshot.bypassed;
+      const candidateRoutes = snapshot.candidateRoutes;
 
       if (!bypassed && candidateRoutes.length === 0 && config.intercept.mode === "strict") {
         logger.debug("ws.unmatched.blocked", {
@@ -133,8 +128,6 @@ export function installWebSocketInterceptor(
 
       this.baseSocket = new BaseWebSocketCtor(url, protocols);
       this.socketUrl = this.baseSocket.url ?? normalizedUrl;
-      this.bypassed = bypassed;
-      this.candidateRoutes = candidateRoutes;
 
       this.bindBaseEvents();
 
@@ -173,13 +166,29 @@ export function installWebSocketInterceptor(
       this.baseSocket.binaryType = value;
     }
 
+    private getRouteSnapshot(url: string): {
+      bypassed: boolean;
+      candidateRoutes: WsEndpointRoute[];
+    } {
+      return {
+        bypassed: config.intercept.routing.bypassWsPatterns.some((pattern) =>
+          matchesPattern(url, pattern),
+        ),
+        candidateRoutes: config.intercept.routing.wsEndpoints.filter((endpoint) =>
+          matchesPattern(url, endpoint.urlPattern),
+        ),
+      };
+    }
+
     send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
-      if (this.bypassed) {
+      const snapshot = this.getRouteSnapshot(this.url);
+
+      if (snapshot.bypassed) {
         this.baseSocket.send?.(data);
         return;
       }
 
-      if (this.candidateRoutes.length === 0) {
+      if (snapshot.candidateRoutes.length === 0) {
         if (config.intercept.mode === "strict") {
           logger.debug("ws.frame.blocked.unmatched", {
             url: this.url,
@@ -193,7 +202,7 @@ export function installWebSocketInterceptor(
 
       const rawFrame = typeof data === "string" ? data : stringifyUnknown(data);
       const parsedFrame = readWsPayload(rawFrame);
-      const route = pickRoute(rawFrame, parsedFrame, this.candidateRoutes);
+      const route = pickRoute(rawFrame, parsedFrame, snapshot.candidateRoutes);
 
       if (!route) {
         if (config.intercept.mode === "strict") {

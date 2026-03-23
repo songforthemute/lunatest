@@ -1,18 +1,19 @@
 import { executeLuaScenario } from "@lunatest/core";
 import { readFile } from "node:fs/promises";
-
+import type { ResolvedLunaCliConfig } from "../config.js";
 import { resolveScenarioSources } from "./scenario-sources.js";
 
 export type RunCommandOptions = {
   filter?: string;
   scenario?: string;
-  luaConfigPath: string;
+  config: ResolvedLunaCliConfig;
 };
 
 export async function runCommand(options: RunCommandOptions): Promise<string> {
   const sources = await resolveScenarioSources({
     scenario: options.scenario,
-    luaConfigPath: options.luaConfigPath,
+    luaConfigPath: options.config.resolvedLuaConfigPath,
+    scenarioDir: options.config.resolvedScenarioDir,
   });
   const filteredSources = options.filter
     ? await (async () => {

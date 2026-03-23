@@ -145,6 +145,28 @@ await runStdioServer({
 });
 ```
 
+### 4.5) CLI config + AI adapter
+
+`lunatest.config.json`:
+
+```json
+{
+  "scenarioDir": "scenarios",
+  "luaConfigPath": "lunatest.lua",
+  "coverageCatalog": {
+    "features": ["swap", "approve"],
+    "states": ["quoteLoaded", "approvalPending"],
+    "components": ["quotePanel", "actionButtonRow"]
+  },
+  "ai": {
+    "command": "node",
+    "args": ["./adapter.mjs"]
+  }
+}
+```
+
+`lunatest gen --ai`는 stdin JSON으로 `scenarios`, `coverage`, `presetCatalog`, `prompts`를 전달하고, adapter는 stdout JSON array를 반환해야 합니다.
+
 ### 5) 개발 서버 런타임 인터셉트 + 인브라우저 위젯
 
 프로젝트 루트 `lunatest.lua`:

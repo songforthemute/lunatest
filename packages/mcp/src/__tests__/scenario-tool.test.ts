@@ -83,4 +83,60 @@ describe("mcp scenario tools", () => {
       error: undefined,
     });
   });
+
+  it("preserves coverage metadata on create and mutate", async () => {
+    const tools = createScenarioTools([], {
+      adapter: {
+        resolveUi: async () => ({}),
+      },
+      getCoverageSnapshot: async () => ({
+        total: 3,
+        covered: 1,
+        ratio: 0.3333,
+        known: {
+          features: ["swap", "approve"],
+          states: ["quoteLoaded"],
+          components: ["SwapForm"],
+        },
+        coveredTargets: {
+          features: ["swap"],
+          states: [],
+          components: [],
+        },
+        missing: {
+          features: ["approve"],
+          states: ["quoteLoaded"],
+          components: ["SwapForm"],
+        },
+      }),
+    });
+
+    const created = await tools.create({
+      id: "swap-coverage",
+      name: "swap coverage",
+      lua: "scenario { name = 'swap-coverage', given = {}, when = { action = 'swap' }, then_ui = {} }",
+      coverage: {
+        features: ["swap"],
+      },
+    });
+
+    expect(created.coverage).toEqual({
+      features: ["swap"],
+    });
+
+    const mutated = await tools.mutate({
+      id: "swap-coverage",
+      count: 1,
+    });
+
+    expect(mutated[0]).toEqual(
+      expect.objectContaining({
+        coverage: {
+          features: ["swap", "approve"],
+          states: ["quoteLoaded"],
+          components: ["SwapForm"],
+        },
+      }),
+    );
+  });
 });

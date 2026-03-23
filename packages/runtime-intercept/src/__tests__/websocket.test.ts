@@ -252,4 +252,57 @@ describe("websocket interceptor", () => {
 
     restore();
   });
+
+  it("uses latest routing snapshot after socket creation", async () => {
+    const config = normalizeRuntimeInterceptConfig({
+      enable: true,
+      intercept: {
+        mode: "permissive",
+        routing: {
+          wsEndpoints: [],
+        },
+        mockResponses: {},
+      },
+    });
+
+    const restore = installWebSocketInterceptor(
+      config,
+      createLogger(false),
+    );
+
+    const ws = new (target as { WebSocket: new (url: string) => WebSocket }).WebSocket(
+      "wss://stream.local/socket",
+    );
+
+    ws.send(JSON.stringify({ type: "SUBSCRIBE_QUOTE" }));
+    expect(FakeWebSocket.instances[0].sent).toHaveLength(1);
+
+    config.intercept.routing.wsEndpoints = [
+      {
+        urlPattern: "wss://stream.local/socket",
+        match: "SUBSCRIBE_QUOTE",
+        responseKey: "ws.quote",
+      },
+    ];
+    config.intercept.mockResponses["ws.quote"] = {
+      type: "QUOTE_UPDATED",
+      amountOut: "123.45",
+    };
+
+    const received: string[] = [];
+    ws.addEventListener("message", (event) => {
+      received.push((event as MessageEvent).data as string);
+    });
+
+    ws.send(JSON.stringify({ type: "SUBSCRIBE_QUOTE" }));
+    await waitForMicrotask();
+
+    expect(received).toHaveLength(1);
+    expect(JSON.parse(received[0])).toEqual({
+      type: "QUOTE_UPDATED",
+      amountOut: "123.45",
+    });
+
+    restore();
+  });
 });

@@ -4,6 +4,10 @@ export { LunaProvider } from "./provider/luna-provider.js";
 export type { LunaProviderOptions } from "./provider/luna-provider.js";
 export { loadLunaConfig } from "./config/lua-config.js";
 export {
+  buildCoverageSnapshot,
+  resolveCoverageMetadata,
+} from "./coverage/catalog.js";
+export {
   createPresetRegistry,
   getProtocolPreset,
   getPresetDiagnostics,

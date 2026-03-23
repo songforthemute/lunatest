@@ -17,14 +17,31 @@ async function canAccess(path: string): Promise<boolean> {
 export async function resolveScenarioSources(input: {
   scenario?: string;
   luaConfigPath: string;
+  scenarioDir: string;
 }): Promise<string[]> {
   const target = input.scenario?.trim();
   if (!target) {
+    const discovered = new Set<string>();
+
     if (await canAccess(input.luaConfigPath)) {
-      return [input.luaConfigPath];
+      discovered.add(input.luaConfigPath);
     }
 
-    throw new Error(`Scenario source not found: ${input.luaConfigPath}`);
+    if (await canAccess(input.scenarioDir)) {
+      const matched = await glob(`${input.scenarioDir.replace(/\\/g, "/")}/**/*.lua`, {
+        onlyFiles: true,
+      });
+
+      for (const item of matched) {
+        discovered.add(item);
+      }
+    }
+
+    if (discovered.size === 0) {
+      throw new Error(`Scenario source not found: ${input.luaConfigPath}`);
+    }
+
+    return Array.from(discovered).sort();
   }
 
   if (!GLOB_CHARS.test(target)) {

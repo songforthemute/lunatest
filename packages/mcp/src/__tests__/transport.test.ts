@@ -42,11 +42,17 @@ describe("mcp transport", () => {
           id: "swap-1",
           name: "swap happy path",
           lua: "scenario { name = 'swap', given = {}, when = { action = 'swap' }, then_ui = {} }",
+          coverage: {
+            features: ["swap"],
+            states: ["quoteLoaded"],
+            components: ["SwapForm"],
+          },
         },
       ],
-      coverage: {
-        total: 3,
-        covered: 1,
+      coverageCatalog: {
+        features: ["swap", "approve"],
+        states: ["quoteLoaded", "approvalPending"],
+        components: ["SwapForm", "ActionButtonRow"],
       },
       componentTree: [{ name: "SwapForm" }],
       componentStates: { SwapForm: ["idle", "pending", "success"] },
@@ -63,8 +69,9 @@ describe("mcp transport", () => {
     expect(gaps).toEqual({
       id: "req-gap",
       result: [
-        { id: "gap-1", reason: "scenario not covered" },
-        { id: "gap-2", reason: "scenario not covered" },
+        { kind: "feature", id: "approve", reason: "scenario not covered" },
+        { kind: "state", id: "approvalPending", reason: "scenario not covered" },
+        { kind: "component", id: "ActionButtonRow", reason: "scenario not covered" },
       ],
     });
 
@@ -80,6 +87,44 @@ describe("mcp transport", () => {
         "lunatest://coverage",
         "lunatest://components",
       ]),
+    });
+
+    const protocolResource = await server.handleRequest({
+      id: "req-protocol-resource",
+      method: "resource.get",
+      params: {
+        uri: "lunatest://protocols",
+      },
+    });
+    expect(protocolResource).toEqual({
+      id: "req-protocol-resource",
+      result: expect.objectContaining({
+        uri: "lunatest://protocols",
+        content: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(String),
+            label: expect.any(String),
+            source: expect.any(String),
+            kind: expect.any(String),
+          }),
+        ]),
+      }),
+    });
+
+    const componentStates = await server.handleRequest({
+      id: "req-component-states",
+      method: "component.states",
+      params: {
+        name: "SwapForm",
+      },
+    });
+    expect(componentStates).toEqual({
+      id: "req-component-states",
+      result: {
+        known: expect.arrayContaining(["SwapForm", "idle", "pending", "success"]),
+        covered: ["SwapForm"],
+        missing: [],
+      },
     });
 
     const prompt = await server.handleRequest({

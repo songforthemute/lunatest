@@ -168,6 +168,29 @@ await runStdioServer({
 });
 ```
 
+### 4.5) CLI config + AI adapter
+
+`lunatest.config.json`:
+
+```json
+{
+  "scenarioDir": "scenarios",
+  "luaConfigPath": "lunatest.lua",
+  "coverageCatalog": {
+    "features": ["swap", "approve"],
+    "states": ["quoteLoaded", "approvalPending"],
+    "components": ["quotePanel", "actionButtonRow"]
+  },
+  "ai": {
+    "command": "node",
+    "args": ["./adapter.mjs"]
+  }
+}
+```
+
+`lunatest gen --ai` sends stdin JSON with `scenarios`, `coverage`, `presetCatalog`, and `prompts`.  
+The adapter must return stdout JSON array of generated scenarios.
+
 ### 5) Browser runtime intercept + in-browser devtools
 
 `lunatest.lua` (project root):

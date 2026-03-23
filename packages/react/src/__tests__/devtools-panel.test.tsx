@@ -1,9 +1,25 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LunaDevtoolsPanel } from "../devtools/LunaDevtoolsPanel";
 import { mountLunaDevtools } from "../devtools/mount";
+
+const mocks = vi.hoisted(() => ({
+  createRootMock: vi.fn(() => ({
+    render: vi.fn(),
+    unmount: vi.fn(),
+  })),
+}));
+
+vi.mock("react-dom/client", () => ({
+  createRoot: mocks.createRootMock,
+}));
+
+afterEach(() => {
+  mocks.createRootMock.mockClear();
+  delete (globalThis as { document?: unknown }).document;
+});
 
 describe("LunaDevtoolsPanel", () => {
   it("renders panel title and controls", () => {
@@ -38,5 +54,29 @@ describe("LunaDevtoolsPanel", () => {
 
   it("skips mount outside development DOM context", () => {
     expect(mountLunaDevtools({ nodeEnv: "production" })).toBeNull();
+  });
+
+  it("keeps host-owned default container on cleanup", () => {
+    const target = {
+      id: "lunatest-devtools-root",
+      remove: vi.fn(),
+    };
+    const body = {
+      appendChild: vi.fn(),
+    };
+
+    (globalThis as { document?: unknown }).document = {
+      getElementById: vi.fn(() => target),
+      createElement: vi.fn(),
+      body,
+    };
+
+    const unmount = mountLunaDevtools({
+      nodeEnv: "development",
+    });
+
+    expect(typeof unmount).toBe("function");
+    unmount?.();
+    expect(target.remove).not.toHaveBeenCalled();
   });
 });

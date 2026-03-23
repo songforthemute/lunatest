@@ -1,8 +1,16 @@
 import { z } from "zod";
+import type { CoverageMetadata } from "@lunatest/contracts";
 import { deepClone, deepMerge, type RouteMock } from "@lunatest/contracts";
 export type { RouteMock } from "@lunatest/contracts";
 
 const StringRecordSchema = z.record(z.string(), z.unknown());
+const CoverageMetadataSchema = z
+  .object({
+    features: z.array(z.string().min(1)).optional(),
+    states: z.array(z.string().min(1)).optional(),
+    components: z.array(z.string().min(1)).optional(),
+  })
+  .partial();
 
 const EthereumRouteSchema = z.object({
   endpointType: z.literal("ethereum"),
@@ -88,6 +96,8 @@ export const LuaConfigSchema = z
     when: StringRecordSchema.optional(),
     then_ui: StringRecordSchema.optional(),
     then_state: StringRecordSchema.optional(),
+    not_present: z.array(z.string().min(1)).optional(),
+    coverage: CoverageMetadataSchema.optional(),
     intercept: z
       .object({
         routes: z.array(RouteMockSchema).optional(),
@@ -100,6 +110,7 @@ export const LuaConfigSchema = z
   .passthrough();
 
 export type LuaConfig = z.infer<typeof LuaConfigSchema>;
+export type { CoverageMetadata };
 
 export type ScenarioRuntime = {
   getConfig: () => LuaConfig;

@@ -59,4 +59,26 @@ describe("loadLunaConfig", () => {
       `),
     ).rejects.toThrow("Lua config must declare scenario");
   });
+
+  it("parses coverage metadata from lua config", async () => {
+    const config = await loadLunaConfig(`
+      scenario {
+        name = "coverage-aware",
+        given = { wallet = { connected = true } },
+        when = { action = "swap" },
+        then_ui = { quotePanel = { visible = true } },
+        coverage = {
+          features = { "swap" },
+          states = { "quoteLoaded" },
+          components = { "quotePanel" },
+        }
+      }
+    `);
+
+    expect(config.coverage).toEqual({
+      features: ["swap"],
+      states: ["quoteLoaded"],
+      components: ["quotePanel"],
+    });
+  });
 });

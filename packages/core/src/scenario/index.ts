@@ -1,6 +1,14 @@
 import { z } from "zod";
+import type { CoverageMetadata } from "@lunatest/contracts";
 
 const RecordValueSchema = z.record(z.string(), z.unknown());
+const CoverageMetadataSchema = z
+  .object({
+    features: z.array(z.string().min(1)).optional(),
+    states: z.array(z.string().min(1)).optional(),
+    components: z.array(z.string().min(1)).optional(),
+  })
+  .partial();
 
 const StageSchema = z.object({
   name: z.string().min(1),
@@ -21,11 +29,13 @@ const ScenarioSchema = z
     stages: z.array(StageSchema).optional(),
     not_present: z.array(z.string().min(1)).optional(),
     timing_ms: z.number().int().nonnegative().optional(),
+    coverage: CoverageMetadataSchema.optional(),
   })
   .passthrough();
 
 export type ScenarioStage = z.infer<typeof StageSchema>;
 export type ParsedScenario = z.infer<typeof ScenarioSchema>;
+export type { CoverageMetadata };
 
 export type StageMachine = {
   current: () => ScenarioStage;

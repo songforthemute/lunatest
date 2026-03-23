@@ -1,11 +1,13 @@
 import { mutateScenarioVariants } from "../generation/mutator.js";
-import { executeLuaScenario, type ExecuteLuaScenarioInput } from "@lunatest/core";
+import { executeLuaScenario, loadLunaConfig, resolveCoverageMetadata, type ExecuteLuaScenarioInput } from "@lunatest/core";
+import type { CoverageMetadata, CoverageSnapshot } from "@lunatest/contracts";
 
 export type ScenarioDescriptor = {
   id: string;
   name: string;
   lua?: string;
   tags?: string[];
+  coverage?: CoverageMetadata;
 };
 
 type ScenarioCreateInput = {
@@ -13,6 +15,7 @@ type ScenarioCreateInput = {
   name?: string;
   lua?: string;
   tags?: string[];
+  coverage?: CoverageMetadata;
 };
 
 type ScenarioMutateInput = {
@@ -50,6 +53,7 @@ export type ScenarioTools = {
 
 type CreateScenarioToolsOptions = {
   adapter?: ExecuteLuaScenarioInput["adapter"];
+  getCoverageSnapshot?: () => Promise<CoverageSnapshot>;
 };
 
 async function runLua(
@@ -91,11 +95,15 @@ export function createScenarioTools(
       const nextId = input.id && input.id.length > 0 ? input.id : `scenario-${store.size + 1}`;
       const nextName =
         input.name && input.name.length > 0 ? input.name : `scenario ${store.size + 1}`;
+      const coverage =
+        input.coverage ??
+        (input.lua ? resolveCoverageMetadata(await loadLunaConfig(input.lua)) : undefined);
       const next = {
         id: nextId,
         name: nextName,
         lua: input.lua,
         tags: input.tags,
+        coverage,
       };
       store.set(next.id, next);
       return next;
@@ -166,7 +174,12 @@ export function createScenarioTools(
       }
 
       const count = Math.max(1, Math.trunc(input.count ?? 1));
-      const variants = mutateScenarioVariants(source, count);
+      const coverageSnapshot = options.getCoverageSnapshot
+        ? await options.getCoverageSnapshot()
+        : undefined;
+      const variants = mutateScenarioVariants(source, count, {
+        missingTargets: coverageSnapshot?.missing,
+      });
       for (const variant of variants) {
         store.set(variant.id, variant);
       }

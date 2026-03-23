@@ -29,4 +29,26 @@ describe("scenario dsl", () => {
     expect(parsed.when.action).toBe("swap");
     expect(parsed.stages).toHaveLength(2);
   });
+
+  it("parses optional coverage metadata", () => {
+    const parsed = parseScenario({
+      name: "coverage-aware",
+      given: {
+        wallet: { connected: true },
+      },
+      when: { action: "swap" },
+      then_ui: { quotePanel: { visible: true } },
+      coverage: {
+        features: ["swap"],
+        states: ["quoteLoaded"],
+        components: ["quotePanel"],
+      },
+    });
+
+    expect(parsed.coverage).toEqual({
+      features: ["swap"],
+      states: ["quoteLoaded"],
+      components: ["quotePanel"],
+    });
+  });
 });

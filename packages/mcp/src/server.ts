@@ -14,6 +14,7 @@ import {
   type PresetRegistry,
   type ProjectPresetSources,
 } from "@lunatest/core";
+import type { CoverageCatalog } from "@lunatest/contracts";
 import { isRecord } from "@lunatest/contracts";
 
 type JsonRpcRequest = {
@@ -37,6 +38,7 @@ type McpServerOptions = {
     covered?: number;
     ratio?: number;
   };
+  coverageCatalog?: Partial<CoverageCatalog>;
   mockState?: Record<string, unknown>;
   componentTree?: Array<{ name: string; children?: Array<{ name: string }> }>;
   componentStates?: Record<string, string[]>;
@@ -48,10 +50,16 @@ type McpServerOptions = {
 };
 
 export function createMcpServer(options: McpServerOptions) {
+  let coverageTools: ReturnType<typeof createCoverageTools>;
   const scenarioTools = createScenarioTools(options.scenarios ?? [], {
     adapter: options.scenarioAdapter,
+    getCoverageSnapshot: async () => coverageTools.report(),
   });
-  const coverageTools = createCoverageTools(options.coverage);
+  coverageTools = createCoverageTools({
+    seed: options.coverage,
+    getScenarios: scenarioTools.list,
+    coverageCatalog: options.coverageCatalog,
+  });
   let registryPromise: Promise<PresetRegistry> | null = options.presetRegistry
     ? Promise.resolve(options.presetRegistry)
     : null;
@@ -87,6 +95,10 @@ export function createMcpServer(options: McpServerOptions) {
   const componentTools = createComponentTools(
     options.componentTree ?? [],
     options.componentStates ?? {},
+    {
+      getScenarios: scenarioTools.list,
+      coverageCatalog: options.coverageCatalog,
+    },
   );
   const prompts = createPromptCatalog();
 
@@ -99,7 +111,21 @@ export function createMcpServer(options: McpServerOptions) {
       scenarios,
       coverage,
       components,
-      protocols: options.protocols ?? protocols.map((preset) => preset.id),
+      protocols:
+        options.protocols?.map((id) => ({
+          id,
+          label: id,
+          source: "custom",
+          kind: "custom",
+          supportedChains: [],
+        })) ??
+        protocols.map((preset) => ({
+          id: preset.qualifiedId,
+          label: preset.label,
+          source: preset.source,
+          kind: preset.kind,
+          supportedChains: preset.supportedChains,
+        })),
     });
   };
 

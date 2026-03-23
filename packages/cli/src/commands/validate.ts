@@ -1,16 +1,18 @@
 import { createScenarioRuntime, loadLunaConfig } from "@lunatest/core";
+import type { ResolvedLunaCliConfig } from "../config.js";
 
 import { resolveScenarioSources } from "./scenario-sources.js";
 
 export type ValidateCommandOptions = {
   scenario?: string;
-  luaConfigPath: string;
+  config: ResolvedLunaCliConfig;
 };
 
 export async function validateCommand(options: ValidateCommandOptions): Promise<string> {
   const sources = await resolveScenarioSources({
     scenario: options.scenario,
-    luaConfigPath: options.luaConfigPath,
+    luaConfigPath: options.config.resolvedLuaConfigPath,
+    scenarioDir: options.config.resolvedScenarioDir,
   });
 
   let passed = 0;

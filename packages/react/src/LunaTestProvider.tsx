@@ -3,6 +3,7 @@ import React, { createContext, useMemo, useState } from "react";
 import { LunaProvider, type LunaProviderOptions } from "@lunatest/core";
 
 import { createLunaProvider } from "./luna-provider.js";
+import { createProviderOptionsKey } from "./provider-options.js";
 
 export type LunaTestContextValue = {
   provider: LunaProvider;
@@ -24,12 +25,13 @@ export function LunaTestProvider(props: LunaTestProviderProps) {
     props.initialScenarioId,
   );
 
+  const optionsKey = createProviderOptionsKey(props.options);
   const provider = useMemo(() => {
     if (props.provider) {
       return props.provider;
     }
     return createLunaProvider(props.options ?? {});
-  }, [props.provider, props.options]);
+  }, [props.provider, optionsKey, props.options?.callHandler]);
 
   const value = useMemo<LunaTestContextValue>(
     () => ({

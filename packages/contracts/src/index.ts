@@ -96,6 +96,27 @@ export type PresetParamType =
   | "boolean"
   | "enum";
 
+export type CoverageMetadata = {
+  features?: string[];
+  states?: string[];
+  components?: string[];
+};
+
+export type CoverageCatalog = {
+  features: string[];
+  states: string[];
+  components: string[];
+};
+
+export type CoverageSnapshot = {
+  total: number;
+  covered: number;
+  ratio: number;
+  known: CoverageCatalog;
+  coveredTargets: CoverageCatalog;
+  missing: CoverageCatalog;
+};
+
 export type PresetParamDescriptor = {
   key: string;
   label: string;

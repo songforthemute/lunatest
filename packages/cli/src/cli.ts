@@ -14,11 +14,20 @@ export type CliExecutionResult = {
   output: string;
 };
 
-export async function executeCommand(args: string[]): Promise<CliExecutionResult> {
+export type ExecuteCommandOptions = {
+  cwd?: string;
+  signal?: AbortSignal;
+  streamOutput?: (chunk: string) => void;
+};
+
+export async function executeCommand(
+  args: string[],
+  options: ExecuteCommandOptions = {},
+): Promise<CliExecutionResult> {
   let output = "";
   let exitCode = 0;
 
-  const config = loadConfig();
+  const config = await loadConfig(options.cwd);
   const setExitCodeBySummary = (summary: string): void => {
     const match = summary.match(/(?:^|\n)failed=(\d+)(?:\n|$)/);
     if (!match) {
@@ -52,7 +61,7 @@ export async function executeCommand(args: string[]): Promise<CliExecutionResult
       output = await runCommand({
         filter,
         scenario: options?.scenario,
-        luaConfigPath: config.luaConfigPath,
+        config,
       });
       setExitCodeBySummary(output);
     });
@@ -63,24 +72,37 @@ export async function executeCommand(args: string[]): Promise<CliExecutionResult
     .action(async (options?: { scenario?: string }) => {
       output = await validateCommand({
         scenario: options?.scenario,
-        luaConfigPath: config.luaConfigPath,
+        config,
       });
       setExitCodeBySummary(output);
     });
 
-  program.command("watch").action(() => {
-    output = watchCommand();
+  program.command("watch").argument("[filter]").action(async (filter?: string) => {
+    output = await watchCommand({
+      filter,
+      config,
+      signal: options.signal,
+      onUpdate(chunk) {
+        output += `${chunk}\n`;
+        options.streamOutput?.(`${chunk}\n`);
+      },
+    });
   });
 
-  program.command("coverage").action(() => {
-    output = coverageCommand();
+  program.command("coverage").action(async () => {
+    output = await coverageCommand(config);
   });
 
   program
     .command("gen")
     .option("--ai", "run AI-based generation")
-    .action((options: { ai?: boolean }) => {
-      output = genCommand({ ai: Boolean(options.ai) });
+    .option("--scenario <fileOrGlob>")
+    .action(async (options: { ai?: boolean; scenario?: string }) => {
+      output = await genCommand({
+        ai: Boolean(options.ai),
+        scenario: options.scenario,
+        config,
+      });
       if (!options.ai) {
         exitCode = 1;
       }
@@ -99,7 +121,7 @@ export async function executeCommand(args: string[]): Promise<CliExecutionResult
     });
 
   program.command("doctor").action(() => {
-    output = doctorCommand();
+    output = doctorCommand(config);
   });
 
   try {

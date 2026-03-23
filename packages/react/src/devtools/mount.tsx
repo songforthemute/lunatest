@@ -13,6 +13,7 @@ export type MountLunaDevtoolsOptions = {
 const DEFAULT_TARGET_ID = "lunatest-devtools-root";
 let activeRoot: Root | null = null;
 let activeTarget: HTMLElement | null = null;
+let activeTargetOwned = false;
 
 export function mountLunaDevtools(
   options: MountLunaDevtoolsOptions = {},
@@ -42,6 +43,7 @@ export function mountLunaDevtools(
 
   activeRoot = createRoot(target);
   activeTarget = target;
+  activeTargetOwned = !existing;
   activeRoot.render(React.createElement(LunaDevtoolsPanel, options.panelProps));
 
   return () => {
@@ -50,10 +52,11 @@ export function mountLunaDevtools(
     }
 
     activeRoot.unmount();
-    if (activeTarget.id === DEFAULT_TARGET_ID) {
+    if (activeTargetOwned) {
       activeTarget.remove();
     }
     activeRoot = null;
     activeTarget = null;
+    activeTargetOwned = false;
   };
 }

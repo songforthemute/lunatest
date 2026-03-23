@@ -6,19 +6,41 @@ import { createResourceCatalog } from "../resources";
 describe("mcp resources and prompts", () => {
   it("builds full resource catalog", () => {
     const resources = createResourceCatalog({
-      scenarios: [{ id: "swap-1", name: "swap happy path" }],
-      coverage: { total: 1, covered: 1, ratio: 1 },
+      scenarios: [{ id: "swap-1", name: "swap happy path", coverage: { features: ["swap"] } }],
+      coverage: {
+        total: 1,
+        covered: 1,
+        ratio: 1,
+        known: { features: ["swap"], states: [], components: [] },
+        coveredTargets: { features: ["swap"], states: [], components: [] },
+        missing: { features: [], states: [], components: [] },
+      },
       components: [{ name: "SwapForm" }],
-      protocols: ["uniswap_v2", "curve"],
+      protocols: [
+        {
+          id: "builtin/uniswap_v2",
+          label: "Uniswap V2",
+          source: "builtin",
+          kind: "dex",
+          supportedChains: [1],
+        },
+        {
+          id: "builtin/curve",
+          label: "Curve",
+          source: "builtin",
+          kind: "dex",
+          supportedChains: [1],
+        },
+      ],
     });
 
     expect(resources.map((resource) => resource.uri)).toEqual([
       "lunatest://scenarios",
       "lunatest://coverage",
-        "lunatest://components",
-        "lunatest://mocks",
-        "lunatest://protocols",
-        "lunatest://guide",
+      "lunatest://components",
+      "lunatest://mocks",
+      "lunatest://protocols",
+      "lunatest://guide",
     ]);
   });
 
