@@ -423,6 +423,83 @@ describe("network routing", () => {
     restore();
   });
 
+  it("returns arraybuffer response for mocked XHR binary payload", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/binary",
+                method: "GET",
+                responseKey: "binary",
+              },
+            ],
+          },
+          mockResponses: {
+            binary: {
+              status: 200,
+              body: "hello",
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.responseType = "arraybuffer";
+    xhr.open("GET", "https://api.example/binary");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(xhr.response).toBeInstanceOf(ArrayBuffer);
+    restore();
+  });
+
+  it("returns blob response for mocked XHR blob payload", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/blob",
+                method: "GET",
+                responseKey: "blob",
+              },
+            ],
+          },
+          mockResponses: {
+            blob: {
+              status: 200,
+              headers: {
+                "content-type": "application/octet-stream",
+              },
+              body: "hello",
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.responseType = "blob";
+    xhr.open("GET", "https://api.example/blob");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(xhr.response).toBeInstanceOf(Blob);
+    restore();
+  });
+
   it("blocks unmatched XHR in strict mode", () => {
     const restore = installXhrInterceptor(
       normalizeRuntimeInterceptConfig({

@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   applyInterceptStateMock: vi.fn(),
   setWalletSessionMock: vi.fn(),
   mountLunaDevtoolsMock: vi.fn(),
+  disableLunaRuntimeInterceptMock: vi.fn(),
 }));
 
 vi.mock("@lunatest/core/browser", () => ({
@@ -30,6 +31,7 @@ vi.mock("@lunatest/core/browser", () => ({
 
 vi.mock("@lunatest/runtime-intercept", () => ({
   enableLunaRuntimeIntercept: mocks.enableLunaRuntimeInterceptMock,
+  disableLunaRuntimeIntercept: mocks.disableLunaRuntimeInterceptMock,
   resolveEnabled: mocks.resolveEnabledMock,
   setRouteMocks: mocks.setRouteMocksMock,
   applyInterceptState: mocks.applyInterceptStateMock,
@@ -312,5 +314,24 @@ describe("bootstrapLunaRuntime", () => {
         },
       },
     });
+  });
+
+  it("disables intercept when bootstrap fails after enable", async () => {
+    const config = createConfig();
+
+    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
+    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
+    mocks.materializeProtocolPresetMock.mockRejectedValueOnce(new Error("preset failed"));
+
+    await expect(
+      bootstrapLunaRuntime({
+        nodeEnv: "development",
+        protocolPresetId: "bad-preset",
+      }),
+    ).rejects.toThrow("preset failed");
+
+    expect(mocks.disableLunaRuntimeInterceptMock).toHaveBeenCalledTimes(1);
   });
 });

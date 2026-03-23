@@ -423,6 +423,7 @@ export function installXhrInterceptor(
 
     private fulfill(status: number, headers: Record<string, string>, body: string): void {
       const apply = () => {
+        const contentType = headers["content-type"] ?? headers["Content-Type"] ?? "application/json";
         this.status = status;
         this.statusText = status >= 200 && status < 300 ? "OK" : "ERROR";
         this.responseHeaders = new Map<string, string>(
@@ -443,6 +444,19 @@ export function installXhrInterceptor(
             this.response = JSON.parse(body);
           } catch {
             this.response = null;
+          }
+        } else if (this.responseType === "arraybuffer") {
+          this.response = new TextEncoder().encode(body).buffer;
+        } else if (this.responseType === "blob") {
+          this.response = new Blob([body], { type: contentType });
+        } else if (this.responseType === "document") {
+          if (typeof DOMParser !== "undefined") {
+            this.response = new DOMParser().parseFromString(
+              body,
+              "text/html",
+            );
+          } else {
+            this.response = body;
           }
         } else {
           this.response = body;

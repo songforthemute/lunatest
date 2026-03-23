@@ -15,6 +15,7 @@ import {
 } from "@lunatest/core/browser";
 import {
   applyInterceptState,
+  disableLunaRuntimeIntercept,
   enableLunaRuntimeIntercept,
   resolveEnabled,
   setWalletSession,
@@ -123,64 +124,69 @@ export async function bootstrapLunaRuntime(
     };
   }
 
-  const routeMocks = options.configOverride?.intercept?.routes ?? config.intercept?.routes ?? [];
-  setRouteMocks(routeMocks);
+  try {
+    const routeMocks = options.configOverride?.intercept?.routes ?? config.intercept?.routes ?? [];
+    setRouteMocks(routeMocks);
 
-  if (config.given) {
-    applyInterceptState(config.given);
+    if (config.given) {
+      applyInterceptState(config.given);
+    }
+
+    if (config.intercept?.state) {
+      applyInterceptState(config.intercept.state);
+    }
+
+    if (options.protocolPresetId) {
+      const materialized = await materializeProtocolPreset(
+        options.protocolPresetId,
+        options.protocolPresetParams,
+        presetRegistry,
+      );
+      setRouteMocks(materialized.routeMocks);
+      applyInterceptState(materialized.interceptState);
+      setWalletSession(materialized.walletSession);
+    }
+
+    if (options.walletPresetId) {
+      const materialized = await materializeWalletPreset(
+        options.walletPresetId,
+        options.walletPresetParams,
+        presetRegistry,
+      );
+      setWalletSession(materialized.walletSession);
+    }
+
+    if (options.walletPreset) {
+      setWalletSession({
+        enabled: false,
+        connected: false,
+        chainId: options.walletPreset.chainId ?? "0x1",
+        accounts: [options.walletPreset.address],
+        permissions: normalizeWalletPermissions(options.walletPreset.permissions),
+        assets: createLunaWalletAssetState(options.walletPreset.assets),
+      });
+    }
+
+    const unmountDevtools =
+      options.mountDevtools === false
+        ? undefined
+        : mountLunaDevtools({
+            targetId: options.devtoolsTargetId,
+            nodeEnv,
+            panelProps: {
+              presetRegistry,
+              walletFallbackMode: options.walletFallbackMode ?? "off",
+            },
+          }) ?? undefined;
+
+    return {
+      enabled: true,
+      configLoaded: true,
+      unmountDevtools,
+      config,
+    };
+  } catch (error) {
+    disableLunaRuntimeIntercept();
+    throw error;
   }
-
-  if (config.intercept?.state) {
-    applyInterceptState(config.intercept.state);
-  }
-
-  if (options.protocolPresetId) {
-    const materialized = await materializeProtocolPreset(
-      options.protocolPresetId,
-      options.protocolPresetParams,
-      presetRegistry,
-    );
-    setRouteMocks(materialized.routeMocks);
-    applyInterceptState(materialized.interceptState);
-    setWalletSession(materialized.walletSession);
-  }
-
-  if (options.walletPresetId) {
-    const materialized = await materializeWalletPreset(
-      options.walletPresetId,
-      options.walletPresetParams,
-      presetRegistry,
-    );
-    setWalletSession(materialized.walletSession);
-  }
-
-  if (options.walletPreset) {
-    setWalletSession({
-      enabled: false,
-      connected: false,
-      chainId: options.walletPreset.chainId ?? "0x1",
-      accounts: [options.walletPreset.address],
-      permissions: normalizeWalletPermissions(options.walletPreset.permissions),
-      assets: createLunaWalletAssetState(options.walletPreset.assets),
-    });
-  }
-
-  const unmountDevtools =
-    options.mountDevtools === false
-      ? undefined
-      : mountLunaDevtools({
-          targetId: options.devtoolsTargetId,
-          nodeEnv,
-          panelProps: {
-            presetRegistry,
-            walletFallbackMode: options.walletFallbackMode ?? "off",
-          },
-        }) ?? undefined;
-
-  return {
-    enabled: true,
-    configLoaded: true,
-    unmountDevtools,
-    config,
-  };
 }
