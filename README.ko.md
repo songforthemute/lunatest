@@ -165,7 +165,9 @@ await runStdioServer({
 }
 ```
 
-`lunatest gen --ai`는 stdin JSON으로 `scenarios`, `coverage`, `presetCatalog`, `prompts`를 전달하고, adapter는 stdout JSON array를 반환해야 합니다.
+`lunatest gen --ai`는 stdin JSON으로 `scenarios`, `coverage`, `presetCatalog`, `prompts`를 전달하고, adapter는 stdout JSON array를 반환해야 합니다. adapter가 `coverage`, `tags`를 포함하면 LunaTest가 generated `.lua`에도 그 metadata를 저장합니다.
+
+`lunatest devtools --open`은 브라우저 devtools 부트스트랩을 위한 project-aware guide를 출력합니다. resolved config path, browser entrypoint, mount API, local preset directory가 함께 표시됩니다.
 
 ### 5) 개발 서버 런타임 인터셉트 + 인브라우저 위젯
 

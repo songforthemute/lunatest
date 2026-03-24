@@ -34,6 +34,14 @@ local preset 진단도 같은 계층에서 확인할 수 있습니다.
 - `validateProtocolPresetSource()` / `validateWalletPresetSource()`는 개별 source를 검증합니다.
 - `getPresetDiagnostics()`는 registry에 로드된 built-in / project-local preset의 structured diagnostics를 돌려줍니다.
 
+Scenario / Lua config는 optional coverage metadata를 지원합니다.
+
+- `coverage.features?: string[]`
+- `coverage.states?: string[]`
+- `coverage.components?: string[]`
+
+metadata가 없으면 LunaTest는 `when.action`, `then_ui`, `then_state`, `not_present`에서 기본 coverage를 추론합니다.
+
 ## `LunaProviderOptions`
 
 - `chainId?: string`

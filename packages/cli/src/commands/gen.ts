@@ -7,6 +7,7 @@ import type { CoverageMetadata } from "@lunatest/contracts";
 import { createPromptCatalog } from "@lunatest/mcp";
 
 import type { ResolvedLunaCliConfig } from "../config.js";
+import { injectGeneratedScenarioMetadata } from "../lua-generation.js";
 import { buildScenarioCoverageSnapshot, loadScenarioCatalog } from "../scenario-catalog.js";
 import { runCommand } from "./run.js";
 import { validateCommand } from "./validate.js";
@@ -175,7 +176,14 @@ export async function genCommand(options: GenCommandOptions): Promise<string> {
     }
 
     writtenFiles.push(target);
-    await writeFile(target, scenario.lua, "utf8");
+    await writeFile(
+      target,
+      injectGeneratedScenarioMetadata(scenario.lua, {
+        coverage: scenario.coverage,
+        tags: scenario.tags,
+      }),
+      "utf8",
+    );
   }
 
   const validateResults = await Promise.all(

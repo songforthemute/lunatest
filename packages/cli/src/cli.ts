@@ -111,9 +111,10 @@ export async function executeCommand(
   program
     .command("devtools")
     .option("--open", "print devtools mounting guide")
-    .action((options: { open?: boolean }) => {
+    .action(async (options: { open?: boolean }) => {
       output = devtoolsCommand({
         open: Boolean(options.open),
+        config,
       });
       if (!options.open) {
         exitCode = 1;

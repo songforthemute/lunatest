@@ -1,21 +1,56 @@
 import { watch } from "node:fs/promises";
-import { access } from "node:fs/promises";
+import { access, stat } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 
 import type { ResolvedLunaCliConfig } from "../config.js";
 import { runCommand } from "./run.js";
 import { loadScenarioCatalog } from "../scenario-catalog.js";
+import { resolveScenarioSources } from "./scenario-sources.js";
+
+type WatchImpl = typeof watch;
 
 export type WatchCommandOptions = {
   config: ResolvedLunaCliConfig;
   filter?: string;
   signal?: AbortSignal;
   debounceMs?: number;
+  pollIntervalMs?: number;
   onUpdate?: (output: string) => void;
+  watchImpl?: WatchImpl;
 };
+
+async function resolveWatchFingerprint(config: ResolvedLunaCliConfig): Promise<string> {
+  let sources: string[];
+  try {
+    sources = await resolveScenarioSources({
+      luaConfigPath: config.resolvedLuaConfigPath,
+      scenarioDir: config.resolvedScenarioDir,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Scenario source not found")) {
+      return "__empty__";
+    }
+    throw error;
+  }
+
+  const fingerprint = await Promise.all(
+    sources.map(async (source) => {
+      try {
+        const snapshot = await stat(source);
+        return `${source}:${snapshot.size}:${snapshot.mtimeMs}`;
+      } catch {
+        return `${source}:missing`;
+      }
+    }),
+  );
+
+  return fingerprint.sort().join("|");
+}
 
 export async function watchCommand(options: WatchCommandOptions): Promise<string> {
   const debounceMs = options.debounceMs ?? 300;
+  const pollIntervalMs = options.pollIntervalMs ?? 250;
+  const watchImpl = options.watchImpl ?? watch;
   const history: string[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running = Promise.resolve();
@@ -54,7 +89,7 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
       if (!(await canAccess(options.config.resolvedLuaConfigPath))) {
         return undefined;
       }
-      return watch(options.config.resolvedLuaConfigPath, {
+      return watchImpl(options.config.resolvedLuaConfigPath, {
         signal: options.signal,
       });
     } catch {
@@ -67,7 +102,7 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
       if (!(await canAccess(options.config.resolvedScenarioDir))) {
         return undefined;
       }
-      return watch(options.config.resolvedScenarioDir, {
+      return watchImpl(options.config.resolvedScenarioDir, {
         recursive: true,
         signal: options.signal,
       });
@@ -92,8 +127,38 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
     }
   };
 
+  const pollForChanges = async () => {
+    let previous = await resolveWatchFingerprint(options.config);
+
+    await new Promise<void>((resolve, reject) => {
+      const interval = setInterval(async () => {
+        try {
+          const next = await resolveWatchFingerprint(options.config);
+          if (next !== previous) {
+            previous = next;
+            schedule();
+          }
+        } catch (error) {
+          clearInterval(interval);
+          reject(error);
+        }
+      }, pollIntervalMs);
+
+      const stop = () => {
+        clearInterval(interval);
+        resolve();
+      };
+
+      options.signal?.addEventListener("abort", stop, { once: true });
+    });
+  };
+
   await Promise.race([
-    Promise.all([consume(configWatcher), consume(scenarioWatcher)]),
+    Promise.all([
+      consume(configWatcher),
+      consume(scenarioWatcher),
+      !configWatcher || !scenarioWatcher ? pollForChanges() : Promise.resolve(),
+    ]),
     new Promise<void>((resolve) => {
       options.signal?.addEventListener("abort", () => resolve(), { once: true });
     }),

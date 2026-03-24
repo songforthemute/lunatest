@@ -189,7 +189,9 @@ await runStdioServer({
 ```
 
 `lunatest gen --ai` sends stdin JSON with `scenarios`, `coverage`, `presetCatalog`, and `prompts`.  
-The adapter must return stdout JSON array of generated scenarios.
+The adapter must return stdout JSON array of generated scenarios. If it includes `coverage` or `tags`, LunaTest persists that metadata into the generated `.lua`.
+
+`lunatest devtools --open` prints a project-aware guide for browser devtools bootstrap, including resolved config paths, browser entrypoint, mount API, and local preset directory.
 
 ### 5) Browser runtime intercept + in-browser devtools
 

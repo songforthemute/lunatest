@@ -62,6 +62,7 @@ Scenario Summary
 
 - 시작 시 1회 실행
 - `luaConfigPath`, `scenarioDir/**/*.lua` 변경 시 debounce 후 재실행
+- recursive watch가 불가능한 환경에서는 polling fallback으로 계속 감시
 
 ## 3) coverage
 
@@ -92,6 +93,7 @@ node packages/cli/dist/index.js gen --ai
 
 - `lunatest.config.json`에 `ai.command`가 있어야 합니다.
 - adapter는 stdin JSON을 받고 stdout JSON array를 반환해야 합니다.
+- adapter가 `coverage`, `tags`를 반환하면 generated `.lua`에도 metadata가 함께 저장됩니다.
 
 출력 예시:
 
@@ -107,3 +109,18 @@ executed=1
 - `gen`을 `--ai` 없이 실행하면 실패로 처리됩니다.
 - `gen --ai`를 쓰려면 `ai.command`가 필요합니다.
 - 빌드 전에 `dist` 경로를 직접 실행하면 파일이 없어 실패할 수 있습니다.
+
+## 5) devtools --open
+
+```bash
+node packages/cli/dist/index.js devtools --open
+```
+
+출력:
+
+- resolved config path
+- resolved `luaConfigPath`
+- resolved `scenarioDir`
+- browser entry (`@lunatest/react/browser`)
+- `bootstrapLunaRuntime()` / `mountLunaDevtools()` guide
+- local preset directory path

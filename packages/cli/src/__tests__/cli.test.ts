@@ -1,8 +1,10 @@
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
+
+import { loadLunaConfig } from "@lunatest/core";
 
 import { executeCommand } from "../cli";
 import { loadConfig } from "../config";
@@ -81,14 +83,15 @@ const chunks = [];
 for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
 const input = JSON.parse(Buffer.concat(chunks).toString("utf8"));
 if (!Array.isArray(input.prompts)) throw new Error("prompts missing");
-process.stdout.write(JSON.stringify([
-  {
-    name: "generated-edge-case",
-    lua: "scenario { name = 'generated-edge-case', given = { wallet = { connected = true } }, when = { action = 'swap' }, then_ui = { quotePanel = { visible = true } } }",
-    coverage: { features: ["swap"], states: ["quoteLoaded"], components: ["quotePanel"] }
-  }
-]));
-`,
+	process.stdout.write(JSON.stringify([
+	  {
+	    name: "generated-edge-case",
+	    lua: "scenario { name = 'generated-edge-case', given = { wallet = { connected = true } }, when = { action = 'swap' }, then_ui = { quotePanel = { visible = true } } }",
+	    coverage: { features: ["swap"], states: ["quoteLoaded"], components: ["quotePanel"] },
+	    tags: ["generated", "edge-case"]
+	  }
+	]));
+	`,
     "utf8",
   );
 
@@ -161,10 +164,14 @@ describe("cli", () => {
   });
 
   it("runs devtools command with --open", async () => {
-    const result = await executeCommand(["devtools", "--open"]);
+    const { cwd } = await withConfiguredProject();
+    const result = await executeCommand(["devtools", "--open"], { cwd });
 
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain("widget=LunaDevtoolsPanel");
+    expect(result.output).toContain("Devtools");
+    expect(result.output).toContain("config_path=");
+    expect(result.output).toContain("browser_entry=@lunatest/react/browser");
+    expect(result.output).toContain("mount_api=mountLunaDevtools()");
   });
 
   it("runs doctor command", async () => {
@@ -180,10 +187,20 @@ describe("cli", () => {
   it("runs gen command with --ai", async () => {
     const { cwd } = await withConfiguredProject();
     const result = await executeCommand(["gen", "--ai"], { cwd });
+    const generatedPath = join(cwd, "scenarios", "generated-edge-case.lua");
+    const generatedLua = await readFile(generatedPath, "utf8");
+    const parsed = (await loadLunaConfig(generatedPath)) as {
+      coverage?: { features?: string[] };
+      tags?: string[];
+    };
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain("AI generation complete");
     expect(result.output).toContain("created=1");
+    expect(generatedLua).toContain("coverage = {");
+    expect(generatedLua).toContain('tags = { "generated", "edge-case" }');
+    expect(parsed.coverage?.features).toEqual(["swap"]);
+    expect(parsed.tags).toEqual(["generated", "edge-case"]);
   });
 
   it("fails gen command without --ai", async () => {
@@ -262,6 +279,55 @@ describe("cli", () => {
 
     expect(updates.length).toBeGreaterThanOrEqual(2);
     expect(output).toContain("swap-updated");
+  });
+
+  it("falls back to polling when recursive watch is unavailable", async () => {
+    const { cwd, scenarioFile } = await withConfiguredProject();
+    const config = await loadConfig(cwd);
+    const controller = new AbortController();
+    const updates: string[] = [];
+
+    const idleWatcher = {
+      async *[Symbol.asyncIterator]() {
+        await new Promise<void>((resolve) => {
+          controller.signal.addEventListener("abort", () => resolve(), { once: true });
+        });
+      },
+    };
+
+    setTimeout(async () => {
+      await writeFile(
+        scenarioFile,
+        `scenario {
+  name = "swap-polled",
+  given = { wallet = { connected = true } },
+  when = { action = "swap" },
+  then_ui = { quotePanel = { visible = true } }
+}
+`,
+        "utf8",
+      );
+      setTimeout(() => controller.abort(), 150);
+    }, 100);
+
+    const output = await watchCommand({
+      config,
+      signal: controller.signal,
+      debounceMs: 25,
+      pollIntervalMs: 25,
+      watchImpl(target, watchOptions) {
+        if (target === config.resolvedScenarioDir && watchOptions?.recursive) {
+          throw new Error("recursive watch unsupported");
+        }
+        return idleWatcher;
+      },
+      onUpdate(chunk) {
+        updates.push(chunk);
+      },
+    });
+
+    expect(updates.length).toBeGreaterThanOrEqual(2);
+    expect(output).toContain("swap-polled");
   });
 
   it("fails gen when AI adapter returns invalid JSON", async () => {
