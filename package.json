@@ -6,6 +6,7 @@
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
     "lint": "pnpm -r --if-present run lint",
+    "lint:workspace-types": "node scripts/check-workspace-type-resolution.mjs",
     "lint:deadcode": "knip --config knip.json --include files",
     "pack:check-integrity": "node scripts/check-pack-integrity.mjs",
     "consumer-smoke:pack": "node scripts/consumer-smoke-pack.mjs",

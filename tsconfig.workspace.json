@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/contracts" },
+    { "path": "./packages/core" },
+    { "path": "./packages/runtime-intercept" },
+    { "path": "./packages/react" },
+    { "path": "./packages/mcp" },
+    { "path": "./packages/playwright-plugin" },
+    { "path": "./packages/vitest-plugin" },
+    { "path": "./packages/cli" }
+  ]
+}

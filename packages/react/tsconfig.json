@@ -1,12 +1,18 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "jsx": "react-jsx",
     "types": ["node"]
   },
+  "references": [
+    { "path": "../contracts" },
+    { "path": "../core" },
+    { "path": "../runtime-intercept" }
+  ],
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/__tests__/**"]
 }
