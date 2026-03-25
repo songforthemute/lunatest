@@ -1,0 +1,121 @@
+import { createInterface } from "node:readline";
+import { isRecord } from "@lunatest/contracts";
+
+import type { createMcpServer } from "../server.js";
+
+type McpServer = ReturnType<typeof createMcpServer>;
+
+type JsonRpcLikeRequest = {
+  id?: string | number | null;
+  method: string;
+  params?: unknown;
+};
+
+type JsonRpcLikeResponse = {
+  id: string | number | null;
+  result?: unknown;
+  error?: {
+    message: string;
+  };
+};
+
+export type StdioServerOptions = {
+  input: NodeJS.ReadableStream;
+  output: NodeJS.WritableStream;
+  error?: NodeJS.WritableStream;
+  server: McpServer;
+};
+
+function invalidRequestResponse(message: string): JsonRpcLikeResponse {
+  return {
+    id: "unknown",
+    error: {
+      message,
+    },
+  };
+}
+
+function isJsonRpcLikeRequest(
+  value: JsonRpcLikeRequest | JsonRpcLikeResponse,
+): value is JsonRpcLikeRequest {
+  return "method" in value;
+}
+
+export function parseJsonRpcLine(rawLine: string): JsonRpcLikeRequest | JsonRpcLikeResponse {
+  const trimmed = rawLine.trim();
+  if (!trimmed) {
+    return invalidRequestResponse("Empty JSON-RPC line");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return invalidRequestResponse("Malformed JSON line");
+  }
+
+  if (!isRecord(parsed)) {
+    return invalidRequestResponse("Invalid JSON-RPC payload");
+  }
+
+  const id = parsed.id;
+  const method = parsed.method;
+
+  if (
+    typeof method !== "string" ||
+    (id !== undefined && id !== null && typeof id !== "string" && typeof id !== "number")
+  ) {
+    return invalidRequestResponse(
+      "JSON-RPC request requires method and optional string|number|null id",
+    );
+  }
+
+  return {
+    id,
+    method,
+    params: parsed.params,
+  };
+}
+
+export async function processJsonRpcLine(
+  line: string,
+  server: McpServer,
+): Promise<JsonRpcLikeResponse | null> {
+  const parsed = parseJsonRpcLine(line);
+  if (!isJsonRpcLikeRequest(parsed)) {
+    return parsed;
+  }
+
+  const response = await server.handleRequest({
+    id: parsed.id === undefined ? "__notification__" : String(parsed.id),
+    method: parsed.method,
+    params: parsed.params,
+  });
+
+  if (parsed.id === undefined) {
+    return null;
+  }
+
+  return {
+    ...response,
+    id: parsed.id,
+  };
+}
+
+export async function runStdioServer(options: StdioServerOptions): Promise<void> {
+  const rl = createInterface({
+    input: options.input,
+    crlfDelay: Infinity,
+  });
+
+  for await (const line of rl) {
+    const response = await processJsonRpcLine(line, options.server);
+    if (!response) {
+      continue;
+    }
+
+    options.output.write(`${JSON.stringify(response)}\n`);
+  }
+
+  rl.close();
+}

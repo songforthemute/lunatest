@@ -1,0 +1,370 @@
+:root {
+  color-scheme: light;
+  font-family: "Manrope", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  line-height: 1.45;
+  font-weight: 500;
+  --bg: #f4f2eb;
+  --card: #fffcf6;
+  --ink: #182025;
+  --ink-soft: #4a565f;
+  --line: #d7d3c6;
+  --accent: #0d6b6d;
+  --accent-strong: #0a5456;
+  --danger: #b23838;
+  --success: #197a4b;
+  --shadow: 0 14px 38px rgb(17 30 34 / 10%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 0% 0%, rgb(232 247 242 / 80%), transparent 45%),
+    radial-gradient(circle at 100% 10%, rgb(240 230 190 / 55%), transparent 50%),
+    var(--bg);
+  color: var(--ink);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  max-width: 1180px;
+}
+
+.hero {
+  margin-bottom: 1.25rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.hero h1 {
+  margin: 0.2rem 0 0.4rem;
+  font-size: clamp(1.9rem, 2.4vw, 2.6rem);
+  line-height: 1.1;
+}
+
+.hero-copy {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--ink-soft);
+}
+
+.network-meta {
+  margin-top: 0.9rem;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.network-meta div {
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.65rem 0.7rem;
+}
+
+.network-meta dt {
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.network-meta dd {
+  margin: 0.2rem 0 0;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.86rem;
+}
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 0.95rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 14px;
+  padding: 0.95rem;
+}
+
+.card h2,
+.card h3 {
+  margin: 0 0 0.7rem;
+  font-size: 1.02rem;
+}
+
+.token-pair-card {
+  grid-column: span 6;
+}
+
+.amount-card {
+  grid-column: span 3;
+}
+
+.quote-card {
+  grid-column: span 3;
+}
+
+.warning-card {
+  grid-column: span 5;
+}
+
+.stepper-card {
+  grid-column: span 4;
+}
+
+.action-card {
+  grid-column: span 3;
+}
+
+.token-headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.token-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.token-symbol {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+}
+
+.token-address {
+  margin: 0.25rem 0 0;
+  color: var(--ink-soft);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.token-arrow {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ghost-button {
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 88%);
+  color: var(--ink);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.amount-input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.62rem 0.7rem;
+  font: inherit;
+  color: var(--ink);
+  background: white;
+}
+
+.amount-input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: 2px solid color-mix(in oklab, var(--accent), white 45%);
+  outline-offset: 1px;
+}
+
+.balance-label,
+.subtle,
+.preset-desc {
+  color: var(--ink-soft);
+  margin: 0.55rem 0 0;
+  font-size: 0.86rem;
+}
+
+.kv-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.26rem 0;
+}
+
+.kv-row dt {
+  color: var(--ink-soft);
+}
+
+.kv-row dd {
+  margin: 0;
+  text-align: right;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.86rem;
+}
+
+.stepper-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.stepper-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.42rem 0.58rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  background: rgb(250 248 242 / 65%);
+}
+
+.stepper-item.done {
+  color: var(--ink);
+  border-color: color-mix(in oklab, var(--accent), white 45%);
+}
+
+.stepper-item.active {
+  color: var(--ink);
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent), white 86%);
+  font-weight: 700;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  border-radius: 10px;
+  padding: 0.58rem 0.72rem;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.tx-card,
+.chaos-card {
+  margin-top: 0.9rem;
+}
+
+.mono {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.error-text {
+  color: var(--danger);
+}
+
+.success-text {
+  color: var(--success);
+}
+
+.chaos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.preset-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.lua-editor {
+  min-height: 260px;
+  margin-top: 0.4rem;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.8rem;
+}
+
+.lua-action-row {
+  margin-top: 0.55rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.diff-panel {
+  margin-top: 0.7rem;
+  border-top: 1px dashed var(--line);
+  padding-top: 0.6rem;
+}
+
+.diff-panel ul {
+  margin: 0.45rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.23rem;
+}
+
+.config-error {
+  margin: 2rem auto 0;
+  max-width: 760px;
+}
+
+@media (max-width: 980px) {
+  .token-pair-card,
+  .amount-card,
+  .quote-card,
+  .warning-card,
+  .stepper-card,
+  .action-card {
+    grid-column: span 12;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chaos-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

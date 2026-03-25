@@ -1,0 +1,553 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { createInterceptedFetch, installFetchInterceptor } from "../interceptors/fetch";
+import { installXhrInterceptor } from "../interceptors/xhr";
+import { createLogger } from "../logger";
+import { normalizeRuntimeInterceptConfig } from "../runtime";
+
+function waitForMicrotask(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
+class FakeXMLHttpRequest {
+  static instances: FakeXMLHttpRequest[] = [];
+
+  readyState = 0;
+  status = 0;
+  statusText = "";
+  responseText = "";
+  response: unknown = null;
+  responseType: XMLHttpRequestResponseType = "";
+
+  onreadystatechange: ((event: Event) => void) | null = null;
+  onload: ((event: Event) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  onabort: ((event: Event) => void) | null = null;
+
+  method = "GET";
+  url = "";
+  isSent = false;
+
+  constructor() {
+    FakeXMLHttpRequest.instances.push(this);
+  }
+
+  open(method: string, url: string): void {
+    this.method = method;
+    this.url = url;
+    this.readyState = 1;
+    this.onreadystatechange?.(new Event("readystatechange"));
+  }
+
+  setRequestHeader(): void {
+    return;
+  }
+
+  send(body?: unknown): void {
+    this.isSent = true;
+    this.readyState = 4;
+    this.status = 200;
+    this.statusText = "OK";
+    this.responseText = JSON.stringify({ passthrough: true, body });
+    this.response = this.responseText;
+
+    this.onreadystatechange?.(new Event("readystatechange"));
+    this.onload?.(new Event("load"));
+  }
+
+  abort(): void {
+    this.onabort?.(new Event("abort"));
+  }
+
+  getAllResponseHeaders(): string {
+    return "content-type: application/json";
+  }
+}
+
+describe("network routing", () => {
+  const originalFetch = globalThis.fetch;
+  const originalXmlHttpRequest = (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest;
+
+  beforeEach(() => {
+    FakeXMLHttpRequest.instances = [];
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest =
+      FakeXMLHttpRequest as unknown as XMLHttpRequest;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    (globalThis as { XMLHttpRequest?: unknown }).XMLHttpRequest = originalXmlHttpRequest;
+  });
+
+  it("fulfills RPC request via fetch route", async () => {
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example/",
+              methods: ["eth_chainId"],
+              responseKey: "chain-id",
+            },
+          ],
+        },
+        mockResponses: {
+          "chain-id": { result: "0x1" },
+        },
+      }),
+      logger: createLogger(false),
+    });
+
+    const response = await fetch("https://rpc.example/", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 7,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+        params: [],
+      }),
+    });
+
+    await expect(response.json()).resolves.toEqual({
+      id: 7,
+      jsonrpc: "2.0",
+      result: "0x1",
+    });
+  });
+
+  it("matches Request payload when filtering RPC methods", async () => {
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example",
+              methods: ["eth_chainId"],
+              responseKey: "chain-id",
+            },
+          ],
+        },
+        mockResponses: {
+          "chain-id": { result: "0x1" },
+        },
+      }),
+      logger: createLogger(false),
+    });
+
+    const request = new Request("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    const response = await fetch(request);
+    await expect(response.json()).resolves.toMatchObject({ result: "0x1" });
+  });
+
+  it("blocks unmatched fetch request in strict mode", async () => {
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [],
+          httpEndpoints: [],
+        },
+        mockResponses: {},
+      }),
+      logger: createLogger(false),
+    });
+
+    await expect(fetch("https://unknown.example")).rejects.toThrow("blocked unmatched request");
+  });
+
+  it("forwards unmatched fetch request in permissive mode", async () => {
+    const baseFetch = vi.fn(async () => new Response("ok", { status: 200 }));
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "permissive",
+        routing: {
+          rpcEndpoints: [],
+          httpEndpoints: [],
+        },
+        mockResponses: {},
+      }),
+      logger: createLogger(false),
+      baseFetch,
+    });
+
+    const response = await fetch("https://unknown.example", {
+      method: "GET",
+    });
+
+    expect(baseFetch).toHaveBeenCalledTimes(1);
+    await expect(response.text()).resolves.toBe("ok");
+  });
+
+  it("forwards matched rpc request in permissive mode when mock is missing", async () => {
+    const baseFetch = vi.fn(async () => new Response("fallback", { status: 200 }));
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "permissive",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example",
+              methods: ["eth_chainId"],
+              responseKey: "missing",
+            },
+          ],
+        },
+        mockResponses: {},
+      }),
+      logger: createLogger(false),
+      baseFetch,
+    });
+
+    const response = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    expect(baseFetch).toHaveBeenCalledTimes(1);
+    await expect(response.text()).resolves.toBe("fallback");
+  });
+
+  it("applies latest snapshot on every fetch call", async () => {
+    const snapshot = {
+      mode: "strict" as const,
+      routing: {
+        rpcEndpoints: [
+          {
+            urlPattern: "https://rpc.example",
+            methods: ["eth_chainId"],
+            responseKey: "chain-id",
+          },
+        ],
+      },
+      mockResponses: {
+        "chain-id": { result: "0x1" },
+      } as Record<string, unknown>,
+    };
+
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => snapshot,
+      logger: createLogger(false),
+    });
+
+    const first = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    await expect(first.json()).resolves.toMatchObject({ result: "0x1" });
+
+    snapshot.mockResponses["chain-id"] = { result: "0x2" };
+    const second = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 2,
+        jsonrpc: "2.0",
+        method: "eth_chainId",
+      }),
+    });
+
+    await expect(second.json()).resolves.toMatchObject({ result: "0x2" });
+  });
+
+  it("forwards unmatched installed fetch with the original binding", async () => {
+    const runtimeTarget = globalThis as typeof globalThis & {
+      marker?: string;
+    };
+
+    runtimeTarget.marker = "fetch-boundary";
+    globalThis.fetch = (function (this: typeof runtimeTarget, input: RequestInfo | URL) {
+      if (this.marker !== "fetch-boundary") {
+        throw new TypeError("lost fetch binding");
+      }
+
+      return Promise.resolve(
+        new Response(typeof input === "string" ? input : input.toString(), {
+          status: 200,
+        }),
+      );
+    }) as typeof fetch;
+
+    const restore = installFetchInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            rpcEndpoints: [],
+            httpEndpoints: [],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+    );
+
+    const response = await fetch("https://forward.example");
+
+    await expect(response.text()).resolves.toBe("https://forward.example");
+    restore();
+  });
+
+  it("fulfills matched XHR route", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/quote",
+                method: "GET",
+                responseKey: "quote",
+              },
+            ],
+          },
+          mockResponses: {
+            quote: {
+              status: 200,
+              body: {
+                amountOut: "123.45",
+              },
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+
+    const completed = new Promise<void>((resolve, reject) => {
+      xhr.onload = () => resolve();
+      xhr.onerror = () => reject(new Error("xhr should not fail"));
+    });
+
+    xhr.open("GET", "https://api.example/quote");
+    xhr.send();
+
+    await completed;
+    expect(xhr.status).toBe(200);
+    expect(JSON.parse(xhr.responseText)).toEqual({
+      amountOut: "123.45",
+    });
+    expect(FakeXMLHttpRequest.instances).toHaveLength(0);
+
+    restore();
+  });
+
+  it("forwards matched permissive XHR route when mock rejects", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/quote",
+                method: "GET",
+                responseKey: "quote",
+              },
+            ],
+          },
+          mockResponses: {
+            quote: () => {
+              throw new Error("boom");
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.open("GET", "https://api.example/quote");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(FakeXMLHttpRequest.instances.at(-1)?.isSent).toBe(true);
+    restore();
+  });
+
+  it("preserves responseType when forwarding XHR to base", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/quote",
+                method: "GET",
+                responseKey: "missing",
+              },
+            ],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.responseType = "json";
+    xhr.open("GET", "https://api.example/quote");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(FakeXMLHttpRequest.instances.at(-1)?.responseType).toBe("json");
+    restore();
+  });
+
+  it("returns arraybuffer response for mocked XHR binary payload", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/binary",
+                method: "GET",
+                responseKey: "binary",
+              },
+            ],
+          },
+          mockResponses: {
+            binary: {
+              status: 200,
+              body: "hello",
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.responseType = "arraybuffer";
+    xhr.open("GET", "https://api.example/binary");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(xhr.response).toBeInstanceOf(ArrayBuffer);
+    restore();
+  });
+
+  it("returns blob response for mocked XHR blob payload", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            httpEndpoints: [
+              {
+                urlPattern: "https://api.example/blob",
+                method: "GET",
+                responseKey: "blob",
+              },
+            ],
+          },
+          mockResponses: {
+            blob: {
+              status: 200,
+              headers: {
+                "content-type": "application/octet-stream",
+              },
+              body: "hello",
+            },
+          },
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.responseType = "blob";
+    xhr.open("GET", "https://api.example/blob");
+    xhr.send();
+
+    await waitForMicrotask();
+
+    expect(xhr.response).toBeInstanceOf(Blob);
+    restore();
+  });
+
+  it("blocks unmatched XHR in strict mode", () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            httpEndpoints: [],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.open("GET", "https://unknown.example");
+
+    expect(() => xhr.send()).toThrow("blocked unmatched request");
+
+    restore();
+  });
+
+  it("forwards unmatched XHR in permissive mode", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "permissive",
+          routing: {
+            httpEndpoints: [],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+    xhr.open("POST", "https://unknown.example");
+    xhr.send(JSON.stringify({ amount: 1 }));
+
+    await waitForMicrotask();
+
+    expect(FakeXMLHttpRequest.instances).toHaveLength(1);
+    expect(FakeXMLHttpRequest.instances[0].url).toBe("https://unknown.example");
+    expect(FakeXMLHttpRequest.instances[0].isSent).toBe(true);
+
+    restore();
+  });
+});
