@@ -28,10 +28,13 @@ Swap 데모(실지갑 + Sepolia + Uniswap V3)는
 ## 3. Run Checks
 
 ```bash
+pnpm lint:workspace-types
 pnpm -r lint
 pnpm -r test
 pnpm -r build
 ```
+
+`pnpm lint:workspace-types` verifies that workspace package typechecking does not depend on prebuilt `dist` artifacts.
 
 ## 4. Run CLI
 

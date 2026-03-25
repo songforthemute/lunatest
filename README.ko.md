@@ -13,6 +13,7 @@ Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
@@ -31,11 +32,14 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5
 1. 기본 품질 게이트 실행
 
 ```bash
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
 pnpm test:e2e:smoke
 ```
+
+`pnpm lint:workspace-types`는 fresh checkout처럼 `dist` 산출물이 없는 상태에서도 workspace 타입체크가 통과하는지 확인하는 회귀 검증입니다.
 
 2. 문서 사이트 로컬 실행
 

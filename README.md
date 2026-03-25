@@ -53,7 +53,7 @@ pnpm -r test
 pnpm test:e2e:smoke
 ```
 
-`pnpm lint:workspace-types`는 fresh checkout처럼 `dist` 산출물이 없는 상태에서도 workspace 타입체크가 통과하는지 확인하는 회귀 검증입니다.
+`pnpm lint:workspace-types` verifies that workspace typechecking still passes in a fresh-checkout-like state where `dist` artifacts are absent.
 
 2. Run docs locally:
 
