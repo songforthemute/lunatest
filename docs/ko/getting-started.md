@@ -9,10 +9,13 @@ pnpm install --frozen-lockfile
 ## 2) 기본 품질 게이트 실행
 
 ```bash
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
 ```
+
+`pnpm lint:workspace-types`는 workspace 패키지 타입체크가 prebuilt `dist` 산출물에 의존하지 않는지 확인합니다.
 
 ## 3) E2E 게이트 실행
 
