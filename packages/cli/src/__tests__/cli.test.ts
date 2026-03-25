@@ -330,6 +330,46 @@ describe("cli", () => {
     expect(output).toContain("swap-polled");
   });
 
+  it("keeps watching after a scheduled refresh hits invalid lua", async () => {
+    const { cwd, scenarioFile } = await withConfiguredProject();
+    const config = await loadConfig(cwd);
+    const controller = new AbortController();
+    const updates: string[] = [];
+
+    setTimeout(async () => {
+      await writeFile(scenarioFile, "scenario {", "utf8");
+      setTimeout(async () => {
+        await writeFile(
+          scenarioFile,
+          `scenario {
+  name = "swap-recovered",
+  given = { wallet = { connected = true } },
+  when = { action = "swap" },
+  then_ui = { quotePanel = { visible = true } }
+}
+`,
+          "utf8",
+        );
+        setTimeout(() => controller.abort(), 200);
+      }, 120);
+    }, 100);
+
+    const output = await watchCommand({
+      config,
+      signal: controller.signal,
+      debounceMs: 25,
+      pollIntervalMs: 25,
+      onUpdate(chunk) {
+        updates.push(chunk);
+      },
+    });
+
+    expect(output).toContain("status=error");
+    expect(output).toContain("swap-recovered");
+    expect(updates.some((chunk) => chunk.includes("status=error"))).toBe(true);
+    expect(updates.some((chunk) => chunk.includes("swap-recovered"))).toBe(true);
+  });
+
   it("fails gen when AI adapter returns invalid JSON", async () => {
     const { cwd } = await withConfiguredProject();
     await writeFile(

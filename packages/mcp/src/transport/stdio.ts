@@ -6,13 +6,13 @@ import type { createMcpServer } from "../server.js";
 type McpServer = ReturnType<typeof createMcpServer>;
 
 type JsonRpcLikeRequest = {
-  id?: string | number;
+  id?: string | number | null;
   method: string;
   params?: unknown;
 };
 
 type JsonRpcLikeResponse = {
-  id: string | number;
+  id: string | number | null;
   result?: unknown;
   error?: {
     message: string;
@@ -63,9 +63,11 @@ export function parseJsonRpcLine(rawLine: string): JsonRpcLikeRequest | JsonRpcL
 
   if (
     typeof method !== "string" ||
-    (id !== undefined && typeof id !== "string" && typeof id !== "number")
+    (id !== undefined && id !== null && typeof id !== "string" && typeof id !== "number")
   ) {
-    return invalidRequestResponse("JSON-RPC request requires method and optional string|number id");
+    return invalidRequestResponse(
+      "JSON-RPC request requires method and optional string|number|null id",
+    );
   }
 
   return {

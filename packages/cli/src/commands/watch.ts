@@ -19,6 +19,11 @@ export type WatchCommandOptions = {
   watchImpl?: WatchImpl;
 };
 
+function formatWatchError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return ["Watch mode", "status=error", `message=${message}`].join("\n");
+}
+
 async function resolveWatchFingerprint(config: ResolvedLunaCliConfig): Promise<string> {
   let sources: string[];
   try {
@@ -56,20 +61,26 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
   let running = Promise.resolve();
 
   const emit = async () => {
-    const existing = await loadScenarioCatalog({
-      config: options.config,
-      allowEmpty: true,
-    });
+    try {
+      const existing = await loadScenarioCatalog({
+        config: options.config,
+        allowEmpty: true,
+      });
 
-    const output =
-      existing.length === 0
-        ? "Watch mode\nstatus=idle"
-        : await runCommand({
-            filter: options.filter,
-            config: options.config,
-          });
-    history.push(output);
-    options.onUpdate?.(output);
+      const output =
+        existing.length === 0
+          ? "Watch mode\nstatus=idle"
+          : await runCommand({
+              filter: options.filter,
+              config: options.config,
+            });
+      history.push(output);
+      options.onUpdate?.(output);
+    } catch (error) {
+      const output = formatWatchError(error);
+      history.push(output);
+      options.onUpdate?.(output);
+    }
   };
 
   const schedule = () => {

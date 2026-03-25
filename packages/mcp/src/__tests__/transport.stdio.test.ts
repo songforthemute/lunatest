@@ -94,4 +94,29 @@ describe("mcp stdio transport", () => {
       params: undefined,
     });
   });
+
+  it("accepts null ids and echoes them back in responses", async () => {
+    const server = createMcpServer({
+      scenarios: [{ id: "swap-1", name: "swap happy path" }],
+    });
+
+    const parsed = parseJsonRpcLine('{"id":null,"method":"scenario.list"}');
+    expect(parsed).toEqual({
+      id: null,
+      method: "scenario.list",
+      params: undefined,
+    });
+
+    const input = new PassThrough();
+    const output = new PassThrough();
+
+    input.write(`${JSON.stringify({ id: null, method: "scenario.list" })}\n`);
+    input.end();
+
+    await runStdioServer({ input, output, server });
+
+    const response = JSON.parse(readOutput(output).trim());
+    expect(response.id).toBeNull();
+    expect(response.result).toEqual([{ id: "swap-1", name: "swap happy path" }]);
+  });
 });
