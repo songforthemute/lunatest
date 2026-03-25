@@ -20,6 +20,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint:workspace-types
       - run: pnpm -r --filter=!@lunatest/e2e-tests build
       - run: pnpm -r --filter=!@lunatest/e2e-tests lint
       - run: pnpm -r --filter=!@lunatest/e2e-tests test

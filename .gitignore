@@ -1,6 +1,7 @@
 .worktrees/
 node_modules/
 dist/
+*.tsbuildinfo
 .turbo/
 scripts/perf-current.json
 scripts/perf-current-absolute.json

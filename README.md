@@ -27,6 +27,7 @@ scenario {
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
@@ -45,11 +46,14 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5
 1. Run workspace quality and E2E gates:
 
 ```bash
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
 pnpm test:e2e:smoke
 ```
+
+`pnpm lint:workspace-types`는 fresh checkout처럼 `dist` 산출물이 없는 상태에서도 workspace 타입체크가 통과하는지 확인하는 회귀 검증입니다.
 
 2. Run docs locally:
 

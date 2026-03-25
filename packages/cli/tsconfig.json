@@ -1,11 +1,18 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "types": ["node", "vitest/globals"]
   },
+  "references": [
+    { "path": "../contracts" },
+    { "path": "../core" },
+    { "path": "../mcp" },
+    { "path": "../runtime-intercept" }
+  ],
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]
 }
