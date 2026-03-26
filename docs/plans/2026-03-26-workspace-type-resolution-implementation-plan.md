@@ -21,8 +21,8 @@
 ### Task 1: Reproduce fresh-checkout failure as an automated regression
 
 **Files:**
-- Create: `/Users/joeylee/lunatest/scripts/check-workspace-type-resolution.mjs`
-- Modify: [/Users/joeylee/lunatest/package.json](/Users/joeylee/lunatest/package.json)
+- Create: `scripts/check-workspace-type-resolution.mjs`
+- Modify: `package.json`
 - Test: run script directly in temp workspace
 
 **Step 1: Write the failing regression script**
@@ -72,7 +72,7 @@ git commit -m "test(workspace): fresh checkout 타입 해석 회귀 재현 추�
 ### Task 2: Add workspace source entry path aliases
 
 **Files:**
-- Modify: [/Users/joeylee/lunatest/tsconfig.base.json](/Users/joeylee/lunatest/tsconfig.base.json)
+- Modify: `tsconfig.base.json`
 
 **Step 1: Write the minimal paths map**
 
@@ -135,14 +135,14 @@ git commit -m "build(types): workspace source path alias 추가"
 ### Task 3: Add package project references and composite configs
 
 **Files:**
-- Modify: [/Users/joeylee/lunatest/packages/contracts/tsconfig.json](/Users/joeylee/lunatest/packages/contracts/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/core/tsconfig.json](/Users/joeylee/lunatest/packages/core/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/runtime-intercept/tsconfig.json](/Users/joeylee/lunatest/packages/runtime-intercept/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/react/tsconfig.json](/Users/joeylee/lunatest/packages/react/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/mcp/tsconfig.json](/Users/joeylee/lunatest/packages/mcp/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/playwright-plugin/tsconfig.json](/Users/joeylee/lunatest/packages/playwright-plugin/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/vitest-plugin/tsconfig.json](/Users/joeylee/lunatest/packages/vitest-plugin/tsconfig.json)
-- Modify: [/Users/joeylee/lunatest/packages/cli/tsconfig.json](/Users/joeylee/lunatest/packages/cli/tsconfig.json)
+- Modify: `packages/contracts/tsconfig.json`
+- Modify: `packages/core/tsconfig.json`
+- Modify: `packages/runtime-intercept/tsconfig.json`
+- Modify: `packages/react/tsconfig.json`
+- Modify: `packages/mcp/tsconfig.json`
+- Modify: `packages/playwright-plugin/tsconfig.json`
+- Modify: `packages/vitest-plugin/tsconfig.json`
+- Modify: `packages/cli/tsconfig.json`
 
 **Step 1: Add `composite: true` where needed**
 
@@ -197,7 +197,7 @@ git commit -m "build(types): package references와 composite 구성 추가"
 ### Task 4: Add solution config for workspace verification
 
 **Files:**
-- Create: `/Users/joeylee/lunatest/tsconfig.workspace.json`
+- Create: `tsconfig.workspace.json`
 
 **Step 1: Create solution config**
 
@@ -229,10 +229,10 @@ git commit -m "build(types): workspace solution tsconfig 추가"
 ### Task 5: Sync CI and docs with the new invariant
 
 **Files:**
-- Modify: [/Users/joeylee/lunatest/.github/workflows/release.yml](/Users/joeylee/lunatest/.github/workflows/release.yml)
-- Modify: [/Users/joeylee/lunatest/.github/workflows/ci.yml](/Users/joeylee/lunatest/.github/workflows/ci.yml)
-- Modify: [/Users/joeylee/lunatest/docs/guides/ci-integration.md](/Users/joeylee/lunatest/docs/guides/ci-integration.md)
-- Modify: [/Users/joeylee/lunatest/README.md](/Users/joeylee/lunatest/README.md)
+- Modify: `.github/workflows/release.yml`
+- Modify: `.github/workflows/ci.yml`
+- Modify: `docs/guides/ci-integration.md`
+- Modify: `README.md`
 
 **Step 1: Add fresh-checkout-safe lint proof to CI**
 

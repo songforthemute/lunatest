@@ -1,9 +1,18 @@
-import { mkdir, rename, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { mkdir, mkdtemp, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const repoRoot = path.resolve(new URL(".", import.meta.url).pathname, "..");
+export function resolveRepoRootFromScriptUrl(scriptUrl) {
+  return path.resolve(path.dirname(fileURLToPath(scriptUrl)), "..");
+}
+
+export function buildBackupPath(targetPath, repoRoot, backupRoot) {
+  const relative = path.relative(repoRoot, targetPath);
+  return path.join(backupRoot, relative);
+}
+
+const repoRoot = resolveRepoRootFromScriptUrl(import.meta.url);
 
 function run(command, args, cwd) {
   return new Promise((resolve, reject) => {
@@ -43,8 +52,7 @@ async function moveAway(targetPath, backupRoot) {
     return null;
   }
 
-  const relative = path.relative(repoRoot, targetPath);
-  const backupPath = path.join(backupRoot, relative);
+  const backupPath = buildBackupPath(targetPath, repoRoot, backupRoot);
   await mkdir(path.dirname(backupPath), { recursive: true });
   await rename(targetPath, backupPath);
   return { targetPath, backupPath };
@@ -58,9 +66,9 @@ async function restoreAll(backups) {
 }
 
 async function main() {
-  const backupRoot = await (await import("node:fs/promises")).mkdtemp(
-    path.join(tmpdir(), "lunatest-workspace-types-"),
-  );
+  const backupParent = path.join(repoRoot, "node_modules", ".cache");
+  await mkdir(backupParent, { recursive: true });
+  const backupRoot = await mkdtemp(path.join(backupParent, "lunatest-workspace-types-"));
   const backups = [];
 
   try {
@@ -81,4 +89,10 @@ async function main() {
   }
 }
 
-await main();
+const directInvocation =
+  process.argv[1] !== undefined &&
+  pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+
+if (directInvocation) {
+  await main();
+}
