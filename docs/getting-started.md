@@ -49,3 +49,14 @@ node packages/cli/dist/index.js gen --ai
 ```bash
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 ```
+
+## 6. CI Wrappers
+
+CI/nightly jobs should use the wrapper commands below instead of invoking E2E or performance checks directly:
+
+```bash
+pnpm run test:e2e:smoke:ci
+pnpm run test:e2e:extended:ci
+pnpm run perf:regression:ci
+pnpm run perf:absolute:ci
+```

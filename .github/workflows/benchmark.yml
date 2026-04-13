@@ -18,8 +18,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @lunatest/core build
-      - run: node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
+      - run: pnpm run perf:absolute:ci
       - uses: actions/upload-artifact@v4
         with:
           name: perf-current-absolute
@@ -37,4 +36,4 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:e2e:extended
+      - run: pnpm run test:e2e:extended:ci

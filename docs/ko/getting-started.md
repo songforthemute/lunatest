@@ -57,6 +57,17 @@ node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-bas
 node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=scripts/perf-current-absolute.json
 ```
 
+## 6) CI 전용 wrapper
+
+CI/야간 job에서는 E2E나 성능 체크를 직접 호출하지 않고 아래 wrapper를 사용합니다.
+
+```bash
+pnpm run test:e2e:smoke:ci
+pnpm run test:e2e:extended:ci
+pnpm run perf:regression:ci
+pnpm run perf:absolute:ci
+```
+
 ## 다음 단계
 
 - 라이브러리 소비자 관점 사용법: [라이브러리 소비자 가이드](./guides/library-consumption.md)

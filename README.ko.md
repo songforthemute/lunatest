@@ -61,6 +61,17 @@ pnpm release:publish:next
 - Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - Local preset 작성: `docs/guides/local-preset-authoring.md`
 
+CI/야간 전용 wrapper:
+
+```bash
+pnpm run test:e2e:smoke:ci
+pnpm run test:e2e:extended:ci
+pnpm run perf:regression:ci
+pnpm run perf:absolute:ci
+```
+
+이 wrapper들은 fresh checkout CI job이 workspace package entry를 읽기 전에 필요한 prebuild 단계를 중앙화합니다.
+
 ## 저장소 구조
 
 | 경로 | 설명 |

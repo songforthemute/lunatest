@@ -75,6 +75,17 @@ pnpm release:publish:next
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - local preset authoring: `docs/guides/local-preset-authoring.md`
 
+CI/nightly wrappers:
+
+```bash
+pnpm run test:e2e:smoke:ci
+pnpm run test:e2e:extended:ci
+pnpm run perf:regression:ci
+pnpm run perf:absolute:ci
+```
+
+These wrappers centralize the prebuild step that fresh-checkout CI jobs need before loading workspace package entries.
+
 ## Repository Structure
 
 | Path | Purpose |
