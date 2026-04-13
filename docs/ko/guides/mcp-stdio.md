@@ -19,13 +19,13 @@ node packages/mcp/dist/bin/mcp-stdio.js
 `scenario.list`를 요청하면 기본 상태에서는 빈 배열이 반환됩니다.
 
 ```bash
-echo '{"id":"1","method":"scenario.list"}' | node packages/mcp/dist/bin/mcp-stdio.js
+echo '{"id":1,"method":"scenario.list"}' | node packages/mcp/dist/bin/mcp-stdio.js
 ```
 
 예상 응답:
 
 ```json
-{"id":"1","result":[]}
+{"id":1,"result":[]}
 ```
 
 ## 4) 다중 요청 예시 (생성 후 실행)
@@ -35,7 +35,8 @@ echo '{"id":"1","method":"scenario.list"}' | node packages/mcp/dist/bin/mcp-stdi
 ```bash
 printf '%s\n' \
   '{"id":"1","method":"scenario.create","params":{"id":"swap-smoke","name":"Swap Smoke"}}' \
-  '{"id":"2","method":"scenario.run","params":{"id":"swap-smoke"}}' \
+  '{"method":"scenario.list"}' \
+  '{"id":null,"method":"scenario.run","params":{"id":"swap-smoke"}}' \
   | node packages/mcp/dist/bin/mcp-stdio.js
 ```
 
@@ -43,7 +44,7 @@ printf '%s\n' \
 
 ```json
 {"id":"1","result":{"id":"swap-smoke","name":"Swap Smoke"}}
-{"id":"2","result":{"id":"swap-smoke","pass":true}}
+{"id":null,"result":{"id":"swap-smoke","pass":true}}
 ```
 
 ## 5) 커버리지/프롬프트 조회 예시
@@ -58,5 +59,7 @@ printf '%s\n' \
 ## 주의사항
 
 - JSON 한 줄은 요청 1개 형식이어야 합니다.
-- `id`와 `method`는 문자열이어야 합니다.
+- `id`는 문자열, 숫자, `null`을 사용할 수 있습니다.
+- `method`는 문자열이어야 합니다.
+- `id`가 없는 요청은 notification이며 응답이 반환되지 않습니다.
 - 잘못된 payload를 보내면 error 응답이 반환됩니다.

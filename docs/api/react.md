@@ -1,13 +1,13 @@
 # API: @lunatest/react
 
-배포 채널: `latest`
+Release channel: `latest`
 
-주요 API:
+## Public API
 
 - `createLunaProvider`
 - `LunaTestProvider`
-- `useLunaTest`
 - `useLunaProvider`
+- `useLunaTest`
 - `withLunaWagmiConfig`
 - `createEthersAdapter`
 - `createWeb3JsAdapter`
@@ -16,41 +16,86 @@
 - `LunaDevtoolsPanel`
 - `mountLunaDevtools`
 
-React 앱에서는 `LunaTestProvider` + `useLunaTest` 조합을 기본 패턴으로 사용하고, 개발 서버 런타임 모킹은 `bootstrapLunaRuntime`를 기본 경로로 권장합니다.
+`@lunatest/react/browser` is the recommended entrypoint for browser-only bootstrap and devtools usage.
 
 ## `bootstrapLunaRuntime(options?)`
 
 ```ts
-import { bootstrapLunaRuntime } from "@lunatest/react/browser";
+type LunaBootstrapOptions = {
+  enable?: boolean;
+  source?: string | URL;
+  nodeEnv?: string;
+  mountDevtools?: boolean;
+  devtoolsTargetId?: string;
+  presetRegistry?: PresetRegistry;
+  projectPresetSources?: ProjectPresetSources;
+  protocolPresetId?: string;
+  protocolPresetParams?: Record<string, unknown>;
+  walletPresetId?: string;
+  walletPresetParams?: Record<string, unknown>;
+  walletFallbackMode?: "off" | "manual-toggle";
+  walletPreset?: {
+    address: string;
+    chainId?: string;
+    permissions?: Array<LunaWalletPermission | string>;
+    assets?: Partial<LunaWalletAssetState>;
+  };
+  configOverride?: Partial<LunaRuntimeInterceptConfig>;
+};
 
-const nodeEnv =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.MODE) ??
-  (typeof process !== "undefined" ? process.env.NODE_ENV : undefined);
-
-void bootstrapLunaRuntime({
-  source: "./lunatest.lua",
-  nodeEnv,
-  mountDevtools: true,
-  walletFallbackMode: "manual-toggle",
-  walletPreset: {
-    address: "0x1111111111111111111111111111111111111111",
-    chainId: "0xaa36a7",
-    permissions: ["eth_accounts"],
-    assets: {
-      nativeBalance: "1",
-      tokens: {},
-    },
-  },
-});
+type LunaBootstrapResult = {
+  enabled: boolean;
+  configLoaded: boolean;
+  unmountDevtools?: () => void;
+  config?: LuaConfig;
+};
 ```
 
-`@lunatest/react/browser`는 browser-only bootstrap/devtools 경로를 위한 권장 import입니다.
-`walletFallbackMode`는 인브라우저 위젯에서 Luna Wallet 토글 UI를 노출할지 결정합니다.
-`walletPreset`은 주소/체인/권한/seeded asset state를 초기값으로 주입합니다.
-`enable` 또는 `configOverride.enable`을 주지 않으면 `bootstrapLunaRuntime()`는 development에서만 자동 활성화됩니다.
-production에서 켜려면 `enable: true` 또는 `configOverride: { enable: true }`를 명시해야 합니다.
+`bootstrapLunaRuntime()` accepts the full runtime/bootstrap surface currently shipped by the package:
 
-반환값은 `enabled`, `configLoaded`, `config?`, `unmountDevtools?`를 포함합니다.  
-production에서 선제 게이트로 막힌 경우에는 `configLoaded: false`로 반환되고 Lua source도 읽지 않습니다.
+- `source`: Lua config path or URL, defaults to `./lunatest.lua`
+- `enable`: explicit on/off override
+- `nodeEnv`: environment override for the bootstrap gate
+- `mountDevtools` and `devtoolsTargetId`: browser devtools mounting control
+- `presetRegistry`: reuse an existing registry instance
+- `projectPresetSources`: inject local preset sources without a prebuilt registry
+- `protocolPresetId` / `protocolPresetParams`: select and materialize a protocol preset
+- `walletPresetId` / `walletPresetParams`: select and materialize a wallet preset
+- `walletFallbackMode`: Luna Wallet fallback UI mode
+- `walletPreset`: direct wallet session seed
+- `configOverride`: partial runtime-intercept config override
 
-수동 고급 모드가 필요한 경우에는 `enableLunaIntercept` + `mountLunaDevtools`를 직접 조합할 수 있습니다.
+Activation precedence is:
+
+1. `enable` if explicitly provided
+2. `configOverride.enable`
+3. `development` only
+
+If activation is blocked before config loading, the function returns `{ enabled: false, configLoaded: false }` and does not read the Lua source.
+
+The result includes `enabled`, `configLoaded`, optional `config`, and optional `unmountDevtools`.
+
+## Related entrypoints
+
+- `LunaTestProvider` / `useLunaProvider` for React state and provider reuse
+- `enableLunaIntercept` when you want to manage intercept activation manually
+- `mountLunaDevtools` when you want to mount the devtools panel without `bootstrapLunaRuntime()`
+
+## Minimal example
+
+```tsx
+import { LunaTestProvider, useLunaTest } from "@lunatest/react";
+
+function Demo() {
+  const { provider } = useLunaTest();
+  return <button onClick={() => provider.request({ method: "eth_chainId" })}>check chain</button>;
+}
+
+export function App() {
+  return (
+    <LunaTestProvider options={{ chainId: "0x1" }}>
+      <Demo />
+    </LunaTestProvider>
+  );
+}
+```

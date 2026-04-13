@@ -25,7 +25,7 @@ If you want to add your own team-specific protocol or wallet presets, see:
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
 ## Core Provider Example

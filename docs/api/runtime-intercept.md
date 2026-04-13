@@ -2,19 +2,27 @@
 
 Release channel: `latest`
 
-`@lunatest/runtime-intercept` is a browser runtime layer for local interactive testing.
+`@lunatest/runtime-intercept` is the browser runtime layer for local interactive testing.
 
 ## Public API
 
-- `enableLunaRuntimeIntercept(config)`
+- `enableLunaRuntimeIntercept(config, nodeEnv?)`
 - `disableLunaRuntimeIntercept()`
 - `createLunaRuntimeIntercept(config)`
 - `setRouteMocks(routes)`
 - `appendRouteMocks(routes)`
 - `applyInterceptState(partialState)`
 - `getInterceptState()`
+- `setWalletSession(session)`
+- `getWalletSession()`
+- `connectWalletSession(address?)`
+- `disconnectWalletSession()`
+- `isLunaRuntimeInterceptEnabled()`
 - `resolveEnabled(config, nodeEnv?)`
+- `normalizeRuntimeInterceptConfig(input)`
 - `LunaRuntimeInterceptConfig`
+- `NormalizedRuntimeInterceptConfig`
+- `RuntimeInterceptHandle`
 
 ## `LunaRuntimeInterceptConfig`
 
@@ -22,47 +30,44 @@ Release channel: `latest`
 type LunaRuntimeInterceptConfig = {
   enable?: boolean;
   debug?: boolean;
+  wallet?: {
+    session?: Partial<LunaWalletSession>;
+  };
   intercept?: {
     mode?: "strict" | "permissive";
-    routes?: Array<
-      | { endpointType: "ethereum"; method: string; responseKey: string }
-      | { endpointType: "rpc"; urlPattern: string | RegExp; methods?: string[]; responseKey: string }
-      | { endpointType: "http"; urlPattern: string | RegExp; method?: string; responseKey: string }
-      | { endpointType: "ws"; urlPattern: string | RegExp; responseKey: string; match?: string | RegExp }
-    >;
-    routing?: {
-      ethereumMethods?: Array<{
-        method: string;
-        responseKey: string;
-      }>;
-      rpcEndpoints?: Array<{
-        urlPattern: string | RegExp;
-        methods?: string[];
-        responseKey: string;
-      }>;
-      httpEndpoints?: Array<{
-        urlPattern: string | RegExp;
-        method?: string;
-        responseKey: string;
-      }>;
-      wsEndpoints?: Array<{
-        urlPattern: string | RegExp;
-        responseKey: string;
-        match?: string | RegExp;
-      }>;
-      bypassWsPatterns?: Array<string | RegExp>;
-    };
+    routes?: RouteMock[];
+    routing?: RoutingConfig;
     mockResponses?: Record<string, unknown | ((ctx) => unknown | Promise<unknown>)>;
   };
 };
 ```
 
-## Activation Priority
+`wallet.session` is the public config hook for seeding wallet state before the intercept runtime becomes active.
 
-1. If `enable` is explicitly boolean, it wins.
-2. Otherwise, activation happens only when `NODE_ENV === "development"`.
+## `normalizeRuntimeInterceptConfig(input)`
 
-## Minimal Example
+`normalizeRuntimeInterceptConfig()` resolves the runtime config into a normalized object with:
+
+- `wallet.session` materialized as a full `LunaWalletSession`
+- `intercept.mode` defaulted to `strict` when omitted
+- `intercept.routing` converted to arrays even when the input used legacy route lists
+- `intercept.mockResponses` cloned into a plain record
+
+## Activation priority
+
+1. An explicit boolean `enable` wins.
+2. Otherwise, activation happens only when the resolved environment is `development`.
+
+## Wallet session helpers
+
+These helpers operate on the active runtime handle:
+
+- `setWalletSession(session)` updates the active wallet session and returns the normalized session.
+- `getWalletSession()` returns the current session.
+- `connectWalletSession(address?)` marks the session connected and optionally seeds a single address.
+- `disconnectWalletSession()` marks the session disconnected.
+
+## Minimal example
 
 ```ts
 import { loadLunaConfig } from "@lunatest/core";
@@ -79,6 +84,9 @@ const nodeEnv =
 
 const enabled = enableLunaRuntimeIntercept(
   {
+    wallet: {
+      session: config.intercept?.state?.walletSession as Partial<LunaWalletSession> | undefined,
+    },
     intercept: {
       mode: config.mode,
       mockResponses: config.intercept?.mockResponses ?? {},
@@ -95,6 +103,6 @@ if (enabled) {
 
 ## Notes
 
-- `strict`: blocks unmatched wallet/network/frame interactions.
-- `permissive`: forwards unmatched interactions to original runtime behavior.
+- `strict` blocks unmatched wallet/network/frame interactions.
+- `permissive` forwards unmatched interactions to original runtime behavior.
 - Built-in WebSocket bypass covers common HMR channels (`vite-hmr`, `webpack-hmr`, `next-hmr`).

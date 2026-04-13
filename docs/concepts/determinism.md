@@ -1,10 +1,10 @@
 # Determinism
 
-같은 입력 시나리오를 넣었을 때는 항상 같은 결과가 나와야 합니다.
+Given the same input scenario, LunaTest should always produce the same result.
 
-핵심 메커니즘:
+Core mechanisms:
 
-- `math.random` 고정 시드
-- `os.time`/`os.date` 가상 시계
-- `io.*`/`os.execute` 차단
-- 실행 단위별 VM 격리
+- fixed seed for `math.random`
+- virtual clock for `os.time` / `os.date`
+- blocking `io.*` / `os.execute`
+- VM isolation per execution unit

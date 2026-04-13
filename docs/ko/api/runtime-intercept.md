@@ -2,19 +2,27 @@
 
 배포 채널: `latest`
 
-`@lunatest/runtime-intercept`는 개발 서버 브라우저에서 지갑/네트워크 상호작용을 가로채는 런타임 계층입니다.
+`@lunatest/runtime-intercept`는 로컬 인터랙티브 테스트를 위한 브라우저 런타임 계층입니다.
 
 ## 공개 API
 
-- `enableLunaRuntimeIntercept(config)`
+- `enableLunaRuntimeIntercept(config, nodeEnv?)`
 - `disableLunaRuntimeIntercept()`
 - `createLunaRuntimeIntercept(config)`
 - `setRouteMocks(routes)`
 - `appendRouteMocks(routes)`
 - `applyInterceptState(partialState)`
 - `getInterceptState()`
+- `setWalletSession(session)`
+- `getWalletSession()`
+- `connectWalletSession(address?)`
+- `disconnectWalletSession()`
+- `isLunaRuntimeInterceptEnabled()`
 - `resolveEnabled(config, nodeEnv?)`
+- `normalizeRuntimeInterceptConfig(input)`
 - `LunaRuntimeInterceptConfig`
+- `NormalizedRuntimeInterceptConfig`
+- `RuntimeInterceptHandle`
 
 ## `LunaRuntimeInterceptConfig`
 
@@ -22,47 +30,44 @@
 type LunaRuntimeInterceptConfig = {
   enable?: boolean;
   debug?: boolean;
+  wallet?: {
+    session?: Partial<LunaWalletSession>;
+  };
   intercept?: {
     mode?: "strict" | "permissive";
-    routes?: Array<
-      | { endpointType: "ethereum"; method: string; responseKey: string }
-      | { endpointType: "rpc"; urlPattern: string | RegExp; methods?: string[]; responseKey: string }
-      | { endpointType: "http"; urlPattern: string | RegExp; method?: string; responseKey: string }
-      | { endpointType: "ws"; urlPattern: string | RegExp; responseKey: string; match?: string | RegExp }
-    >;
-    routing?: {
-      ethereumMethods?: Array<{
-        method: string;
-        responseKey: string;
-      }>;
-      rpcEndpoints?: Array<{
-        urlPattern: string | RegExp;
-        methods?: string[];
-        responseKey: string;
-      }>;
-      httpEndpoints?: Array<{
-        urlPattern: string | RegExp;
-        method?: string;
-        responseKey: string;
-      }>;
-      wsEndpoints?: Array<{
-        urlPattern: string | RegExp;
-        responseKey: string;
-        match?: string | RegExp;
-      }>;
-      bypassWsPatterns?: Array<string | RegExp>;
-    };
+    routes?: RouteMock[];
+    routing?: RoutingConfig;
     mockResponses?: Record<string, unknown | ((ctx) => unknown | Promise<unknown>)>;
   };
 };
 ```
 
+`wallet.session`은 intercept runtime이 활성화되기 전에 wallet state를 미리 주입하는 public config hook입니다.
+
+## `normalizeRuntimeInterceptConfig(input)`
+
+`normalizeRuntimeInterceptConfig()`는 runtime config를 다음과 같은 normalized object로 바꿉니다.
+
+- `wallet.session`을 full `LunaWalletSession`으로 materialize
+- `intercept.mode`는 생략 시 `strict`로 기본값 적용
+- `intercept.routing`은 legacy route list가 들어와도 배열로 정규화
+- `intercept.mockResponses`는 plain record로 복제
+
 ## 활성화 우선순위
 
-1. `enable` 값이 명시되어 있으면 해당 값을 그대로 사용합니다.
-2. `enable`이 없으면 `NODE_ENV === "development"`일 때만 켭니다.
+1. `enable`이 boolean으로 명시되면 그 값을 그대로 사용합니다.
+2. 아니면 resolved environment가 `development`일 때만 활성화합니다.
 
-## 최소 사용 예시
+## wallet session helper
+
+이 helper들은 active runtime handle에 대해 동작합니다.
+
+- `setWalletSession(session)`: 현재 wallet session을 갱신하고 normalized session을 반환
+- `getWalletSession()`: 현재 session 반환
+- `connectWalletSession(address?)`: connected 상태로 전환하고 필요하면 address 하나를 주입
+- `disconnectWalletSession()`: disconnected 상태로 전환
+
+## 최소 예시
 
 ```ts
 import { loadLunaConfig } from "@lunatest/core";
@@ -79,6 +84,9 @@ const nodeEnv =
 
 const enabled = enableLunaRuntimeIntercept(
   {
+    wallet: {
+      session: config.intercept?.state?.walletSession as Partial<LunaWalletSession> | undefined,
+    },
     intercept: {
       mode: config.mode,
       mockResponses: config.intercept?.mockResponses ?? {},
@@ -95,6 +103,6 @@ if (enabled) {
 
 ## 동작 요약
 
-- `strict`: 매핑되지 않은 요청/프레임은 차단
-- `permissive`: 매핑되지 않은 요청/프레임은 원본 경로로 전달
+- `strict`: 매핑되지 않은 wallet/network/frame interaction을 차단
+- `permissive`: 매핑되지 않은 interaction을 원본 runtime으로 전달
 - WebSocket은 기본적으로 HMR 채널(`vite-hmr`, `webpack-hmr`, `next-hmr`)을 우회

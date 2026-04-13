@@ -25,9 +25,10 @@
 
 ## 1) 환경 변수 설정
 
+repo root에서:
+
 ```bash
-cd /Users/joeylee/lunatest
-pnpm install
+pnpm install --frozen-lockfile
 cd examples/swap-dapp
 cp .env.example .env.local
 ```
@@ -46,8 +47,9 @@ cp .env.example .env.local
 
 ## 2) 데모 실행
 
+repo root에서:
+
 ```bash
-cd /Users/joeylee/lunatest
 pnpm --filter @lunatest/example-swap-dapp dev
 ```
 

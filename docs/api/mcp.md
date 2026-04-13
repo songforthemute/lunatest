@@ -1,17 +1,88 @@
 # API: @lunatest/mcp
 
-배포 채널: `latest`
+Release channel: `latest`
 
-주요 도구 그룹:
+## Public API
 
-- `scenario.*`
-- `coverage.*`
-- `mock.*`
-- `component.*`
+- `createMcpServer`
+- `createCoverageTools`
+- `createComponentTools`
+- `createMockTools`
+- `createScenarioTools`
+- `createResourceCatalog`
+- `createPromptCatalog`
+- `generate`
+- `mutateValues`
+- `mutateStages`
+- `mutateMocks`
+- `mutateScenarioVariants`
+- `parseJsonRpcLine`
+- `processJsonRpcLine`
+- `runStdioServer`
 
-기본 제공 리소스 6종, 프롬프트 4종을 함께 제공합니다.
+## `createMcpServer(options)`
 
-Preset registry 연동 도구:
+```ts
+type McpServerOptions = {
+  scenarios?: ScenarioDescriptor[];
+  coverage?: {
+    total?: number;
+    covered?: number;
+    ratio?: number;
+  };
+  coverageCatalog?: Partial<CoverageCatalog>;
+  mockState?: Record<string, unknown>;
+  componentTree?: Array<{ name: string; children?: Array<{ name: string }> }>;
+  componentStates?: Record<string, string[]>;
+  protocols?: string[];
+  scenarioAdapter?: ExecuteLuaScenarioInput["adapter"];
+  presetRegistry?: PresetRegistry;
+  projectPresetSources?: ProjectPresetSources;
+  projectRoot?: string;
+};
+```
+
+`createMcpServer(options)` wires together the shipped MCP tool groups and resources:
+
+- `scenario.*` for listing, creating, running, and mutating scenarios
+- `coverage.*` for coverage reporting, gap discovery, and suggestions
+- `mock.*` for preset registry access and mock state routing
+- `component.*` for component tree and state coverage inspection
+
+The option bag supports both direct registry injection and project-local discovery:
+
+- `presetRegistry`: reuse an existing registry instance
+- `projectPresetSources`: inject project-local protocol/wallet sources
+- `projectRoot`: load project-local sources from a filesystem root
+
+Other options seed the exposed tools and resources:
+
+- `scenarios`: initial scenario store
+- `coverage`: fallback seed for coverage tools
+- `coverageCatalog`: explicit coverage target catalog
+- `mockState`: mock state seed
+- `componentTree`: component tree resource seed
+- `componentStates`: component coverage seed
+- `protocols`: explicit protocol resource ids
+- `scenarioAdapter`: execution adapter used by scenario tools
+
+## Exported helpers
+
+`@lunatest/mcp` also exports the tool/resource/prompt factories and transport helpers:
+
+- `createCoverageTools`
+- `createComponentTools`
+- `createMockTools`
+- `createScenarioTools`
+- `createResourceCatalog`
+- `createPromptCatalog`
+- `generate`
+- `mutateValues`, `mutateStages`, `mutateMocks`, `mutateScenarioVariants`
+- `parseJsonRpcLine`, `processJsonRpcLine`, `runStdioServer`
+
+## Tool / resource behavior
+
+Preset registry tools:
 
 - `mock.listProtocolPresets`
 - `mock.getProtocolPreset`
@@ -22,23 +93,29 @@ Preset registry 연동 도구:
 - `mock.listPresetDiagnostics`
 - `mock.getPresetDiagnostic`
 
-`mock.listPresetDiagnostics`는 malformed local preset를 structured diagnostic 형태로 반환합니다.
-유효하지 않은 preset은 list/apply catalog에는 포함되지 않고 diagnostics로만 노출됩니다.
+`mock.listPresetDiagnostics` returns structured diagnostics for malformed local presets. Invalid presets are excluded from the list/apply catalog and surfaced only through diagnostics.
 
-Coverage / component surface는 실제 scenario metadata와 coverage catalog를 기준으로 동작합니다.
+Coverage / component surface:
 
-- `coverage.report`
-  - `total`
-  - `covered`
-  - `ratio`
-  - `known`
-  - `coveredTargets`
-  - `missing`
-- `coverage.gaps`
-  - `feature/state/component` 단위 missing target 목록
-- `coverage.suggest`
-  - missing target 기준 scenario suggestion 목록
-- `component.states(name)`
-  - `{ known, covered, missing }`
+- `coverage.report` returns `total`, `covered`, `ratio`, `known`, `coveredTargets`, `missing`
+- `coverage.gaps` returns missing feature/state/component targets
+- `coverage.suggest` returns scenario suggestions for missing targets
+- `component.states(name)` returns `{ known, covered, missing }`
 
-`resource.get("lunatest://protocols")`는 protocol id 배열이 아니라 preset metadata object 배열을 반환합니다.
+`resource.get("lunatest://protocols")` returns protocol metadata objects with `id`, `label`, `source`, `kind`, and `supportedChains`.
+
+## Minimal stdio example
+
+```ts
+import { createMcpServer, runStdioServer } from "@lunatest/mcp";
+
+const server = createMcpServer({
+  scenarios: [{ id: "swap-smoke", name: "Swap Smoke", lua: "scenario {}" }],
+});
+
+await runStdioServer({
+  input: process.stdin,
+  output: process.stdout,
+  server,
+});
+```
