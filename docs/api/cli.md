@@ -11,7 +11,7 @@ CLI는 아래 여섯 가지 흐름을 중심으로 사용합니다.
 - `lunatest devtools --open`
 - `lunatest doctor`
 
-일반적으로 로컬에서는 `run/devtools/doctor`, CI에서는 `coverage`와 `run` 조합을 많이 사용합니다.
+일반적으로 로컬에서는 `run/devtools/doctor`, CI에서는 `lint:workspace-types + build + lint + test + e2e smoke` 조합을 많이 사용합니다.
 
 ## `lunatest.config.json`
 

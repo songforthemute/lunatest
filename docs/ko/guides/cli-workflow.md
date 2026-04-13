@@ -1,6 +1,6 @@
 # CLI 워크플로 가이드
 
-LunaTest CLI는 `run`, `watch`, `coverage`, `gen --ai` 흐름을 제공합니다.
+LunaTest CLI는 `run`, `watch`, `coverage`, `gen --ai`, `devtools --open`, `doctor` 흐름을 제공합니다.
 
 선택적으로 프로젝트 루트 `lunatest.config.json`을 읽습니다.
 

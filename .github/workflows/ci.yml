@@ -20,6 +20,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint:workspace-types
       - run: pnpm -r --filter=!@lunatest/e2e-tests build
       - run: pnpm -r --filter=!@lunatest/e2e-tests lint
       - run: pnpm -r --filter=!@lunatest/e2e-tests test
@@ -55,7 +56,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:e2e:smoke
+      - run: pnpm run test:e2e:smoke:ci
 
   performance-regression:
     if: github.event_name == 'pull_request' || github.event_name == 'push'
@@ -71,5 +72,4 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @lunatest/core build
-      - run: node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
+      - run: pnpm run perf:regression:ci

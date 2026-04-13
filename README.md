@@ -27,6 +27,7 @@ scenario {
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
@@ -45,11 +46,14 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5
 1. Run workspace quality and E2E gates:
 
 ```bash
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
 pnpm test:e2e:smoke
 ```
+
+`pnpm lint:workspace-types` verifies that workspace typechecking still passes in a fresh-checkout-like state where `dist` artifacts are absent.
 
 2. Run docs locally:
 
@@ -70,6 +74,17 @@ pnpm release:publish:next
 - CI and gates: `docs/guides/ci-integration.md`
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - local preset authoring: `docs/guides/local-preset-authoring.md`
+
+CI/nightly wrappers:
+
+```bash
+pnpm run test:e2e:smoke:ci
+pnpm run test:e2e:extended:ci
+pnpm run perf:regression:ci
+pnpm run perf:absolute:ci
+```
+
+These wrappers centralize the prebuild step that fresh-checkout CI jobs need before loading workspace package entries.
 
 ## Repository Structure
 

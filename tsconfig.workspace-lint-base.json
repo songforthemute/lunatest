@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@lunatest/contracts": ["packages/contracts/src/index.ts"],
+      "@lunatest/core": ["packages/core/src/index.ts"],
+      "@lunatest/core/browser": ["packages/core/src/browser.ts"],
+      "@lunatest/runtime-intercept": ["packages/runtime-intercept/src/index.ts"],
+      "@lunatest/react": ["packages/react/src/index.ts"],
+      "@lunatest/react/browser": ["packages/react/src/browser.ts"],
+      "@lunatest/mcp": ["packages/mcp/src/index.ts"],
+      "@lunatest/vitest-plugin": ["packages/vitest-plugin/src/index.ts"],
+      "@lunatest/playwright-plugin": ["packages/playwright-plugin/src/index.ts"]
+    }
+  }
+}

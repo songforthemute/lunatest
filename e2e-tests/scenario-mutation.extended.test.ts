@@ -20,8 +20,16 @@ describe("e2e extended: scenario mutation flow", () => {
     expect(result).toEqual({
       id: "mut-1",
       result: [
-        { id: "swap-1-mut-1", name: "swap happy mutation 1" },
-        { id: "swap-1-mut-2", name: "swap happy mutation 2" },
+        expect.objectContaining({
+          id: "swap-1-mut-1",
+          name: "swap happy mutation 1",
+          tags: ["mutated"],
+        }),
+        expect.objectContaining({
+          id: "swap-1-mut-2",
+          name: "swap happy mutation 2",
+          tags: ["mutated"],
+        }),
       ],
     });
   });

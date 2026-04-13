@@ -9,10 +9,13 @@ pnpm install --frozen-lockfile
 ## 2) 기본 품질 게이트 실행
 
 ```bash
+pnpm lint:workspace-types
 pnpm -r build
 pnpm -r lint
 pnpm -r test
 ```
+
+`pnpm lint:workspace-types`는 workspace 패키지 타입체크가 prebuilt `dist` 산출물에 의존하지 않는지 확인합니다.
 
 ## 3) E2E 게이트 실행
 
@@ -52,6 +55,17 @@ node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-bas
 
 ```bash
 node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=scripts/perf-current-absolute.json
+```
+
+## 6) CI 전용 wrapper
+
+CI/야간 job에서는 E2E나 성능 체크를 직접 호출하지 않고 아래 wrapper를 사용합니다.
+
+```bash
+pnpm run test:e2e:smoke:ci
+pnpm run test:e2e:extended:ci
+pnpm run perf:regression:ci
+pnpm run perf:absolute:ci
 ```
 
 ## 다음 단계
