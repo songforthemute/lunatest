@@ -66,9 +66,7 @@ jobs:
             exit 0
           fi
 
-          gh api \
-            --method POST \
-            "repos/${GITHUB_REPOSITORY}/pages" \
-            -f build_type=workflow >/dev/null
+          echo "::error::GitHub Pages is not enabled for ${GITHUB_REPOSITORY}. Enable Pages with GitHub Actions as the source before running docs deploy: https://github.com/${GITHUB_REPOSITORY}/settings/pages"
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4

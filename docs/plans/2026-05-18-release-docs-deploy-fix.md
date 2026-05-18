@@ -4,7 +4,7 @@
 
 **Goal:** Restore npm release and GitHub Pages docs deployment after the PR #3 merge.
 
-**Architecture:** Keep the existing release and docs workflows, but fix the two deployment-only failures at their source. Changesets should resolve the custom changelog module from `.changeset`, and the docs deploy job should ensure a GitHub Actions Pages site exists before calling `actions/deploy-pages`.
+**Architecture:** Keep the existing release and docs workflows, but fix the two deployment-only failures at their source. Changesets should resolve the custom changelog module from `.changeset`, and the docs deploy job should fail with an explicit Pages setup message before calling `actions/deploy-pages` when GitHub Pages is disabled.
 
 **Tech Stack:** GitHub Actions, Changesets, VitePress, Node.js test runner.
 
@@ -30,9 +30,9 @@
 - Modify: `scripts/ci-prebuild-workflows.test.mjs`
 
 **Steps:**
-- Add a workflow regression test that requires a Pages enablement preflight before `actions/deploy-pages`.
+- Add a workflow regression test that requires a Pages preflight before `actions/deploy-pages`.
 - Add a deploy job step that calls `gh api repos/${GITHUB_REPOSITORY}/pages`.
-- If Pages is not configured, create it with `build_type=workflow`.
+- If Pages is not configured, fail with the repo settings URL because the default workflow token cannot reliably create a Pages site.
 
 ### Task 3: Verify and publish PR
 
@@ -51,5 +51,5 @@
 
 **Acceptance Criteria:**
 - Release no longer fails while resolving `.changeset/changelog.cjs`.
-- Docs deploy no longer reaches `actions/deploy-pages` with Pages disabled.
+- Docs deploy no longer reaches `actions/deploy-pages` with Pages disabled, and reports the exact settings page that must be enabled.
 - Existing quality, pack, e2e, and docs build gates remain green.

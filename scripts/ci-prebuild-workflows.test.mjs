@@ -44,7 +44,7 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
 });
 
-test("Docs workflow enables GitHub Pages before push deploy", async () => {
+test("Docs workflow checks GitHub Pages before push deploy", async () => {
   const docsWorkflow = await readFile(
     new URL("../.github/workflows/docs.yml", import.meta.url),
     "utf8",
@@ -52,6 +52,8 @@ test("Docs workflow enables GitHub Pages before push deploy", async () => {
 
   assert.match(docsWorkflow, /Ensure GitHub Pages is enabled/);
   assert.match(docsWorkflow, /gh api "repos\/\$\{GITHUB_REPOSITORY\}\/pages"/);
-  assert.match(docsWorkflow, /-f build_type=workflow/);
+  assert.match(docsWorkflow, /settings\/pages/);
+  assert.doesNotMatch(docsWorkflow, /--method POST/);
+  assert.doesNotMatch(docsWorkflow, /-f build_type=workflow/);
   assert.match(docsWorkflow, /actions\/deploy-pages@v4/);
 });
