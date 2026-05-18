@@ -32,3 +32,5 @@ CI 전용 wrapper script(`build:workspace:ci`, `test:e2e:*:ci`, `perf:*:ci`)는 
 
 - `main` 릴리스 파이프라인은 npm Trusted Publishing(GitHub OIDC)을 사용합니다.
 - 장기 `NPM_TOKEN` publish 비밀값에 의존하지 않으며, GitHub Actions의 `id-token: write` 권한이 필요합니다.
+- npm provenance 검증을 통과하려면 각 공개 패키지의 `package.json`에 있는 `repository.url`이 GitHub repository(`https://github.com/songforthemute/lunatest`)와 일치해야 합니다.
+- `pnpm pack:check-integrity`는 publish 전에 tarball 내부 `package.json`의 repository metadata까지 검증합니다. 새 공개 패키지를 추가할 때는 package manifest와 pack integrity 대상 목록을 함께 갱신해야 합니다.

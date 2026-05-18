@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
+const repositoryUrl = "https://github.com/songforthemute/lunatest";
+
 const packageDirs = [
   "packages/contracts",
   "packages/core",
@@ -74,7 +76,11 @@ function getTarballFiles(tarballPath) {
     .map((line) => line.replace(/^package\//, ""));
 }
 
-function validatePackFiles(packageDir, files) {
+function getTarballManifest(tarballPath) {
+  return JSON.parse(run("tar", ["-xOf", tarballPath, "package/package.json"], process.cwd()));
+}
+
+function validatePackFiles(packageDir, files, manifest) {
   const errors = [];
 
   if (!files.includes("package.json")) {
@@ -91,6 +97,18 @@ function validatePackFiles(packageDir, files) {
     }
   }
 
+  if (manifest.repository?.type !== "git") {
+    errors.push("repository.type은 git이어야 함");
+  }
+
+  if (manifest.repository?.url !== repositoryUrl) {
+    errors.push(`repository.url은 ${repositoryUrl}이어야 함`);
+  }
+
+  if (manifest.repository?.directory !== packageDir) {
+    errors.push(`repository.directory는 ${packageDir}이어야 함`);
+  }
+
   return errors;
 }
 
@@ -102,7 +120,8 @@ try {
     const absoluteDir = join(process.cwd(), packageDir);
     const tarballPath = packPackage(absoluteDir, tempDir);
     const files = getTarballFiles(tarballPath);
-    const errors = validatePackFiles(packageDir, files);
+    const manifest = getTarballManifest(tarballPath);
+    const errors = validatePackFiles(packageDir, files, manifest);
 
     if (errors.length > 0) {
       failures.push({
