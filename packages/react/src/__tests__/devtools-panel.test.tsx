@@ -27,6 +27,19 @@ describe("LunaDevtoolsPanel", () => {
       React.createElement(LunaDevtoolsPanel, {
         title: "Runtime QA",
         walletFallbackMode: "manual-toggle",
+        initialRoutes: [
+          { endpointType: "ethereum", method: "eth_call", responseKey: "protocol.runtime" },
+          { endpointType: "ethereum", method: "eth_sendTransaction", responseKey: "protocol.runtime" },
+        ],
+        initialState: {
+          protocolRuntime: {
+            activeProtocol: "uniswap_v3",
+            chainId: 11155111,
+            tokens: {
+              "0x1111111111111111111111111111111111111111": { symbol: "MOCK", decimals: 18 },
+            },
+          },
+        },
         initialPresetDiagnostics: [
           {
             code: "preset_manifest_invalid",
@@ -46,6 +59,10 @@ describe("LunaDevtoolsPanel", () => {
     expect(html).toContain("project/bad_swap");
     expect(html).toContain("Run Scenario");
     expect(html).toContain("Protocol Preset");
+    expect(html).toContain("Protocol Runtime Preview");
+    expect(html).toContain("active: ");
+    expect(html).toContain("uniswap_v3");
+    expect(html).toContain("methods: ");
     expect(html).toContain("Wallet Preset");
     expect(html).toContain("Apply Routes");
     expect(html).toContain("Patch State");

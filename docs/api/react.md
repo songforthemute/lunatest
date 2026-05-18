@@ -75,6 +75,17 @@ If activation is blocked before config loading, the function returns `{ enabled:
 
 The result includes `enabled`, `configLoaded`, optional `config`, and optional `unmountDevtools`.
 
+When `protocolPresetId` is provided, bootstrap applies the materialized payload in this order:
+
+1. config route mocks and config state from `lunatest.lua`
+2. protocol preset route mocks, including `protocol.runtime`
+3. protocol preset `interceptState`, including `protocolRuntime`
+4. protocol preset wallet session
+5. optional `walletPresetId` override
+6. optional direct `walletPreset` override
+
+The devtools panel includes a compact protocol runtime preview: active protocol, chain id, token count, route count, and supported method count.
+
 ## Related entrypoints
 
 - `LunaTestProvider` / `useLunaProvider` for React state and provider reuse

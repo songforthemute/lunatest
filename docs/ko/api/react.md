@@ -75,6 +75,17 @@ activation gate에서 막히면 `{ enabled: false, configLoaded: false }`를 반
 
 반환값에는 `enabled`, `configLoaded`, optional `config`, optional `unmountDevtools`가 포함됩니다.
 
+`protocolPresetId`를 넘기면 bootstrap은 materialized payload를 아래 순서로 적용합니다.
+
+1. `lunatest.lua`의 config route mock과 config state
+2. `protocol.runtime`을 포함한 protocol preset route mock
+3. `protocolRuntime`을 포함한 protocol preset `interceptState`
+4. protocol preset wallet session
+5. optional `walletPresetId` override
+6. optional direct `walletPreset` override
+
+Devtools panel은 active protocol, chain id, token count, route count, supported method count를 보여주는 compact protocol runtime preview를 제공합니다.
+
 ## 관련 entrypoint
 
 - `LunaTestProvider` / `useLunaProvider`: React state와 provider reuse

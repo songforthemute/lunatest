@@ -12,6 +12,8 @@ import {
   readBodyPayload,
   resolveMock,
 } from "../matcher.js";
+import type { LunaWalletSession } from "@lunatest/contracts";
+import { resolveProtocolRequest } from "../protocols/engine.js";
 
 type JsonRpcPayload = {
   id?: unknown;
@@ -26,6 +28,12 @@ type InterceptFetchSnapshot = {
   mode: RoutingMode;
   routing: RoutingConfig;
   mockResponses: MockResponseMap;
+};
+
+type ProtocolRuntimeController = {
+  getWalletSession: () => LunaWalletSession;
+  setWalletSession: (session: Partial<LunaWalletSession>) => LunaWalletSession;
+  getRuntimeState: () => Record<string, unknown>;
 };
 
 async function extractRequest(input: RequestInfo | URL, init?: RequestInit): Promise<{
@@ -76,6 +84,7 @@ export function createInterceptedFetch(options: {
   getSnapshot: () => InterceptFetchSnapshot;
   logger: RuntimeLogger;
   baseFetch?: FetchLike;
+  protocolRuntime?: ProtocolRuntimeController;
 }): FetchLike {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = await extractRequest(input, init);
@@ -109,6 +118,32 @@ export function createInterceptedFetch(options: {
       });
 
       if (response === undefined && routingMode === "strict") {
+        if (options.protocolRuntime && isRecord(request.payload) && typeof request.payload.method === "string") {
+          const protocolResult = resolveProtocolRequest({
+            method: request.payload.method,
+            params: request.payload.params,
+            runtimeState: options.protocolRuntime.getRuntimeState(),
+            walletSession: options.protocolRuntime.getWalletSession(),
+            setWalletSession: options.protocolRuntime.setWalletSession,
+          });
+          if (protocolResult.handled) {
+            const rpcPayload = request.payload as JsonRpcPayload;
+            return createJsonResponse(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                id: rpcPayload.id ?? null,
+                result: protocolResult.result,
+              }),
+              {
+                status: 200,
+                headers: {
+                  "content-type": "application/json",
+                },
+              },
+            );
+          }
+        }
+
         options.logger.debug("fetch.rpc.blocked", {
           url: request.url,
           method: request.method,
@@ -117,6 +152,32 @@ export function createInterceptedFetch(options: {
       }
 
       if (response === undefined) {
+        if (options.protocolRuntime && isRecord(request.payload) && typeof request.payload.method === "string") {
+          const protocolResult = resolveProtocolRequest({
+            method: request.payload.method,
+            params: request.payload.params,
+            runtimeState: options.protocolRuntime.getRuntimeState(),
+            walletSession: options.protocolRuntime.getWalletSession(),
+            setWalletSession: options.protocolRuntime.setWalletSession,
+          });
+          if (protocolResult.handled) {
+            const rpcPayload = request.payload as JsonRpcPayload;
+            return createJsonResponse(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                id: rpcPayload.id ?? null,
+                result: protocolResult.result,
+              }),
+              {
+                status: 200,
+                headers: {
+                  "content-type": "application/json",
+                },
+              },
+            );
+          }
+        }
+
         if (!options.baseFetch) {
           throw noBaseFetchError(request.url);
         }
@@ -250,6 +311,7 @@ export function createInterceptedFetch(options: {
 export function installFetchInterceptor(
   config: NormalizedRuntimeInterceptConfig,
   logger: RuntimeLogger,
+  protocolRuntime?: ProtocolRuntimeController,
 ): () => void {
   const target = globalThis as { fetch?: FetchLike };
   const originalFetch = target.fetch;
@@ -269,6 +331,7 @@ export function installFetchInterceptor(
     }),
     logger,
     baseFetch,
+    protocolRuntime,
   });
 
   target.fetch = interceptedFetch;

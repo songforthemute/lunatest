@@ -60,6 +60,7 @@ pnpm release:publish:next
 - 시작 가이드: `docs/getting-started.md`
 - 아키텍처: `docs/concepts/architecture.md`
 - CI 게이트: `docs/guides/ci-integration.md`
+- 프로토콜/지갑 지원 범위: `docs/guides/protocol-support.md`
 - Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - Local preset 작성: `docs/guides/local-preset-authoring.md`
 
@@ -225,6 +226,8 @@ void bootstrapLunaRuntime({
 ```
 
 production에서는 자동 활성화되지 않습니다. 개발 환경 외에서 런타임 인터셉트를 켜려면 `enable: true` 또는 `configOverride: { enable: true }`를 명시해야 합니다. browser-only bootstrap/devtools에는 `@lunatest/react/browser` 경로를 권장합니다.
+
+Built-in protocol preset(`builtin/uniswap_v2`, `builtin/uniswap_v3`, `builtin/curve`, `builtin/aave`)은 결정론적인 L3 frontend-flow 지원을 목표로 합니다. 정확한 EVM fork를 대체하지는 않습니다. protocol 및 wallet method 지원 범위는 `docs/guides/protocol-support.md`에서 확인할 수 있습니다.
 
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
 

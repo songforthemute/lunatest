@@ -375,11 +375,24 @@ export function createLunaRuntimeIntercept(config: LunaRuntimeInterceptConfig = 
             {
               getWalletSession: () => walletSession,
               setWalletSession: setWalletSessionInternal,
+              getRuntimeState: () => runtimeState,
             },
           ),
         );
-        nextRestorers.push(installFetchInterceptor(normalizedConfig, logger));
-        nextRestorers.push(installXhrInterceptor(normalizedConfig, logger));
+        nextRestorers.push(
+          installFetchInterceptor(normalizedConfig, logger, {
+            getWalletSession: () => walletSession,
+            setWalletSession: setWalletSessionInternal,
+            getRuntimeState: () => runtimeState,
+          }),
+        );
+        nextRestorers.push(
+          installXhrInterceptor(normalizedConfig, logger, {
+            getWalletSession: () => walletSession,
+            setWalletSession: setWalletSessionInternal,
+            getRuntimeState: () => runtimeState,
+          }),
+        );
         nextRestorers.push(installWebSocketInterceptor(normalizedConfig, logger));
         restorers = nextRestorers;
       } catch (error) {

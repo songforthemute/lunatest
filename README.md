@@ -74,6 +74,7 @@ pnpm release:publish:next
 - docs index: `docs/index.md`
 - getting started: `docs/getting-started.md`
 - CI and gates: `docs/guides/ci-integration.md`
+- protocol and wallet support: `docs/guides/protocol-support.md`
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - local preset authoring: `docs/guides/local-preset-authoring.md`
 
@@ -250,6 +251,8 @@ void bootstrapLunaRuntime({
 
 Production bootstrap is explicit opt-in. If you want runtime intercept outside development, pass `enable: true` or `configOverride: { enable: true }`. For browser-only bootstrap/devtools, prefer the `@lunatest/react/browser` entry.
 
+Built-in protocol presets (`builtin/uniswap_v2`, `builtin/uniswap_v3`, `builtin/curve`, `builtin/aave`) target deterministic L3 frontend-flow support. They do not replace an exact EVM fork. See `docs/guides/protocol-support.md` for the protocol and wallet method support matrix.
+
 ### 6) Vitest matcher
 
 ```ts
@@ -318,6 +321,7 @@ expect({ pass: true }).toLunaPass();
   - project page: `/${repo}/`
   - user/org page: `/`
 - Library consumption guide: `docs/guides/library-consumption.md`
+- Protocol and wallet support: `docs/guides/protocol-support.md`
 - Korean docs index: `docs/ko/index.md`
 - Korean scenario examples: `docs/ko/guides/scenario-examples.md`
 

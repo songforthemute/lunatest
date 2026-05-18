@@ -44,6 +44,27 @@ type LunaRuntimeInterceptConfig = {
 
 `wallet.session` is the public config hook for seeding wallet state before the intercept runtime becomes active.
 
+The wallet session may include deterministic test-only metadata:
+
+```ts
+type LunaWalletSession = {
+  enabled: boolean;
+  connected: boolean;
+  chainId: string;
+  accounts: string[];
+  permissions: Array<{ parentCapability: string }>;
+  assets: {
+    nativeBalance: string;
+    tokens: Record<string, { symbol?: string; decimals?: number; balance: string; allowance: string }>;
+  };
+  knownChains?: Record<string, { chainId: string; chainName?: string; rpcUrls?: string[] }>;
+  watchedAssets?: Array<{ type: string; options: Record<string, unknown> }>;
+  behavior?: {
+    userRejectedMethods?: string[];
+  };
+};
+```
+
 ## `normalizeRuntimeInterceptConfig(input)`
 
 `normalizeRuntimeInterceptConfig()` resolves the runtime config into a normalized object with:
@@ -66,6 +87,20 @@ These helpers operate on the active runtime handle:
 - `getWalletSession()` returns the current session.
 - `connectWalletSession(address?)` marks the session connected and optionally seeds a single address.
 - `disconnectWalletSession()` marks the session disconnected.
+
+## Wallet method support
+
+The interceptor handles the common EIP-1193 and wallet methods needed by frontend integration tests:
+
+- Chain/session: `eth_chainId`, `net_version`, `eth_accounts`, `eth_requestAccounts`, `wallet_switchEthereumChain`, `wallet_addEthereumChain`
+- Permissions: `wallet_requestPermissions`, `wallet_getPermissions`, `wallet_revokePermissions`
+- Balances/gas/block: `eth_getBalance`, `eth_getTransactionCount`, `eth_blockNumber`, `eth_gasPrice`, `eth_estimateGas`, `eth_feeHistory`, `eth_maxPriorityFeePerGas`, `eth_getBlockByNumber`
+- Protocol/transactions: `eth_call`, `eth_sendTransaction`, `eth_getTransactionReceipt`, `eth_getLogs`
+- Signing/assets: `personal_sign`, `eth_signTypedData_v4`, `wallet_watchAsset`
+
+Unsupported wallet methods fail with provider error code `4200` in strict mode. Deterministic user rejection can be modeled with `wallet.session.behavior.userRejectedMethods`.
+
+Wallet asset `nativeBalance`, token `balance`, and token `allowance` values are integer base-unit strings. Runtime protocol handlers read and mutate these values for ERC-20 approvals and supported protocol transaction effects.
 
 ## Minimal example
 

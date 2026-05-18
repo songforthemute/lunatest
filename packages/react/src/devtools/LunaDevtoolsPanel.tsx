@@ -48,6 +48,52 @@ function toPrettyJson(input: unknown): string {
   return JSON.stringify(input, null, 2);
 }
 
+type ProtocolRuntimePreview = {
+  activeProtocol: string;
+  chainId: string;
+  tokenCount: number;
+  routeCount: number;
+  supportedMethodCount: number;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function buildProtocolRuntimePreview(
+  state: Record<string, unknown>,
+  routes: RouteMock[],
+): ProtocolRuntimePreview | null {
+  const runtime = state.protocolRuntime;
+  if (!isRecord(runtime)) {
+    return null;
+  }
+
+  const tokens = isRecord(runtime.tokens) ? runtime.tokens : {};
+  const supportedMethods = new Set<string>();
+  for (const route of routes) {
+    if (route.endpointType === "ethereum") {
+      supportedMethods.add(route.method);
+    }
+    if (route.endpointType === "http" && route.method) {
+      supportedMethods.add(route.method);
+    }
+    if (route.endpointType === "rpc" && route.methods) {
+      for (const method of route.methods) {
+        supportedMethods.add(method);
+      }
+    }
+  }
+
+  return {
+    activeProtocol: typeof runtime.activeProtocol === "string" ? runtime.activeProtocol : "unknown",
+    chainId: runtime.chainId === undefined ? "unknown" : String(runtime.chainId),
+    tokenCount: Object.keys(tokens).length,
+    routeCount: routes.length,
+    supportedMethodCount: supportedMethods.size,
+  };
+}
+
 function buildDefaultParamValues(
   schema: PresetParamDescriptor[],
 ): Record<string, string> {
@@ -145,6 +191,9 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
   const [presetParamValues, setPresetParamValues] = useState<Record<string, string>>({});
   const [presetParamsJson, setPresetParamsJson] = useState("{}");
   const [materializedPreview, setMaterializedPreview] = useState<string>("");
+  const [protocolRuntimePreview, setProtocolRuntimePreview] = useState<ProtocolRuntimePreview | null>(() =>
+    buildProtocolRuntimePreview(defaultState, defaultRoutes),
+  );
   const [presetDiagnostics, setPresetDiagnostics] = useState<PresetDiagnostic[]>(
     props.initialPresetDiagnostics ?? [],
   );
@@ -338,6 +387,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       } else {
         setRouteMocks(parsed);
       }
+      setProtocolRuntimePreview(buildProtocolRuntimePreview(JSON.parse(stateJson) as Record<string, unknown>, parsed));
       setStatus("routes-updated");
       refreshWalletSession();
       await refreshPresetDiagnostics();
@@ -358,6 +408,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       } else {
         applyInterceptState(parsed);
       }
+      setProtocolRuntimePreview(buildProtocolRuntimePreview(parsed, JSON.parse(routeJson) as RouteMock[]));
       setStatus("state-patched");
       refreshWalletSession();
     } catch (cause) {
@@ -370,6 +421,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
     setLuaScript(initialLuaScript);
     setRouteJson(toPrettyJson(defaultRoutes));
     setStateJson(toPrettyJson(defaultState));
+    setProtocolRuntimePreview(buildProtocolRuntimePreview(defaultState, defaultRoutes));
     setStatus("reset");
     setError(null);
     setDiff(null);
@@ -398,6 +450,7 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       setRouteMocks(materialized.routeMocks);
       applyInterceptState(materialized.interceptState);
       setMaterializedPreview(toPrettyJson(materialized));
+      setProtocolRuntimePreview(buildProtocolRuntimePreview(materialized.interceptState, materialized.routeMocks));
       setSelectedWalletPresetId(materialized.walletPresetId);
 
       const scenario =
@@ -512,6 +565,24 @@ export function LunaDevtoolsPanel(props: LunaDevtoolsPanelProps) {
       <hr />
 
       <h4 style={{ margin: 0, marginBottom: 8 }}>Protocol Preset</h4>
+      {protocolRuntimePreview ? (
+        <div
+          style={{
+            border: "1px solid #cbd5e1",
+            borderRadius: 8,
+            padding: 8,
+            marginBottom: 10,
+            background: "#f8fafc",
+          }}
+        >
+          <p style={{ margin: 0, marginBottom: 4 }}>Protocol Runtime Preview</p>
+          <p style={{ margin: 0, marginBottom: 4 }}>active: {protocolRuntimePreview.activeProtocol}</p>
+          <p style={{ margin: 0, marginBottom: 4 }}>chain: {protocolRuntimePreview.chainId}</p>
+          <p style={{ margin: 0, marginBottom: 4 }}>tokens: {protocolRuntimePreview.tokenCount}</p>
+          <p style={{ margin: 0, marginBottom: 4 }}>routes: {protocolRuntimePreview.routeCount}</p>
+          <p style={{ margin: 0 }}>methods: {protocolRuntimePreview.supportedMethodCount}</p>
+        </div>
+      ) : null}
       <label htmlFor="lunatest-protocol-preset">Protocol Preset</label>
       <select
         id="lunatest-protocol-preset"

@@ -78,6 +78,30 @@ describe("preset registry", () => {
     expect(v1.walletPresetId).toBe("builtin/demo_sepolia");
   });
 
+  it("materializes built-in protocols with runtime state and protocol routes", async () => {
+    for (const id of ["uniswap_v2", "uniswap_v3", "curve", "aave"]) {
+      const materialized = await materializeProtocolPreset(id);
+      const protocolRuntime = materialized.interceptState.protocolRuntime as Record<string, unknown>;
+
+      expect(protocolRuntime).toMatchObject({
+        activeProtocol: id,
+        supportLevel: "L3",
+      });
+      expect(materialized.routeMocks).toEqual(
+        expect.arrayContaining([
+          { endpointType: "ethereum", method: "eth_call", responseKey: "protocol.runtime" },
+          { endpointType: "ethereum", method: "eth_sendTransaction", responseKey: "protocol.runtime" },
+          { endpointType: "ethereum", method: "eth_getTransactionReceipt", responseKey: "protocol.runtime" },
+          { endpointType: "ethereum", method: "eth_getLogs", responseKey: "protocol.runtime" },
+        ]),
+      );
+      expect(Object.keys(materialized.walletSession.assets.tokens).length).toBeGreaterThan(0);
+      expect(materialized.builtinScenarios.map((item) => item.id)).toEqual(
+        expect.arrayContaining(["quote_success", "approve_success", "transaction_reverted"]),
+      );
+    }
+  });
+
   it("rejects unsupported protocol chain", async () => {
     await expect(
       materializeProtocolPreset("curve", {
