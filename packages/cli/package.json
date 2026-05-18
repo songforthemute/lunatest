@@ -35,5 +35,10 @@
     "@lunatest/runtime-intercept": "workspace:*",
     "commander": "^14.0.3",
     "tinyglobby": "^0.2.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/songforthemute/lunatest",
+    "directory": "packages/cli"
   }
 }

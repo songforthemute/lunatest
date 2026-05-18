@@ -27,5 +27,10 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.lint.json --pretty false"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/songforthemute/lunatest",
+    "directory": "packages/runtime-intercept"
   }
 }
