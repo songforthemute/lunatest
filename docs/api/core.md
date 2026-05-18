@@ -1,45 +1,148 @@
 # API: @lunatest/core
 
-배포 채널: `latest`
+Release channel: `latest`
 
-현재 공개 API는 다음 항목입니다.
+## Public API
 
 - `LunaProvider`
 - `LunaProviderOptions`
+- `createPresetRegistry(options?)`
+- `loadProjectPresetSources(projectRoot)`
 - `loadLunaConfig(source)`
-- `@lunatest/core/browser`
-- `listProtocolPresets()`
-- `getProtocolPreset(id)`
-- `materializeProtocolPreset(id, params)`
+- `listProtocolPresets(registry?)`
+- `getProtocolPreset(id, registry?)`
+- `materializeProtocolPreset(id, params?, registry?)`
 - `validateProtocolPresetSource(source, context?)`
-- `listWalletPresets()`
-- `getWalletPreset(id)`
-- `materializeWalletPreset(id, params?)`
+- `listWalletPresets(registry?)`
+- `getWalletPreset(id, registry?)`
+- `materializeWalletPreset(id, params?, registry?)`
 - `validateWalletPresetSource(source, context?)`
 - `getPresetDiagnostics(registry?)`
+- `buildCoverageSnapshot(input)`
+- `resolveCoverageMetadata(input)`
 - `createScenarioRuntime(config)`
-- `LuaConfig`
+- `LuaConfigSchema`
+- `executeLuaScenario(input)`
 - `RouteMock`
 
-`LunaProvider`는 EIP-1193의 `request/on/removeListener` 패턴을 기준으로 동작합니다.
+`@lunatest/core/browser` exports the browser-safe subset of the same registry/runtime helpers. `loadProjectPresetSources()` is available only from the root package, not from the browser subpath.
 
-브라우저 런타임 인터셉트는 [API: @lunatest/runtime-intercept](./runtime-intercept.md) 문서를 참고하세요.
+## `LunaProviderOptions`
 
-Preset registry는 built-in Lua manifest를 catalog/API로 승격한 계층입니다.  
-`materializeProtocolPreset()`은 `walletSession`, `interceptState`, `routeMocks`, `builtinScenarios`를 함께 반환합니다.
+```ts
+type LunaProviderOptions = {
+  chainId?: string;
+  accounts?: string[];
+  balances?: Record<string, string>;
+  wallet?: Partial<LunaWalletSession>;
+  callHandler?: (input: Record<string, unknown>) => Promise<string> | string;
+};
+```
 
-브라우저 앱에서 Lua config/preset registry를 직접 소비할 때는 `@lunatest/core/browser` subpath를 권장합니다.  
-Node 전용 helper인 `loadProjectPresetSources()`는 root `@lunatest/core`에만 남고 browser subpath에서는 노출되지 않습니다.
+`wallet` lets you seed a partial wallet session on top of the provider defaults.
 
-Local preset diagnostics도 같은 계층에서 확인할 수 있습니다.
+## Preset registry
 
-- `validateProtocolPresetSource()` / `validateWalletPresetSource()`는 단일 source를 검증합니다.
-- `getPresetDiagnostics()`는 registry에 로드된 built-in / project-local preset의 structured diagnostics를 반환합니다.
+```ts
+type ProjectPresetSources = {
+  protocol?: Record<string, string | URL>;
+  wallet?: Record<string, string | URL>;
+};
 
-Scenario / Lua config는 optional coverage metadata를 지원합니다.
+type PresetRegistryOptions = {
+  projectSources?: ProjectPresetSources;
+};
+```
 
-- `coverage.features?: string[]`
-- `coverage.states?: string[]`
-- `coverage.components?: string[]`
+`createPresetRegistry(options?)` merges built-in manifest sources with optional project-local sources. `list/get/materialize` functions always work with qualified ids:
 
-metadata가 없으면 LunaTest는 `when.action`, `then_ui`, `then_state`, `not_present`에서 기본 coverage를 추론합니다.
+- built-in: `builtin/<id>`
+- project-local: `project/<id>`
+
+### Materialization shapes
+
+```ts
+type WalletPresetMaterialization = {
+  walletPresetId: string;
+  resolvedParams: Record<string, unknown>;
+  walletSession: LunaWalletSession;
+};
+
+type ProtocolPresetMaterialization = {
+  protocolPresetId: string;
+  walletPresetId: string;
+  resolvedParams: Record<string, unknown>;
+  walletSession: LunaWalletSession;
+  interceptState: Record<string, unknown>;
+  routeMocks: RouteMock[];
+  builtinScenarios: PresetScenarioDescriptor[];
+};
+```
+
+`materializeProtocolPreset()` always returns the resolved protocol id, the wallet preset it selected, the merged params, and the runtime payloads used by bootstrap/devtools.
+
+`materializeWalletPreset()` always returns the resolved wallet id, the merged params, and the session state.
+
+`validateProtocolPresetSource()` and `validateWalletPresetSource()` return structured diagnostics for a single source. `getPresetDiagnostics()` returns the diagnostics collected in a registry, including discovery, manifest, materialize, and registry-level issues.
+
+## Coverage helpers
+
+```ts
+type CoverageCatalog = {
+  features: string[];
+  states: string[];
+  components: string[];
+};
+
+type CoverageSnapshot = {
+  total: number;
+  covered: number;
+  ratio: number;
+  known: CoverageCatalog;
+  coveredTargets: CoverageCatalog;
+  missing: CoverageCatalog;
+};
+```
+
+`resolveCoverageMetadata(input)` reads optional `coverage` metadata from a scenario/Lua config and falls back to inference when the metadata is absent:
+
+- `when.action` -> feature coverage
+- `then_ui`, `then_state`, `not_present` -> state coverage
+- `then_ui` -> component coverage
+
+`buildCoverageSnapshot({ items, coverageCatalog? })` merges known coverage targets from the explicit catalog and the covered targets discovered from the items. It returns `known`, `coveredTargets`, `missing`, and aggregate `total/covered/ratio` values.
+
+## Lua config and scenario execution
+
+```ts
+const LuaConfigSchema: z.ZodType<LuaConfig>;
+
+type LuaConfig = {
+  name?: string;
+  mode: "strict" | "permissive";
+  given: Record<string, unknown>;
+  when?: Record<string, unknown>;
+  then_ui?: Record<string, unknown>;
+  then_state?: Record<string, unknown>;
+  not_present?: string[];
+  coverage?: CoverageMetadata;
+  intercept?: {
+    routes?: RouteMock[];
+    routing?: unknown;
+    mockResponses?: Record<string, unknown>;
+    state?: Record<string, unknown>;
+  };
+};
+```
+
+`LuaConfigSchema` accepts the top-level scenario fields above plus passthrough keys for scenario-specific metadata.
+
+`executeLuaScenario(input)` accepts `source` as a string, URL, or parsed `LuaConfig`. The optional adapter may provide:
+
+- `runWhen`
+- `resolveUi`
+- `resolveState`
+- `resolveTransitions`
+- `resolveElapsedMs`
+
+The result includes `scenarioName`, `pass`, optional `error`, optional `result`, and the resolved `config`.

@@ -1,10 +1,10 @@
 # Architecture
 
-LunaTest는 크게 네 레이어로 구성됩니다.
+LunaTest is organized into four layers:
 
 1. Lua WASM Runtime (Wasmoon)
-2. Mock Provider (체인/지갑/이벤트)
-3. Scenario Engine (Given-When-Then + Multi-stage)
-4. Runner/Reporter (assertion + 결과 출력)
+2. Mock Provider (chain, wallet, and event state)
+3. Scenario Engine (Given-When-Then + multi-stage flows)
+4. Runner/Reporter (assertions and output)
 
-핵심 설계 원칙은 "같은 입력이면 항상 같은 결과"입니다.
+The core design principle is that the same input always produces the same result.

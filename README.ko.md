@@ -14,28 +14,30 @@ Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경
 ```bash
 pnpm install --frozen-lockfile
 pnpm lint:workspace-types
-pnpm -r build
 pnpm -r lint
+pnpm -r build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
 
-야간 확장 검증:
+유지보수 / 릴리스 게이트:
 
 ```bash
-pnpm test:e2e:extended
-node scripts/check-performance.mjs --mode=absolute --threshold=5
+pnpm lint:deadcode
+pnpm pack:check-integrity
 ```
 
 ## 사용 가이드
 
-1. 기본 품질 게이트 실행
+1. 기본 품질 및 릴리스 게이트 실행
 
 ```bash
 pnpm lint:workspace-types
-pnpm -r build
 pnpm -r lint
+pnpm -r build
 pnpm -r test
+pnpm lint:deadcode
+pnpm pack:check-integrity
 pnpm test:e2e:smoke
 ```
 
@@ -70,7 +72,7 @@ pnpm run perf:regression:ci
 pnpm run perf:absolute:ci
 ```
 
-이 wrapper들은 fresh checkout CI job이 workspace package entry를 읽기 전에 필요한 prebuild 단계를 중앙화합니다.
+이 wrapper들은 fresh checkout CI job이 workspace package entry를 읽기 전에 필요한 prebuild 단계를 중앙화합니다. CI와 release 흐름에서는 `pnpm lint:deadcode`와 `pnpm pack:check-integrity`도 함께 실행합니다.
 
 ## 저장소 구조
 
@@ -180,7 +182,7 @@ await runStdioServer({
 }
 ```
 
-`lunatest gen --ai`는 stdin JSON으로 `scenarios`, `coverage`, `presetCatalog`, `prompts`를 전달하고, adapter는 stdout JSON array를 반환해야 합니다. adapter가 `coverage`, `tags`를 포함하면 LunaTest가 generated `.lua`에도 그 metadata를 저장합니다.
+`lunatest gen --ai`는 stdin JSON으로 `scenarios`, `coverage`, `presetCatalog`, `prompts`를 전달하고, adapter는 stdout JSON array를 반환해야 합니다. 이 명령은 `lunatest.config.json`의 `ai.command`가 있어야 동작합니다. adapter가 `coverage`, `tags`를 포함하면 LunaTest가 generated `.lua`에도 그 metadata를 저장합니다.
 
 `lunatest devtools --open`은 브라우저 devtools 부트스트랩을 위한 project-aware guide를 출력합니다. resolved config path, browser entrypoint, mount API, local preset directory가 함께 표시됩니다.
 

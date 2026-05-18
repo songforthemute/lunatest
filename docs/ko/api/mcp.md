@@ -12,12 +12,77 @@
 - `createResourceCatalog`
 - `createPromptCatalog`
 - `generate`
-- `mutateMocks`, `mutateScenarioVariants`, `mutateStages`, `mutateValues`
+- `mutateValues`
+- `mutateStages`
+- `mutateMocks`
+- `mutateScenarioVariants`
+- `parseJsonRpcLine`
+- `processJsonRpcLine`
+- `runStdioServer`
+
+## `createMcpServer(options)`
+
+```ts
+type McpServerOptions = {
+  scenarios?: ScenarioDescriptor[];
+  coverage?: {
+    total?: number;
+    covered?: number;
+    ratio?: number;
+  };
+  coverageCatalog?: Partial<CoverageCatalog>;
+  mockState?: Record<string, unknown>;
+  componentTree?: Array<{ name: string; children?: Array<{ name: string }> }>;
+  componentStates?: Record<string, string[]>;
+  protocols?: string[];
+  scenarioAdapter?: ExecuteLuaScenarioInput["adapter"];
+  presetRegistry?: PresetRegistry;
+  projectPresetSources?: ProjectPresetSources;
+  projectRoot?: string;
+};
+```
+
+`createMcpServer(options)`는 shipped MCP tool group과 resource를 묶어서 서버를 구성합니다.
+
+- `scenario.*`: 시나리오 listing / creation / execution / mutation
+- `coverage.*`: coverage report / gap discovery / suggestion
+- `mock.*`: preset registry 접근 / mock state routing
+- `component.*`: component tree / state coverage 조회
+
+옵션 bag은 registry 주입과 project-local discovery 둘 다 지원합니다.
+
+- `presetRegistry`: 이미 만들어 둔 registry 재사용
+- `projectPresetSources`: project-local protocol/wallet source 주입
+- `projectRoot`: filesystem root에서 project-local source 로드
+
+그 외 옵션은 노출되는 tool/resource의 seed로 사용됩니다.
+
+- `scenarios`: 초기 scenario store
+- `coverage`: coverage tool fallback seed
+- `coverageCatalog`: 명시 coverage target catalog
+- `mockState`: mock state seed
+- `componentTree`: component tree resource seed
+- `componentStates`: component coverage seed
+- `protocols`: protocol resource id override
+- `scenarioAdapter`: scenario tool execution adapter
+
+## Exported helper
+
+`@lunatest/mcp`는 tool/resource/prompt factory와 transport helper도 같이 export합니다.
+
+- `createCoverageTools`
+- `createComponentTools`
+- `createMockTools`
+- `createScenarioTools`
+- `createResourceCatalog`
+- `createPromptCatalog`
+- `generate`
+- `mutateValues`, `mutateStages`, `mutateMocks`, `mutateScenarioVariants`
 - `parseJsonRpcLine`, `processJsonRpcLine`, `runStdioServer`
 
-보통은 `createMcpServer`로 서버를 만든 뒤 `runStdioServer`로 연결해 사용합니다.
+## tool / resource behavior
 
-Preset registry 연동 도구:
+Preset registry tools:
 
 - `mock.listProtocolPresets`
 - `mock.getProtocolPreset`
@@ -28,28 +93,18 @@ Preset registry 연동 도구:
 - `mock.listPresetDiagnostics`
 - `mock.getPresetDiagnostic`
 
-`mock.listPresetDiagnostics`는 잘못된 local preset를 structured diagnostic 형태로 반환합니다.
-유효하지 않은 preset은 list/apply catalog에는 나타나지 않고 diagnostics에서만 확인할 수 있습니다.
+`mock.listPresetDiagnostics`는 malformed local preset를 structured diagnostic로 반환합니다. invalid preset은 list/apply catalog에는 들어가지 않고 diagnostics로만 노출됩니다.
 
-Coverage / component surface는 실제 scenario metadata와 coverage catalog를 기준으로 동작합니다.
+Coverage / component surface:
 
-- `coverage.report`
-  - `total`
-  - `covered`
-  - `ratio`
-  - `known`
-  - `coveredTargets`
-  - `missing`
-- `coverage.gaps`
-  - `feature/state/component` 단위 missing target 목록
-- `coverage.suggest`
-  - missing target 기준 scenario suggestion 목록
-- `component.states(name)`
-  - `{ known, covered, missing }`
+- `coverage.report`는 `total`, `covered`, `ratio`, `known`, `coveredTargets`, `missing`를 반환
+- `coverage.gaps`는 missing feature/state/component target 목록을 반환
+- `coverage.suggest`는 missing target 기준 scenario suggestion을 반환
+- `component.states(name)`는 `{ known, covered, missing }`를 반환
 
-`resource.get("lunatest://protocols")`는 protocol id 배열이 아니라 preset metadata object 배열을 반환합니다.
+`resource.get("lunatest://protocols")`는 protocol id 배열이 아니라 `id`, `label`, `source`, `kind`, `supportedChains`를 가진 metadata object 배열을 반환합니다.
 
-## stdio 서버 예시
+## 최소 stdio 예시
 
 ```ts
 import { createMcpServer, runStdioServer } from "@lunatest/mcp";
@@ -63,14 +118,4 @@ await runStdioServer({
   output: process.stdout,
   server,
 });
-```
-
-## JSON-RPC 요청 예시
-
-```json
-{"id":"1","method":"scenario.list"}
-```
-
-```json
-{"id":"2","method":"scenario.run","params":{"id":"swap-smoke"}}
 ```

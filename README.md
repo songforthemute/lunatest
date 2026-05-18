@@ -28,28 +28,30 @@ scenario {
 ```bash
 pnpm install --frozen-lockfile
 pnpm lint:workspace-types
-pnpm -r build
 pnpm -r lint
+pnpm -r build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
 
-For nightly-scale checks:
+For maintainer and release checks:
 
 ```bash
-pnpm test:e2e:extended
-node scripts/check-performance.mjs --mode=absolute --threshold=5
+pnpm lint:deadcode
+pnpm pack:check-integrity
 ```
 
 ## Usage Guide
 
-1. Run workspace quality and E2E gates:
+1. Run workspace quality and release gates:
 
 ```bash
 pnpm lint:workspace-types
-pnpm -r build
 pnpm -r lint
+pnpm -r build
 pnpm -r test
+pnpm lint:deadcode
+pnpm pack:check-integrity
 pnpm test:e2e:smoke
 ```
 
@@ -84,7 +86,7 @@ pnpm run perf:regression:ci
 pnpm run perf:absolute:ci
 ```
 
-These wrappers centralize the prebuild step that fresh-checkout CI jobs need before loading workspace package entries.
+These wrappers centralize the prebuild step that fresh-checkout CI jobs need before loading workspace package entries. The CI and release flows also run `pnpm lint:deadcode` and `pnpm pack:check-integrity` before publish.
 
 ## Repository Structure
 
@@ -204,7 +206,7 @@ await runStdioServer({
 ```
 
 `lunatest gen --ai` sends stdin JSON with `scenarios`, `coverage`, `presetCatalog`, and `prompts`.  
-The adapter must return stdout JSON array of generated scenarios. If it includes `coverage` or `tags`, LunaTest persists that metadata into the generated `.lua`.
+The adapter must return stdout JSON array of generated scenarios, and `lunatest.config.json` must define `ai.command`. If it includes `coverage` or `tags`, LunaTest persists that metadata into the generated `.lua`.
 
 `lunatest devtools --open` prints a project-aware guide for browser devtools bootstrap, including resolved config paths, browser entrypoint, mount API, and local preset directory.
 

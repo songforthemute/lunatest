@@ -299,7 +299,7 @@ local preset 하나가 잘못되어도 registry 전체가 깨지지는 않습니
 
 샘플 앱 예제를 그대로 시작점으로 써도 됩니다.
 
-- [`team_swap.lua`](/Users/joeylee/lunatest/examples/swap-dapp/lunatest/presets/protocol/team_swap.lua)
-- [`team_wallet.lua`](/Users/joeylee/lunatest/examples/swap-dapp/lunatest/presets/wallet/team_wallet.lua)
+- [`team_swap.lua`](../../examples/swap-dapp/lunatest/presets/protocol/team_swap.lua)
+- [`team_wallet.lua`](../../examples/swap-dapp/lunatest/presets/wallet/team_wallet.lua)
 
 이 두 파일이 sample app bootstrap 경로에서 실제로 쓰는 local preset 예제입니다.

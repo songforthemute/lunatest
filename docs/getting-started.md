@@ -25,18 +25,36 @@ Swap 데모(실지갑 + Sepolia + Uniswap V3)는
 팀 전용 protocol / wallet preset을 직접 작성하려면
 [Local Preset Authoring Guide](./guides/local-preset-authoring.md)를 참고하세요.
 
-## 3. Run Checks
+## 3. Run Local Checks
 
 ```bash
 pnpm lint:workspace-types
 pnpm -r lint
-pnpm -r test
 pnpm -r build
+pnpm -r test
 ```
 
 `pnpm lint:workspace-types` verifies that workspace package typechecking does not depend on prebuilt `dist` artifacts.
 
-## 4. Run CLI
+## 4. Run Release Gates
+
+```bash
+pnpm lint:deadcode
+pnpm pack:check-integrity
+```
+
+## 5. Run CLI
+
+If you plan to use `gen --ai`, define `ai.command` in `lunatest.config.json`:
+
+```json
+{
+  "ai": {
+    "command": "node",
+    "args": ["./adapter.mjs"]
+  }
+}
+```
 
 ```bash
 pnpm --filter @lunatest/cli build
@@ -44,13 +62,15 @@ node packages/cli/dist/index.js run
 node packages/cli/dist/index.js gen --ai
 ```
 
-## 5. Run Performance Gate
+`lunatest gen --ai` requires `lunatest.config.json` to define `ai.command`. Without that field, the command exits early instead of generating scenarios.
+
+## 6. Run Performance Gate
 
 ```bash
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 ```
 
-## 6. CI Wrappers
+## 7. CI Wrappers
 
 CI/nightly jobs should use the wrapper commands below instead of invoking E2E or performance checks directly:
 

@@ -25,9 +25,10 @@
 
 ## 1) Configure Environment
 
+From the repo root:
+
 ```bash
-cd /Users/joeylee/lunatest
-pnpm install
+pnpm install --frozen-lockfile
 cd examples/swap-dapp
 cp .env.example .env.local
 ```
@@ -46,8 +47,9 @@ If any field is missing/invalid, the app renders a configuration error screen wi
 
 ## 2) Run the Demo
 
+From the repo root:
+
 ```bash
-cd /Users/joeylee/lunatest
 pnpm --filter @lunatest/example-swap-dapp dev
 ```
 

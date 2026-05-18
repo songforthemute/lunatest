@@ -27,7 +27,7 @@
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
 ## Core Provider 최소 예시

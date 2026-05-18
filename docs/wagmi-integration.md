@@ -1,6 +1,6 @@
 # Wagmi Integration
 
-`@lunatest/react` provides a wagmi-like adapter API.
+`@lunatest/react` provides a wagmi-style adapter API.
 
 ## Example
 
@@ -18,4 +18,4 @@ const config = withLunaWagmiConfig(
 );
 ```
 
-`config.transports[1].request(...)` forwards to LunaProvider `request`.
+`config.transports[1].request(...)` forwards to `LunaProvider.request(...)`.

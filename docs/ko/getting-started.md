@@ -6,18 +6,46 @@
 pnpm install --frozen-lockfile
 ```
 
-## 2) 기본 품질 게이트 실행
+## 2) 로컬 체크 실행
 
 ```bash
 pnpm lint:workspace-types
-pnpm -r build
 pnpm -r lint
+pnpm -r build
 pnpm -r test
 ```
 
 `pnpm lint:workspace-types`는 workspace 패키지 타입체크가 prebuilt `dist` 산출물에 의존하지 않는지 확인합니다.
 
-## 3) E2E 게이트 실행
+## 3) 릴리스 게이트 실행
+
+```bash
+pnpm lint:deadcode
+pnpm pack:check-integrity
+```
+
+## 4) CLI 실행
+
+`gen --ai`를 사용할 계획이라면 `lunatest.config.json`에 `ai.command`를 정의해야 합니다.
+
+```json
+{
+  "ai": {
+    "command": "node",
+    "args": ["./adapter.mjs"]
+  }
+}
+```
+
+```bash
+pnpm --filter @lunatest/cli build
+node packages/cli/dist/index.js run
+node packages/cli/dist/index.js gen --ai
+```
+
+`lunatest gen --ai`는 `lunatest.config.json`의 `ai.command`가 있어야 동작합니다. 이 설정이 없으면 시나리오를 생성하지 않고 바로 종료합니다.
+
+## 5) E2E 게이트 실행
 
 PR 스모크 게이트:
 
@@ -31,7 +59,7 @@ pnpm test:e2e:smoke
 pnpm test:e2e:extended
 ```
 
-## 4) 문서 확인
+## 6) 문서 확인
 
 ```bash
 pnpm docs:dev
@@ -43,7 +71,7 @@ pnpm docs:dev
 pnpm docs:build
 ```
 
-## 5) 성능 게이트 실행
+## 7) 성능 게이트 실행
 
 회귀 기준 비교:
 
@@ -57,7 +85,7 @@ node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-bas
 node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=scripts/perf-current-absolute.json
 ```
 
-## 6) CI 전용 wrapper
+## 8) CI 전용 wrapper
 
 CI/야간 job에서는 E2E나 성능 체크를 직접 호출하지 않고 아래 wrapper를 사용합니다.
 

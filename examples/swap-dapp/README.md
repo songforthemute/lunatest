@@ -9,10 +9,8 @@
 ## 1. 준비
 
 ```bash
-cd /Users/joeylee/lunatest
 pnpm install
-cd examples/swap-dapp
-cp .env.example .env.local
+cp examples/swap-dapp/.env.example examples/swap-dapp/.env.local
 ```
 
 `.env.local` 값을 실제 RPC/토큰 조합에 맞게 수정합니다.
@@ -20,7 +18,6 @@ cp .env.example .env.local
 ## 2. 실행
 
 ```bash
-cd /Users/joeylee/lunatest
 pnpm --filter @lunatest/example-swap-dapp dev
 ```
 
@@ -33,7 +30,7 @@ pnpm --filter @lunatest/example-swap-dapp dev
 지갑 확장/앱이 없다면 우하단 `LunaTest Devtools`에서 `Enable Luna Wallet`을 켠 뒤 같은 플로우를 바로 실험할 수 있습니다.
 
 팀 전용 local preset을 붙여서 protocol/wallet 문맥을 확장하려면
-[`docs/guides/local-preset-authoring.md`](/Users/joeylee/lunatest/docs/guides/local-preset-authoring.md)를 참고하세요.
+[`docs/guides/local-preset-authoring.md`](../../docs/guides/local-preset-authoring.md)를 참고하세요.
 
 ## 3. 카오스 프리셋
 
