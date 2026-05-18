@@ -1,21 +1,9 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const stablePackages = [
-  "@lunatest/contracts",
-  "@lunatest/core",
-  "@lunatest/runtime-intercept",
-  "@lunatest/cli",
-  "@lunatest/react",
-  "@lunatest/mcp",
-];
-
-const nextPackages = [
-  "@lunatest/vitest-plugin",
-  "@lunatest/playwright-plugin",
-];
+import { nextPackages, packageNames, stablePackages } from "./package-roster.mjs";
+import { run, startMcpSmoke } from "./smoke-helpers.mjs";
 
 function readArg(name, defaultValue) {
   const prefix = `--${name}=`;
@@ -23,51 +11,8 @@ function readArg(name, defaultValue) {
   return match ? match.slice(prefix.length) : defaultValue;
 }
 
-function run(command, args, cwd, options = {}) {
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: "pipe",
-    ...options,
-  });
-
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
-    throw new Error(
-      [
-        `Command failed: ${command} ${args.join(" ")}`,
-        stdout ? `stdout:\n${stdout}` : "",
-        stderr ? `stderr:\n${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
-
-  return typeof result.stdout === "string" ? result.stdout.trim() : "";
-}
-
-function startMcpSmoke(consumerDir) {
-  const result = spawnSync("pnpm", ["exec", "lunatest-mcp"], {
-    cwd: consumerDir,
-    encoding: "utf8",
-    stdio: "pipe",
-    timeout: 800,
-  });
-
-  if (result.error && result.error.code === "ETIMEDOUT") {
-    return;
-  }
-
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    throw new Error(stderr || "lunatest-mcp smoke failed");
-  }
-}
-
 function buildInstallTargets(channel, stableTag, nextTag) {
-  const stable = stablePackages.map((name) => `${name}@${stableTag}`);
+  const stable = packageNames(stablePackages).map((name) => `${name}@${stableTag}`);
 
   if (channel !== "next") {
     return stable;
@@ -75,7 +20,7 @@ function buildInstallTargets(channel, stableTag, nextTag) {
 
   return [
     ...stable,
-    ...nextPackages.map((name) => `${name}@${nextTag}`),
+    ...packageNames(nextPackages).map((name) => `${name}@${nextTag}`),
   ];
 }
 

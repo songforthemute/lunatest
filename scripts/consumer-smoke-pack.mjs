@@ -1,78 +1,9 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 
-const stablePackages = [
-  { name: "@lunatest/contracts", dir: "packages/contracts" },
-  { name: "@lunatest/core", dir: "packages/core" },
-  { name: "@lunatest/runtime-intercept", dir: "packages/runtime-intercept" },
-  { name: "@lunatest/cli", dir: "packages/cli" },
-  { name: "@lunatest/react", dir: "packages/react" },
-  { name: "@lunatest/mcp", dir: "packages/mcp" },
-];
-
-function run(command, args, cwd, options = {}) {
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: "pipe",
-    ...options,
-  });
-
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
-    throw new Error(
-      [
-        `Command failed: ${command} ${args.join(" ")}`,
-        stdout ? `stdout:\n${stdout}` : "",
-        stderr ? `stderr:\n${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
-
-  return typeof result.stdout === "string" ? result.stdout.trim() : "";
-}
-
-function packPackage(packageDir, outputDir) {
-  const output = run(
-    "pnpm",
-    ["pack", "--pack-destination", outputDir],
-    packageDir,
-  );
-  const lines = output.split("\n").map((line) => line.trim()).filter(Boolean);
-  const tarballPath = lines
-    .slice()
-    .reverse()
-    .find((line) => line.endsWith(".tgz"));
-
-  if (!tarballPath) {
-    throw new Error(`Unexpected pnpm pack output: ${packageDir}`);
-  }
-
-  return resolve(tarballPath);
-}
-
-function startMcpSmoke(consumerDir) {
-  const result = spawnSync("pnpm", ["exec", "lunatest-mcp"], {
-    cwd: consumerDir,
-    encoding: "utf8",
-    stdio: "pipe",
-    timeout: 800,
-  });
-
-  if (result.error && result.error.code === "ETIMEDOUT") {
-    return;
-  }
-
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    throw new Error(stderr || "lunatest-mcp smoke failed");
-  }
-}
+import { packageNames, stablePackages } from "./package-roster.mjs";
+import { packPackage, run, startMcpSmoke } from "./smoke-helpers.mjs";
 
 const tempRoot = mkdtempSync(join(tmpdir(), "lunatest-consumer-pack-"));
 const tarballsDir = join(tempRoot, "tarballs");
@@ -107,7 +38,7 @@ try {
     ),
   );
 
-  run("pnpm", ["add", ...stablePackages.map((pkg) => pkg.name)], consumerDir, {
+  run("pnpm", ["add", ...packageNames(stablePackages)], consumerDir, {
     stdio: "inherit",
   });
 

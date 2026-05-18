@@ -1,7 +1,7 @@
-# DeFi Dashboard Example (Future)
+# DeFi Dashboard Example Placeholder
 
-`examples/defi-dashboard`는 향후 확장 예제를 위한 자리입니다.
+This directory is intentionally non-runnable. It tracks a future example idea for portfolio, health-factor, and LTV warning scenarios.
 
-- 현재는 스텁만 포함합니다.
-- 실사용 가능한 샘플은 [`examples/swap-dapp`](../swap-dapp)에서 제공합니다.
-- 다음 범위: 대시보드 포트폴리오/헬스팩터/LTV 기반 경고 시나리오.
+- Use [`examples/swap-dapp`](../swap-dapp) for the current runnable example.
+- Keep files in this directory small and illustrative until the example has a real package, build script, and README walkthrough.
+- Do not document this directory as a runnable sample until those pieces exist.

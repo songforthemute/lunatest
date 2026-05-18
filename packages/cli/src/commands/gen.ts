@@ -176,14 +176,20 @@ export async function genCommand(options: GenCommandOptions): Promise<string> {
     }
 
     writtenFiles.push(target);
-    await writeFile(
-      target,
-      injectGeneratedScenarioMetadata(scenario.lua, {
-        coverage: scenario.coverage,
-        tags: scenario.tags,
-      }),
-      "utf8",
-    );
+    const lua = injectGeneratedScenarioMetadata(scenario.lua, {
+      coverage: scenario.coverage,
+      tags: scenario.tags,
+    });
+
+    try {
+      await writeFile(target, lua, { encoding: "utf8", flag: "wx" });
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "EEXIST") {
+        throw new Error(`Generated scenario file already exists: ${target}`);
+      }
+
+      throw error;
+    }
   }
 
   const validateResults = await Promise.all(

@@ -11,8 +11,6 @@ import type { RuntimeLogger } from "../logger.js";
 import type {
   EndpointPattern,
   NormalizedRuntimeInterceptConfig,
-  RoutingMode,
-  RoutingConfig,
   WsEndpointRoute,
 } from "../types.js";
 
@@ -360,42 +358,4 @@ export function installWebSocketInterceptor(
     target.WebSocket = BaseWebSocket;
     logger.debug("ws.restored");
   };
-}
-
-export function createWebSocketInterceptor(input: {
-  mode: RoutingMode;
-  routing: RoutingConfig;
-  mockResponses: Record<string, unknown>;
-  logger: RuntimeLogger;
-}): () => void {
-  const normalizedConfig: NormalizedRuntimeInterceptConfig = {
-    debug: false,
-    enable: true,
-    wallet: {
-      session: {
-        enabled: false,
-        connected: false,
-        chainId: "0x1",
-        accounts: [],
-        permissions: [],
-        assets: {
-          nativeBalance: "0",
-          tokens: {},
-        },
-      },
-    },
-    intercept: {
-      mode: input.mode,
-      routing: {
-        ethereumMethods: input.routing.ethereumMethods ?? [],
-        rpcEndpoints: input.routing.rpcEndpoints ?? [],
-        httpEndpoints: input.routing.httpEndpoints ?? [],
-        wsEndpoints: input.routing.wsEndpoints ?? [],
-        bypassWsPatterns: input.routing.bypassWsPatterns ?? [],
-      },
-      mockResponses: input.mockResponses,
-    },
-  };
-
-  return installWebSocketInterceptor(normalizedConfig, input.logger);
 }

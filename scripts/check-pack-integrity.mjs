@@ -1,20 +1,9 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { join } from "node:path";
 
-const repositoryUrl = "https://github.com/songforthemute/lunatest";
-
-const packageDirs = [
-  "packages/contracts",
-  "packages/core",
-  "packages/runtime-intercept",
-  "packages/cli",
-  "packages/react",
-  "packages/mcp",
-  "packages/vitest-plugin",
-  "packages/playwright-plugin",
-];
+import { publicPackages, repositoryUrl } from "./package-roster.mjs";
+import { packPackage, run } from "./smoke-helpers.mjs";
 
 const disallowedPathPatterns = [
   /^src\//,
@@ -23,49 +12,6 @@ const disallowedPathPatterns = [
   /^\.github\//,
   /^\.worktrees\//,
 ];
-
-function run(command, args, cwd) {
-  const result = spawnSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: "pipe",
-  });
-
-  if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
-    throw new Error(
-      [
-        `Command failed: ${command} ${args.join(" ")}`,
-        stdout ? `stdout:\n${stdout}` : "",
-        stderr ? `stderr:\n${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
-
-  return result.stdout.trim();
-}
-
-function packPackage(packageDir, outputDir) {
-  const output = run(
-    "pnpm",
-    ["pack", "--pack-destination", outputDir],
-    packageDir,
-  );
-  const lines = output.split("\n").map((line) => line.trim()).filter(Boolean);
-  const tarballPath = lines
-    .slice()
-    .reverse()
-    .find((line) => line.endsWith(".tgz"));
-
-  if (!tarballPath) {
-    throw new Error(`Tarball path not found from pnpm pack output at ${packageDir}`);
-  }
-
-  return resolve(tarballPath);
-}
 
 function getTarballFiles(tarballPath) {
   const output = run("tar", ["-tf", tarballPath], process.cwd());
@@ -116,7 +62,7 @@ const failures = [];
 const tempDir = mkdtempSync(join(tmpdir(), "lunatest-pack-check-"));
 
 try {
-  for (const packageDir of packageDirs) {
+  for (const { dir: packageDir } of publicPackages) {
     const absoluteDir = join(process.cwd(), packageDir);
     const tarballPath = packPackage(absoluteDir, tempDir);
     const files = getTarballFiles(tarballPath);

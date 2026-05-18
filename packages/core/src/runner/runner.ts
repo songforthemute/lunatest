@@ -123,15 +123,3 @@ export async function runScenario(input: RunScenarioInput): Promise<RunScenarioR
     assertions,
   };
 }
-
-export async function runAll(items: RunScenarioInput[]): Promise<RunAllResult> {
-  const results = await Promise.all(items.map((item) => runScenario(item)));
-  const passed = results.filter((result) => result.pass).length;
-
-  return {
-    total: results.length,
-    passed,
-    failed: results.length - passed,
-    results,
-  };
-}
