@@ -1,23 +1,35 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
-  "ignore": ["docs/**", "examples/**", ".changeset/changelog.cjs"],
+  "ignore": ["examples/**"],
   "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/check-pack-integrity.mjs",
+        "scripts/check-performance.mjs",
+        "scripts/consumer-smoke-npm.mjs",
+        "scripts/consumer-smoke-pack.mjs"
+      ],
+      "project": ["scripts/**/*.mjs"]
+    },
     "packages/contracts": {
       "project": ["src/**/*.ts"]
     },
     "packages/core": {
+      "entry": ["src/index.ts", "src/browser.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/cli": {
       "project": ["src/**/*.ts"]
     },
     "packages/mcp": {
+      "entry": ["src/index.ts", "src/bin/mcp-stdio.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/playwright-plugin": {
       "project": ["src/**/*.ts"]
     },
     "packages/react": {
+      "entry": ["src/index.ts", "src/browser.ts"],
       "project": ["src/**/*.ts", "src/**/*.tsx"]
     },
     "packages/runtime-intercept": {

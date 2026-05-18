@@ -58,5 +58,15 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Ensure GitHub Pages is enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            exit 0
+          fi
+
+          echo "::error::GitHub Pages is not enabled for ${GITHUB_REPOSITORY}. Enable Pages with GitHub Actions as the source before running docs deploy: https://github.com/${GITHUB_REPOSITORY}/settings/pages"
+          exit 1
       - id: deployment
         uses: actions/deploy-pages@v4
