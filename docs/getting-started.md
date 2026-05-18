@@ -75,8 +75,13 @@ node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-bas
 CI/nightly jobs should use the wrapper commands below instead of invoking E2E or performance checks directly:
 
 ```bash
+pnpm run build:workspace:ci
+pnpm run lint:workspace:ci
+pnpm run test:workspace:ci
 pnpm run test:e2e:smoke:ci
 pnpm run test:e2e:extended:ci
 pnpm run perf:regression:ci
 pnpm run perf:absolute:ci
 ```
+
+`test:e2e:*` checks workspace-source integration behavior. Use `pnpm consumer-smoke:pack` or `pnpm consumer-smoke:npm` when you need to verify package public entrypoints from a packed tarball or npm registry.

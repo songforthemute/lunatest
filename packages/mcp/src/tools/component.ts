@@ -25,37 +25,48 @@ export function createComponentTools(
   const resolveCoverage = async () => {
     if (!options.getScenarios) {
       return {
-        known: options.coverageCatalog?.components ?? [],
-        covered: [] as string[],
-        missing: options.coverageCatalog?.components ?? [],
+        components: {
+          known: options.coverageCatalog?.components ?? [],
+          covered: [] as string[],
+          missing: options.coverageCatalog?.components ?? [],
+        },
+        states: [] as string[],
       };
     }
 
     const scenarios = await options.getScenarios();
-    const covered = new Set<string>();
+    const coveredComponents = new Set<string>();
+    const coveredStates = new Set<string>();
 
     for (const scenario of scenarios) {
       const metadata =
         scenario.coverage ??
         (scenario.lua
           ? resolveCoverageMetadata(await loadLunaConfig(scenario.lua))
-          : { components: [] });
+          : { components: [], states: [] });
 
       for (const component of metadata.components ?? []) {
-        covered.add(component);
+        coveredComponents.add(component);
+      }
+
+      for (const state of metadata.states ?? []) {
+        coveredStates.add(state);
       }
     }
 
     const known = new Set<string>([
       ...(options.coverageCatalog?.components ?? []),
       ...Object.keys(states),
-      ...covered,
+      ...coveredComponents,
     ]);
 
     return {
-      known: Array.from(known).sort(),
-      covered: Array.from(covered).sort(),
-      missing: Array.from(known).filter((item) => !covered.has(item)),
+      components: {
+        known: Array.from(known).sort(),
+        covered: Array.from(coveredComponents).sort(),
+        missing: Array.from(known).filter((item) => !coveredComponents.has(item)),
+      },
+      states: Array.from(coveredStates).sort(),
     };
   };
 
@@ -66,17 +77,19 @@ export function createComponentTools(
 
     async states(name: string) {
       const resolved = await resolveCoverage();
-      const known = Array.from(
-        new Set([
-          ...(states[name] ?? []),
-          ...(resolved.known.includes(name) ? [name] : []),
-        ]),
-      ).sort();
+      const known = Array.from(new Set(states[name] ?? [])).sort();
+      const covered = known.filter((state) => resolved.states.includes(state));
 
       return {
+        component: name,
         known,
-        covered: resolved.covered.includes(name) ? [name] : [],
-        missing: resolved.missing.includes(name) ? [name] : [],
+        covered,
+        missing: known.filter((state) => !covered.includes(state)),
+        componentCoverage: {
+          known: resolved.components.known.includes(name),
+          covered: resolved.components.covered.includes(name),
+          missing: resolved.components.missing.includes(name),
+        },
       };
     },
   };

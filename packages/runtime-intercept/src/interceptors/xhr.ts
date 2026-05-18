@@ -8,12 +8,7 @@ import {
   stringifyUnknown,
 } from "../matcher.js";
 import type { RuntimeLogger } from "../logger.js";
-import type {
-  MockResponseMap,
-  NormalizedRuntimeInterceptConfig,
-  RoutingMode,
-  RoutingConfig,
-} from "../types.js";
+import type { NormalizedRuntimeInterceptConfig } from "../types.js";
 
 type JsonRpcPayload = {
   id?: unknown;
@@ -516,42 +511,4 @@ export function installXhrInterceptor(
     target.XMLHttpRequest = BaseXMLHttpRequest;
     logger.debug("xhr.restored");
   };
-}
-
-export function createXhrInterceptor(input: {
-  mode: RoutingMode;
-  routing: RoutingConfig;
-  mockResponses: MockResponseMap;
-  logger: RuntimeLogger;
-}): () => void {
-  const normalizedConfig: NormalizedRuntimeInterceptConfig = {
-    debug: false,
-    enable: true,
-    wallet: {
-      session: {
-        enabled: false,
-        connected: false,
-        chainId: "0x1",
-        accounts: [],
-        permissions: [],
-        assets: {
-          nativeBalance: "0",
-          tokens: {},
-        },
-      },
-    },
-    intercept: {
-      mode: input.mode,
-      routing: {
-        ethereumMethods: input.routing.ethereumMethods ?? [],
-        rpcEndpoints: input.routing.rpcEndpoints ?? [],
-        httpEndpoints: input.routing.httpEndpoints ?? [],
-        wsEndpoints: input.routing.wsEndpoints ?? [],
-        bypassWsPatterns: input.routing.bypassWsPatterns ?? [],
-      },
-      mockResponses: input.mockResponses,
-    },
-  };
-
-  return installXhrInterceptor(normalizedConfig, input.logger);
 }

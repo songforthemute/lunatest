@@ -244,6 +244,9 @@ production에서는 자동 활성화되지 않습니다. 개발 환경 외에서
 - 문서 배포: `.github/workflows/docs.yml` (GitHub Pages)
 - 릴리스 파이프라인: `.github/workflows/release.yml`
 - 릴리스 인증: npm Trusted Publishing(GitHub OIDC, 장기 publish 토큰 미사용)
+- CI workspace 품질 명령: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
+- Dead-code 게이트: 빠른 unused-file 점검은 `pnpm lint:deadcode`, 더 넓은 감사는 `pnpm lint:deadcode:strict`
+- `test:e2e:*`는 workspace source integration을 검증하고, 패키지 entrypoint 소비 검증은 `pnpm consumer-smoke:pack`과 `pnpm consumer-smoke:npm`이 담당합니다.
 
 ## 라이선스
 

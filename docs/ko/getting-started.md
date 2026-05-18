@@ -90,11 +90,16 @@ node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=script
 CI/야간 job에서는 E2E나 성능 체크를 직접 호출하지 않고 아래 wrapper를 사용합니다.
 
 ```bash
+pnpm run build:workspace:ci
+pnpm run lint:workspace:ci
+pnpm run test:workspace:ci
 pnpm run test:e2e:smoke:ci
 pnpm run test:e2e:extended:ci
 pnpm run perf:regression:ci
 pnpm run perf:absolute:ci
 ```
+
+`test:e2e:*`는 workspace source integration 동작을 검증합니다. 패키지 public entrypoint를 tarball 또는 npm registry 기준으로 검증할 때는 `pnpm consumer-smoke:pack` 또는 `pnpm consumer-smoke:npm`을 사용합니다.
 
 ## 다음 단계
 

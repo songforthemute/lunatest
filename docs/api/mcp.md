@@ -100,7 +100,25 @@ Coverage / component surface:
 - `coverage.report` returns `total`, `covered`, `ratio`, `known`, `coveredTargets`, `missing`
 - `coverage.gaps` returns missing feature/state/component targets
 - `coverage.suggest` returns scenario suggestions for missing targets
-- `component.states(name)` returns `{ known, covered, missing }`
+- `component.states(name)` returns `{ component, known, covered, missing, componentCoverage }`
+
+`component.states(name)` separates component identity from state coverage:
+
+```ts
+type ComponentStatesResult = {
+  component: string;
+  known: string[];
+  covered: string[];
+  missing: string[];
+  componentCoverage: {
+    known: boolean;
+    covered: boolean;
+    missing: boolean;
+  };
+};
+```
+
+`known`, `covered`, and `missing` contain component state names only. `componentCoverage` reports whether the component itself is present in the coverage catalog or covered by scenario metadata.
 
 `resource.get("lunatest://protocols")` returns protocol metadata objects with `id`, `label`, `source`, `kind`, and `supportedChains`.
 

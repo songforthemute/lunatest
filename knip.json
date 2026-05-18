@@ -1,17 +1,23 @@
 {
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "ignore": ["examples/**"],
+  "ignoreIssues": {
+    "packages/**/src/**/*.ts": ["types"],
+    "packages/**/src/**/*.tsx": ["types"]
+  },
   "workspaces": {
     ".": {
       "entry": [
         "scripts/check-pack-integrity.mjs",
         "scripts/check-performance.mjs",
         "scripts/consumer-smoke-npm.mjs",
-        "scripts/consumer-smoke-pack.mjs"
+        "scripts/consumer-smoke-pack.mjs",
+        "scripts/publish-packages.mjs"
       ],
       "project": ["scripts/**/*.mjs"]
     },
     "packages/contracts": {
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/core": {
@@ -19,6 +25,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/cli": {
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/mcp": {
@@ -26,6 +33,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/playwright-plugin": {
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/react": {
@@ -33,10 +41,20 @@
       "project": ["src/**/*.ts", "src/**/*.tsx"]
     },
     "packages/runtime-intercept": {
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
     },
     "packages/vitest-plugin": {
+      "entry": ["src/index.ts"],
       "project": ["src/**/*.ts"]
+    },
+    "e2e-tests": {
+      "ignoreDependencies": [
+        "@lunatest/cli",
+        "@lunatest/mcp",
+        "@lunatest/playwright-plugin"
+      ],
+      "project": ["*.test.ts"]
     }
   }
 }

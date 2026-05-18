@@ -121,11 +121,18 @@ describe("mcp transport", () => {
     expect(componentStates).toEqual({
       id: "req-component-states",
       result: {
-        known: expect.arrayContaining(["SwapForm", "idle", "pending", "success"]),
-        covered: ["SwapForm"],
-        missing: [],
+        component: "SwapForm",
+        known: expect.arrayContaining(["idle", "pending", "success"]),
+        covered: [],
+        missing: expect.arrayContaining(["idle", "pending", "success"]),
+        componentCoverage: {
+          known: true,
+          covered: true,
+          missing: false,
+        },
       },
     });
+    expect((componentStates.result as { known: string[] }).known).not.toContain("SwapForm");
 
     const prompt = await server.handleRequest({
       id: "req-prompt",

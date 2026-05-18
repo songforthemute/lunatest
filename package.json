@@ -9,6 +9,7 @@
     "lint": "pnpm -r --if-present run lint",
     "lint:workspace-types": "node scripts/check-workspace-type-resolution.mjs",
     "lint:deadcode": "knip --config knip.json --include files",
+    "lint:deadcode:strict": "knip --config knip.json",
     "pack:check-integrity": "node scripts/check-pack-integrity.mjs",
     "consumer-smoke:pack": "node scripts/consumer-smoke-pack.mjs",
     "consumer-smoke:npm": "node scripts/consumer-smoke-npm.mjs",
@@ -16,7 +17,9 @@
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "build:workspace:ci": "pnpm -r --filter=!@lunatest/e2e-tests build",
+    "build:workspace:ci": "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run build",
+    "lint:workspace:ci": "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run lint",
+    "test:workspace:ci": "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run test",
     "test:e2e:smoke": "pnpm --filter @lunatest/e2e-tests test:smoke",
     "test:e2e:extended": "pnpm --filter @lunatest/e2e-tests test:extended",
     "test:e2e:smoke:ci": "pnpm run build:workspace:ci && pnpm test:e2e:smoke",
@@ -25,16 +28,15 @@
     "perf:regression:ci": "pnpm run build:workspace:ci && node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release:publish:stable": "pnpm --filter @lunatest/contracts --filter @lunatest/core --filter @lunatest/runtime-intercept --filter @lunatest/cli --filter @lunatest/react --filter @lunatest/mcp publish --access public --no-git-checks --tag latest",
-    "release:publish:next": "pnpm --filter @lunatest/vitest-plugin --filter @lunatest/playwright-plugin publish --access public --no-git-checks --tag next",
+    "release:publish:stable": "node scripts/publish-packages.mjs --channel=stable --tag=latest",
+    "release:publish:next": "node scripts/publish-packages.mjs --channel=next --tag=next",
     "release:publish": "pnpm run release:publish:stable && pnpm run release:publish:next",
-    "release:publish:dry-run": "pnpm run release:publish:stable --dry-run && pnpm run release:publish:next --dry-run"
+    "release:publish:dry-run": "node scripts/publish-packages.mjs --channel=stable --tag=latest --dry-run && node scripts/publish-packages.mjs --channel=next --tag=next --dry-run"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@types/node": "^24.3.0",
     "knip": "^5.62.0",
-    "turbo": "^2.5.8",
     "typescript": "^5.9.2",
     "vitepress": "^1.6.4",
     "vitest": "^3.2.4"

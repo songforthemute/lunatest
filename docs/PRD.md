@@ -976,7 +976,7 @@ scenarios = {
 
 **구현 태스크:**
 
-1. monorepo 초기화 (pnpm workspace + turborepo)
+1. monorepo 초기화 (pnpm workspace)
 2. `wasmoon` 패키지 설치, Lua VM 인스턴스 생성 래퍼
 3. JS → Lua 함수 호출 (`call`) 구현
 4. Lua → JS 호스트 함수 등록 (`register`) 구현
@@ -1416,7 +1416,7 @@ scenarios = {
 │   └── benchmark.yml       # 성능 회귀 감지
 │
 ├── changeset config
-├── turbo.json 최적화
+├── pnpm workspace CI wrapper 정리
 └── README.md (badges, quick start)
 ```
 

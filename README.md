@@ -323,11 +323,14 @@ expect({ pass: true }).toLunaPass();
 
 ## Quality and Gates
 
-- Workspace quality: `pnpm -r build`, `pnpm -r lint`, `pnpm -r test`
-- E2E smoke (PR): `pnpm test:e2e:smoke`
-- E2E extended (nightly): `pnpm test:e2e:extended`
-- Performance regression: `node scripts/check-performance.mjs --mode=regression`
-- Performance absolute: `node scripts/check-performance.mjs --mode=absolute --threshold=5`
+- Local workspace quality: `pnpm -r build`, `pnpm -r lint`, `pnpm -r test`
+- CI workspace quality: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
+- Dead-code gates: `pnpm lint:deadcode` for fast unused-file checks, `pnpm lint:deadcode:strict` for broader audits
+- Workspace-source E2E smoke (PR): `pnpm run test:e2e:smoke:ci`
+- Workspace-source E2E extended (nightly): `pnpm run test:e2e:extended:ci`
+- Package entry smoke: `pnpm consumer-smoke:pack`, `pnpm consumer-smoke:npm`
+- Performance regression: `pnpm run perf:regression:ci`
+- Performance absolute: `pnpm run perf:absolute:ci`
 
 ## Performance Policy
 
@@ -351,7 +354,7 @@ expect({ pass: true }).toLunaPass();
 
 ## Status
 
-Active development. Runtime/CLI/MCP/docs/CI gates are integrated, with npm publication pending first stable release.
+Active development. Runtime/CLI/MCP/docs/CI gates are integrated, and stable packages are published on npm.
 
 ## License
 
