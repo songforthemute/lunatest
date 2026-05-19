@@ -128,7 +128,7 @@ describe("e2e smoke: protocol wallet completion", () => {
         {
           from: OWNER,
           to: contracts.router,
-          data: "0x414bf389",
+          data: `0x414bf389${addressWord(pool.token0)}${addressWord(pool.token1)}${uintWord(pool.fee)}${addressWord(OWNER)}${uintWord(999999)}${uintWord(1)}${uintWord(0)}${uintWord(0)}`,
         },
       ],
     });

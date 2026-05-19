@@ -30,6 +30,22 @@ function quote(input: ProtocolCallInput | ProtocolTransactionInput, amountIn: bi
   return (amountIn * BigInt(pool.priceNumerator)) / BigInt(pool.priceDenominator || "1");
 }
 
+function calldataHasWord(data: unknown, index: number): data is string {
+  if (typeof data !== "string" || !/^0x[0-9a-f]*$/i.test(data)) {
+    return false;
+  }
+
+  return data.replace(/^0x/i, "").slice(8).length >= (index + 1) * 64;
+}
+
+function requireUintWord(data: unknown, index: number, label: string): bigint {
+  if (!calldataHasWord(data, index)) {
+    throw createProviderError(4200, `Uniswap V3 ${label} requires encoded calldata word ${index}`);
+  }
+
+  return uintFromWord(wordAt(data, index));
+}
+
 function isV3Contract(input: ProtocolCallInput | ProtocolTransactionInput): boolean {
   const to = normalizeAddress(input.to);
   const state = input.protocolRuntime.uniswapV3;
@@ -62,7 +78,7 @@ export function resolveUniswapV3Call(input: ProtocolCallInput): unknown | null {
   }
 
   if (currentSelector === SELECTORS.quoteExactInputSingleV2) {
-    return uint256Hex(quote(input, 1n));
+    return uint256Hex(quote(input, requireUintWord(input.data, 2, "quoteExactInputSingleV2 amountIn")));
   }
 
   if (currentSelector === SELECTORS.slot0) {
@@ -99,7 +115,7 @@ export function applyUniswapV3Transaction(input: ProtocolTransactionInput): Prot
     return { handled: true, status: "0x0" };
   }
 
-  const amountIn = 1n;
+  const amountIn = requireUintWord(input.data, 5, "exactInputSingle amountIn");
   const amountOut = quote(input, amountIn);
   const transferred = applyTokenTransfer({
     walletSession: input.walletSession,

@@ -211,7 +211,7 @@ describe("protocol runtime engine", () => {
         {
           from: OWNER,
           to: ROUTER,
-          data: "0x414bf389",
+          data: `0x414bf389${addressWord(TOKEN_IN)}${addressWord(TOKEN_OUT)}${uintWord(3000)}${addressWord(OWNER)}${uintWord(999999)}${uintWord(1)}${uintWord(0)}${uintWord(0)}`,
         },
       ],
       runtimeState,
@@ -238,6 +238,79 @@ describe("protocol runtime engine", () => {
         transactionHash: swap.handled ? swap.result : "0x0",
       },
     });
+  });
+
+  it("uses QuoterV2 exactInputSingle amount from calldata", () => {
+    const runtimeState = baseRuntimeState();
+    const protocolRuntime = runtimeState.protocolRuntime as {
+      uniswapV3: { quoterVersion: string };
+    };
+    protocolRuntime.uniswapV3.quoterVersion = "v2";
+    const walletSession = baseWalletSession();
+
+    const quote = resolveProtocolRequest({
+      method: "eth_call",
+      params: [
+        {
+          to: QUOTER,
+          data: `0xc6a5026a${addressWord(TOKEN_IN)}${addressWord(TOKEN_OUT)}${uintWord(3)}${uintWord(3000)}${uintWord(0)}`,
+        },
+        "latest",
+      ],
+      runtimeState,
+      walletSession,
+      setWalletSession: () => walletSession,
+    });
+
+    expect(quote.handled).toBe(true);
+    expect(decodeUint(quote.handled ? quote.result : "0x0")).toBe(5400n);
+  });
+
+  it("uses SwapRouter exactInputSingle amount from calldata for wallet effects", () => {
+    const runtimeState = baseRuntimeState();
+    let walletSession = baseWalletSession();
+
+    const setWalletSession = (session: Partial<LunaWalletSession>): LunaWalletSession => {
+      walletSession = createLunaWalletSession({
+        ...walletSession,
+        ...session,
+        accounts: session.accounts ?? walletSession.accounts,
+        permissions: session.permissions ?? walletSession.permissions,
+        assets: session.assets ?? walletSession.assets,
+      });
+      return walletSession;
+    };
+
+    setWalletSession({
+      assets: {
+        ...walletSession.assets,
+        tokens: {
+          ...walletSession.assets.tokens,
+          [TOKEN_IN.toLowerCase()]: {
+            ...walletSession.assets.tokens[TOKEN_IN.toLowerCase()],
+            allowance: "10",
+          },
+        },
+      },
+    });
+
+    const swap = resolveProtocolRequest({
+      method: "eth_sendTransaction",
+      params: [
+        {
+          from: OWNER,
+          to: ROUTER,
+          data: `0x414bf389${addressWord(TOKEN_IN)}${addressWord(TOKEN_OUT)}${uintWord(3000)}${addressWord(OWNER)}${uintWord(999999)}${uintWord(3)}${uintWord(0)}${uintWord(0)}`,
+        },
+      ],
+      runtimeState,
+      walletSession,
+      setWalletSession,
+    });
+
+    expect(swap.handled).toBe(true);
+    expect(walletSession.assets.tokens[TOKEN_IN.toLowerCase()].balance).toBe("22");
+    expect(walletSession.assets.tokens[TOKEN_OUT.toLowerCase()].balance).toBe("5400");
   });
 
   it("returns an empty log set for supported protocol log requests", () => {
