@@ -1,7 +1,17 @@
-import { extractPermissionKeys, normalizeWalletPermissions, type LunaWalletSession } from "@lunatest/contracts";
+import {
+  createLunaWalletSession,
+  extractPermissionKeys,
+  normalizeAddress,
+  normalizeWalletPermissions,
+  type LunaWalletChain,
+  type LunaWalletSession,
+  type LunaWalletWatchedAsset,
+} from "@lunatest/contracts";
 import { isRecord, resolveMock } from "../matcher.js";
 import type { RuntimeLogger } from "../logger.js";
 import type { NormalizedRuntimeInterceptConfig } from "../types.js";
+import { createProviderError } from "../provider-errors.js";
+import { resolveProtocolRequest } from "../protocols/engine.js";
 
 type EthereumListener = (...args: unknown[]) => void;
 
@@ -14,6 +24,7 @@ type EthereumLike = {
 type WalletSessionController = {
   getWalletSession: () => LunaWalletSession;
   setWalletSession: (session: Partial<LunaWalletSession>) => LunaWalletSession;
+  getRuntimeState?: () => Record<string, unknown>;
 };
 
 type MockReceipt = {
@@ -24,10 +35,26 @@ type MockReceipt = {
 
 const DEFAULT_GAS_PRICE = 30_000_000_000n;
 const DEFAULT_ESTIMATE_GAS = 150_000n;
+const DEFAULT_MAX_PRIORITY_FEE = 1_500_000_000n;
+const ZERO_HASH = `0x${"0".repeat(64)}`;
 
 function toError(value: unknown, fallbackMessage: string): Error {
   if (value instanceof Error) {
     return value;
+  }
+
+  if (isRecord(value) && typeof value.code === "number") {
+    const message = typeof value.message === "string" ? value.message : fallbackMessage;
+    if (
+      value.code === 4001 ||
+      value.code === 4100 ||
+      value.code === 4200 ||
+      value.code === 4900 ||
+      value.code === 4901 ||
+      value.code === 4902
+    ) {
+      return createProviderError(value.code, message, value.data);
+    }
   }
 
   if (typeof value === "string") {
@@ -49,32 +76,170 @@ function extractMockResult(value: unknown): unknown {
   return value;
 }
 
+function normalizeHexQuantity(value: string | number | bigint): string {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^0x[0-9a-f]+$/i.test(trimmed)) {
+      return trimmed.toLowerCase();
+    }
+    if (/^[0-9]+$/.test(trimmed)) {
+      return `0x${BigInt(trimmed).toString(16)}`;
+    }
+    return "0x0";
+  }
+
+  return `0x${BigInt(value).toString(16)}`;
+}
+
+function parseQuantity(value: unknown, fallback: bigint): bigint {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return BigInt(Math.floor(value));
+  }
+
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const trimmed = value.trim();
+  if (/^0x[0-9a-f]+$/i.test(trimmed)) {
+    return BigInt(trimmed);
+  }
+
+  if (/^[0-9]+$/.test(trimmed)) {
+    return BigInt(trimmed);
+  }
+
+  return fallback;
+}
+
+function normalizeChainId(value: unknown): string | null {
+  if (typeof value !== "string" || !/^0x[0-9a-f]+$/i.test(value)) {
+    return null;
+  }
+
+  return value.toLowerCase();
+}
+
+function chainIdToNetworkVersion(chainId: string): string {
+  return parseQuantity(chainId, 1n).toString(10);
+}
+
+function deterministicHex(input: unknown, bytes: number): string {
+  const source = typeof input === "string" ? input : JSON.stringify(input);
+  let hash = 0x811c9dc5;
+  let hex = "";
+
+  for (let index = 0; hex.length < bytes * 2; index += 1) {
+    const charCode = source.charCodeAt(index % Math.max(source.length, 1)) || index;
+    hash ^= charCode + index;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+    hex += hash.toString(16).padStart(8, "0");
+  }
+
+  return `0x${hex.slice(0, bytes * 2)}`;
+}
+
+function isRejectedMethod(session: LunaWalletSession, method: string): boolean {
+  return session.behavior?.userRejectedMethods?.includes(method) ?? false;
+}
+
+function isKnownChain(session: LunaWalletSession, chainId: string): boolean {
+  return Boolean(session.knownChains?.[chainId]);
+}
+
+function isWalletScopedMethod(method: string): boolean {
+  return method.startsWith("wallet_") || method === "personal_sign" || method.startsWith("eth_signTypedData");
+}
+
+function hasAccountPermission(session: LunaWalletSession): boolean {
+  return session.permissions.some((permission) => permission.parentCapability === "eth_accounts");
+}
+
+function assertAccountAuthorized(session: LunaWalletSession, address: unknown, method: string): void {
+  if (typeof address !== "string") {
+    return;
+  }
+
+  const known = new Set(session.accounts.map((account) => account.toLowerCase()));
+  if (!session.connected || !hasAccountPermission(session) || !known.has(address.toLowerCase())) {
+    throw createProviderError(4100, `Luna wallet is not authorized for ${method}`);
+  }
+}
+
+function normalizeAddEthereumChainParams(params: unknown): LunaWalletChain | null {
+  const candidate = Array.isArray(params) ? params[0] : params;
+  if (!isRecord(candidate)) {
+    return null;
+  }
+
+  const chainId = normalizeChainId(candidate.chainId);
+  if (!chainId) {
+    return null;
+  }
+
+  return {
+    chainId,
+    chainName: typeof candidate.chainName === "string" ? candidate.chainName : undefined,
+    rpcUrls: Array.isArray(candidate.rpcUrls)
+      ? candidate.rpcUrls.filter((url): url is string => typeof url === "string")
+      : undefined,
+    blockExplorerUrls: Array.isArray(candidate.blockExplorerUrls)
+      ? candidate.blockExplorerUrls.filter((url): url is string => typeof url === "string")
+      : undefined,
+    nativeCurrency: isRecord(candidate.nativeCurrency)
+      ? {
+          name: typeof candidate.nativeCurrency.name === "string" ? candidate.nativeCurrency.name : undefined,
+          symbol: typeof candidate.nativeCurrency.symbol === "string" ? candidate.nativeCurrency.symbol : undefined,
+          decimals: typeof candidate.nativeCurrency.decimals === "number" ? candidate.nativeCurrency.decimals : undefined,
+        }
+      : undefined,
+  };
+}
+
+function normalizeWatchAssetParams(params: unknown): LunaWalletWatchedAsset | null {
+  const candidate = Array.isArray(params) ? params[0] : params;
+  if (!isRecord(candidate) || typeof candidate.type !== "string" || !isRecord(candidate.options)) {
+    return null;
+  }
+
+  return {
+    type: candidate.type,
+    options: { ...candidate.options },
+  };
+}
+
+function createBlock(blockNumber: bigint, includeTransactions: boolean): Record<string, unknown> {
+  const number = normalizeHexQuantity(blockNumber);
+
+  return {
+    number,
+    hash: deterministicHex(`block:${number}`, 32),
+    parentHash: blockNumber > 0n ? deterministicHex(`block:${blockNumber - 1n}`, 32) : ZERO_HASH,
+    nonce: "0x0000000000000000",
+    sha3Uncles: ZERO_HASH,
+    logsBloom: `0x${"0".repeat(512)}`,
+    transactionsRoot: deterministicHex(`txroot:${number}`, 32),
+    stateRoot: deterministicHex(`stateroot:${number}`, 32),
+    receiptsRoot: deterministicHex(`receiptsroot:${number}`, 32),
+    miner: "0x0000000000000000000000000000000000000000",
+    difficulty: "0x0",
+    totalDifficulty: "0x0",
+    extraData: "0x",
+    size: "0x0",
+    gasLimit: "0x1c9c380",
+    gasUsed: "0x0",
+    timestamp: normalizeHexQuantity(1_700_000_000n + blockNumber),
+    transactions: includeTransactions ? [] : [],
+    baseFeePerGas: normalizeHexQuantity(DEFAULT_GAS_PRICE),
+  };
+}
+
 export function installEthereumInterceptor(
   config: NormalizedRuntimeInterceptConfig,
   logger: RuntimeLogger,
   walletController: WalletSessionController = {
-    getWalletSession: () => ({
-      enabled: false,
-      connected: false,
-      chainId: "0x1",
-      accounts: [],
-      permissions: [],
-      assets: {
-        nativeBalance: "0",
-        tokens: {},
-      },
-    }),
-    setWalletSession: () => ({
-      enabled: false,
-      connected: false,
-      chainId: "0x1",
-      accounts: [],
-      permissions: [],
-      assets: {
-        nativeBalance: "0",
-        tokens: {},
-      },
-    }),
+    getWalletSession: () => createLunaWalletSession(),
+    setWalletSession: () => createLunaWalletSession(),
   },
 ): () => void {
   const target = globalThis as unknown as { window?: Record<string, unknown> };
@@ -127,8 +292,16 @@ export function installEthereumInterceptor(
       return undefined;
     }
 
+    if (isRejectedMethod(session, method)) {
+      throw createProviderError(4001, `Luna wallet rejected ${method}`);
+    }
+
     if (method === "eth_chainId") {
       return session.chainId;
+    }
+
+    if (method === "net_version") {
+      return chainIdToNetworkVersion(session.chainId);
     }
 
     if (method === "eth_accounts") {
@@ -186,18 +359,80 @@ export function installEthereumInterceptor(
 
     if (method === "wallet_switchEthereumChain") {
       const [target] = Array.isArray(payload.params) ? payload.params : [];
-      const chainId =
+      const chainId = normalizeChainId(
         target && typeof target === "object"
           ? (target as { chainId?: unknown }).chainId
-          : undefined;
+          : undefined,
+      );
 
-      if (typeof chainId !== "string") {
+      if (!chainId) {
         throw new Error("wallet_switchEthereumChain requires chainId");
+      }
+
+      if (!isKnownChain(session, chainId)) {
+        throw createProviderError(4902, `Luna wallet does not know chain ${chainId}`);
       }
 
       const next = walletController.setWalletSession({ chainId });
       emitLocal("chainChanged", next.chainId);
       return null;
+    }
+
+    if (method === "wallet_addEthereumChain") {
+      const chain = normalizeAddEthereumChainParams(payload.params);
+      if (!chain) {
+        throw new Error("wallet_addEthereumChain requires chain metadata with chainId");
+      }
+
+      walletController.setWalletSession({
+        knownChains: {
+          ...(session.knownChains ?? {}),
+          [chain.chainId]: chain,
+        },
+      });
+      return null;
+    }
+
+    if (method === "wallet_watchAsset") {
+      const asset = normalizeWatchAssetParams(payload.params);
+      if (!asset) {
+        throw new Error("wallet_watchAsset requires an asset descriptor");
+      }
+
+      const tokens = { ...session.assets.tokens };
+      if (
+        asset.type.toUpperCase() === "ERC20" &&
+        typeof asset.options.address === "string"
+      ) {
+        const tokenAddress = normalizeAddress(asset.options.address);
+        tokens[tokenAddress] = {
+          ...tokens[tokenAddress],
+          balance: tokens[tokenAddress]?.balance ?? "0",
+          allowance: tokens[tokenAddress]?.allowance ?? "0",
+          symbol: typeof asset.options.symbol === "string" ? asset.options.symbol : tokens[tokenAddress]?.symbol,
+          decimals:
+            typeof asset.options.decimals === "number" ? asset.options.decimals : tokens[tokenAddress]?.decimals,
+        };
+      }
+
+      walletController.setWalletSession({
+        watchedAssets: [...(session.watchedAssets ?? []), asset],
+        assets: {
+          ...session.assets,
+          tokens,
+        },
+      });
+      return true;
+    }
+
+    if (method === "eth_getBalance") {
+      const [address] = Array.isArray(payload.params) ? payload.params : [];
+      const knownAccounts = new Set(session.accounts.map((account) => account.toLowerCase()));
+      if (typeof address === "string" && !knownAccounts.has(address.toLowerCase())) {
+        return "0x0";
+      }
+
+      return normalizeHexQuantity(session.assets.nativeBalance);
     }
 
     if (method === "eth_getTransactionCount") {
@@ -216,8 +451,44 @@ export function installEthereumInterceptor(
       return `0x${DEFAULT_GAS_PRICE.toString(16)}`;
     }
 
+    if (method === "eth_maxPriorityFeePerGas") {
+      return normalizeHexQuantity(DEFAULT_MAX_PRIORITY_FEE);
+    }
+
     if (method === "eth_estimateGas") {
       return `0x${DEFAULT_ESTIMATE_GAS.toString(16)}`;
+    }
+
+    if (method === "eth_feeHistory") {
+      const params = Array.isArray(payload.params) ? payload.params : [];
+      const blockCount = Number(parseQuantity(params[0], 1n));
+      const safeBlockCount = Math.max(1, Math.min(blockCount, 1024));
+      const rewardPercentiles = Array.isArray(params[2]) ? params[2] : [];
+
+      return {
+        oldestBlock: normalizeHexQuantity(blockNumber > BigInt(safeBlockCount) ? blockNumber - BigInt(safeBlockCount) : 0n),
+        baseFeePerGas: Array.from({ length: safeBlockCount + 1 }, (_, index) =>
+          normalizeHexQuantity(DEFAULT_GAS_PRICE + BigInt(index) * 1_000_000n),
+        ),
+        gasUsedRatio: Array.from({ length: safeBlockCount }, () => 0.5),
+        reward: Array.from({ length: safeBlockCount }, () =>
+          rewardPercentiles.map(() => normalizeHexQuantity(DEFAULT_MAX_PRIORITY_FEE)),
+        ),
+      };
+    }
+
+    if (method === "eth_getBlockByNumber") {
+      const params = Array.isArray(payload.params) ? payload.params : [];
+      const tag = params[0];
+      const includeTransactions = params[1] === true;
+      const resolvedBlockNumber =
+        tag === "latest" || tag === "pending" || tag === undefined
+          ? blockNumber
+          : tag === "earliest"
+            ? 0n
+            : parseQuantity(tag, blockNumber);
+
+      return createBlock(resolvedBlockNumber, includeTransactions);
     }
 
     if (method === "eth_sendTransaction") {
@@ -227,6 +498,8 @@ export function installEthereumInterceptor(
         request && typeof request === "object" && typeof (request as { from?: unknown }).from === "string"
           ? ((request as { from: string }).from).toLowerCase()
           : session.accounts[0]?.toLowerCase() ?? "default";
+
+      assertAccountAuthorized(session, fromAddress, method);
       const nonce = nonces.get(fromAddress) ?? 0;
 
       nonces.set(fromAddress, nonce + 1);
@@ -257,7 +530,45 @@ export function installEthereumInterceptor(
       return receipts.get(txHash) ?? null;
     }
 
+    if (method === "personal_sign") {
+      const params = Array.isArray(payload.params) ? payload.params : [];
+      const message = params[0];
+      const address = params[1];
+      assertAccountAuthorized(session, address, method);
+      return deterministicHex({ method, message, address, chainId: session.chainId }, 65);
+    }
+
+    if (method === "eth_signTypedData_v4") {
+      const params = Array.isArray(payload.params) ? payload.params : [];
+      const address = params[0];
+      const typedData = params[1];
+      assertAccountAuthorized(session, address, method);
+      return deterministicHex({ method, typedData, address, chainId: session.chainId }, 65);
+    }
+
+    if (isWalletScopedMethod(method)) {
+      throw createProviderError(4200, `Luna wallet does not support ${method}`);
+    }
+
     return undefined;
+  };
+
+  const tryProtocolRequest = (
+    method: string,
+    payload: { method?: unknown; params?: unknown },
+  ): { handled: true; result: unknown } | { handled: false } => {
+    const session = walletController.getWalletSession();
+    if (!session.enabled) {
+      return { handled: false };
+    }
+
+    return resolveProtocolRequest({
+      method,
+      params: payload.params,
+      runtimeState: walletController.getRuntimeState?.() ?? {},
+      walletSession: session,
+      setWalletSession: walletController.setWalletSession,
+    });
   };
 
   const api: EthereumLike & { isLunaTest: boolean } = {
@@ -275,6 +586,15 @@ export function installEthereumInterceptor(
         });
 
         if (response === undefined) {
+          const protocolResult = tryProtocolRequest(method, payload);
+          if (protocolResult.handled) {
+            logger.debug("ethereum.protocol", {
+              method,
+              key: route.responseKey,
+            });
+            return protocolResult.result;
+          }
+
           if (config.intercept.mode === "strict") {
             logger.debug("ethereum.blocked.no_response", {
               method,
@@ -296,6 +616,14 @@ export function installEthereumInterceptor(
         });
 
         return extractMockResult(response);
+      }
+
+      const protocolResult = tryProtocolRequest(method, payload);
+      if (protocolResult.handled) {
+        logger.debug("ethereum.protocol", {
+          method,
+        });
+        return protocolResult.result;
       }
 
       const walletResult = await handleWalletRequest(method, payload);

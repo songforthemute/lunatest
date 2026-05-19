@@ -68,18 +68,37 @@ type WalletPresetMaterialization = {
   walletSession: LunaWalletSession;
 };
 
+type ProtocolRuntimeState = {
+  activeProtocol: "uniswap_v2" | "uniswap_v3" | "curve" | "aave";
+  supportLevel: "L3";
+  chainId: number;
+  contracts: Record<string, string>;
+  tokens: Record<string, { symbol?: string; decimals?: number }>;
+  transactionBehavior?: {
+    forcePending?: boolean;
+    forceRevert?: boolean;
+    userRejectedMethods?: string[];
+  };
+  uniswapV2?: unknown;
+  uniswapV3?: unknown;
+  curve?: unknown;
+  aave?: unknown;
+};
+
 type ProtocolPresetMaterialization = {
   protocolPresetId: string;
   walletPresetId: string;
   resolvedParams: Record<string, unknown>;
   walletSession: LunaWalletSession;
-  interceptState: Record<string, unknown>;
+  interceptState: Record<string, unknown> & {
+    protocolRuntime?: ProtocolRuntimeState;
+  };
   routeMocks: RouteMock[];
   builtinScenarios: PresetScenarioDescriptor[];
 };
 ```
 
-`materializeProtocolPreset()`은 resolved protocol id, 선택된 wallet preset id, merged params, 그리고 bootstrap/devtools가 쓰는 runtime payload를 함께 반환합니다.
+`materializeProtocolPreset()`은 resolved protocol id, 선택된 wallet preset id, merged params, 그리고 bootstrap/devtools가 쓰는 runtime payload를 함께 반환합니다. Built-in protocol preset은 `interceptState.protocolRuntime` 아래에 결정론적인 L3 frontend-flow state를 설치하고, `eth_call`, `eth_sendTransaction`, `eth_getTransactionReceipt`, `eth_getLogs` route mock을 함께 제공합니다. 정확한 EVM simulation은 범위 밖입니다.
 
 `materializeWalletPreset()`은 resolved wallet id, merged params, session state를 반환합니다.
 

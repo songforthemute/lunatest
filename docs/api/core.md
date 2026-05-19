@@ -68,18 +68,37 @@ type WalletPresetMaterialization = {
   walletSession: LunaWalletSession;
 };
 
+type ProtocolRuntimeState = {
+  activeProtocol: "uniswap_v2" | "uniswap_v3" | "curve" | "aave";
+  supportLevel: "L3";
+  chainId: number;
+  contracts: Record<string, string>;
+  tokens: Record<string, { symbol?: string; decimals?: number }>;
+  transactionBehavior?: {
+    forcePending?: boolean;
+    forceRevert?: boolean;
+    userRejectedMethods?: string[];
+  };
+  uniswapV2?: unknown;
+  uniswapV3?: unknown;
+  curve?: unknown;
+  aave?: unknown;
+};
+
 type ProtocolPresetMaterialization = {
   protocolPresetId: string;
   walletPresetId: string;
   resolvedParams: Record<string, unknown>;
   walletSession: LunaWalletSession;
-  interceptState: Record<string, unknown>;
+  interceptState: Record<string, unknown> & {
+    protocolRuntime?: ProtocolRuntimeState;
+  };
   routeMocks: RouteMock[];
   builtinScenarios: PresetScenarioDescriptor[];
 };
 ```
 
-`materializeProtocolPreset()` always returns the resolved protocol id, the wallet preset it selected, the merged params, and the runtime payloads used by bootstrap/devtools.
+`materializeProtocolPreset()` always returns the resolved protocol id, the wallet preset it selected, the merged params, and the runtime payloads used by bootstrap/devtools. Built-in protocol presets install deterministic L3 frontend-flow state under `interceptState.protocolRuntime` plus route mocks for `eth_call`, `eth_sendTransaction`, `eth_getTransactionReceipt`, and `eth_getLogs`. Exact EVM simulation remains out of scope.
 
 `materializeWalletPreset()` always returns the resolved wallet id, the merged params, and the session state.
 

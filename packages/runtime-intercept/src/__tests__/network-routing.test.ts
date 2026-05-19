@@ -4,11 +4,76 @@ import { createInterceptedFetch, installFetchInterceptor } from "../interceptors
 import { installXhrInterceptor } from "../interceptors/xhr";
 import { createLogger } from "../logger";
 import { normalizeRuntimeInterceptConfig } from "../runtime";
+import { createLunaWalletSession, type LunaWalletSession } from "@lunatest/contracts";
 
 function waitForMicrotask(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, 0);
   });
+}
+
+const OWNER = "0x1111111111111111111111111111111111111111";
+const TOKEN = "0x2222222222222222222222222222222222222222";
+
+function addressWord(address: string): string {
+  return address.replace(/^0x/i, "").padStart(64, "0").toLowerCase();
+}
+
+function createProtocolController(): {
+  getRuntimeState: () => Record<string, unknown>;
+  getWalletSession: () => LunaWalletSession;
+  setWalletSession: (session: Partial<LunaWalletSession>) => LunaWalletSession;
+} {
+  const runtimeState = {
+    protocolRuntime: {
+      activeProtocol: "uniswap_v3",
+      supportLevel: "L3",
+      chainId: 11155111,
+      tokens: {
+        [TOKEN]: {
+          symbol: "MOCK",
+          decimals: 18,
+        },
+      },
+      uniswapV3: {
+        router: "0x4444444444444444444444444444444444444444",
+        quoter: "0x5555555555555555555555555555555555555555",
+        pools: [],
+      },
+    },
+  };
+  let walletSession = createLunaWalletSession({
+    enabled: true,
+    connected: true,
+    accounts: [OWNER],
+    permissions: ["eth_accounts"],
+    assets: {
+      nativeBalance: "0",
+      tokens: {
+        [TOKEN]: {
+          balance: "25",
+          allowance: "0",
+          symbol: "MOCK",
+          decimals: 18,
+        },
+      },
+    },
+  });
+
+  return {
+    getRuntimeState: () => runtimeState,
+    getWalletSession: () => walletSession,
+    setWalletSession: (session) => {
+      walletSession = createLunaWalletSession({
+        ...walletSession,
+        ...session,
+        accounts: session.accounts ?? walletSession.accounts,
+        permissions: session.permissions ?? walletSession.permissions,
+        assets: session.assets ?? walletSession.assets,
+      });
+      return walletSession;
+    },
+  };
 }
 
 class FakeXMLHttpRequest {
@@ -223,6 +288,48 @@ describe("network routing", () => {
     await expect(response.text()).resolves.toBe("fallback");
   });
 
+  it("resolves matched fetch RPC requests from protocol runtime when mock is missing", async () => {
+    const fetch = createInterceptedFetch({
+      getSnapshot: () => ({
+        mode: "strict",
+        routing: {
+          rpcEndpoints: [
+            {
+              urlPattern: "https://rpc.example",
+              methods: ["eth_call"],
+              responseKey: "protocol.runtime",
+            },
+          ],
+        },
+        mockResponses: {},
+      }),
+      logger: createLogger(false),
+      protocolRuntime: createProtocolController(),
+    });
+
+    const response = await fetch("https://rpc.example", {
+      method: "POST",
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            to: TOKEN,
+            data: `0x70a08231${addressWord(OWNER)}`,
+          },
+          "latest",
+        ],
+      }),
+    });
+
+    await expect(response.json()).resolves.toMatchObject({
+      id: 1,
+      jsonrpc: "2.0",
+      result: "0x0000000000000000000000000000000000000000000000000000000000000019",
+    });
+  });
+
   it("applies latest snapshot on every fetch call", async () => {
     const snapshot = {
       mode: "strict" as const,
@@ -350,6 +457,62 @@ describe("network routing", () => {
     expect(xhr.status).toBe(200);
     expect(JSON.parse(xhr.responseText)).toEqual({
       amountOut: "123.45",
+    });
+    expect(FakeXMLHttpRequest.instances).toHaveLength(0);
+
+    restore();
+  });
+
+  it("resolves matched XHR RPC requests from protocol runtime when mock is missing", async () => {
+    const restore = installXhrInterceptor(
+      normalizeRuntimeInterceptConfig({
+        enable: true,
+        intercept: {
+          mode: "strict",
+          routing: {
+            rpcEndpoints: [
+              {
+                urlPattern: "https://rpc.example",
+                methods: ["eth_call"],
+                responseKey: "protocol.runtime",
+              },
+            ],
+          },
+          mockResponses: {},
+        },
+      }),
+      createLogger(false),
+      createProtocolController(),
+    );
+
+    const xhr = new (globalThis as { XMLHttpRequest: new () => XMLHttpRequest }).XMLHttpRequest();
+
+    const completed = new Promise<void>((resolve, reject) => {
+      xhr.onload = () => resolve();
+      xhr.onerror = () => reject(new Error("xhr should not fail"));
+    });
+
+    xhr.open("POST", "https://rpc.example");
+    xhr.send(
+      JSON.stringify({
+        id: 2,
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            to: TOKEN,
+            data: "0x313ce567",
+          },
+          "latest",
+        ],
+      }),
+    );
+
+    await completed;
+    expect(JSON.parse(xhr.responseText)).toMatchObject({
+      id: 2,
+      jsonrpc: "2.0",
+      result: "0x0000000000000000000000000000000000000000000000000000000000000012",
     });
     expect(FakeXMLHttpRequest.instances).toHaveLength(0);
 

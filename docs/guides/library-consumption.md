@@ -9,6 +9,7 @@ If you want a full 0→1 reference app (real wallet + Sepolia + Uniswap V3 + Lua
 
 If you want to add your own team-specific protocol or wallet presets, see:
 
+- [Protocol and Wallet Support](./protocol-support.md)
 - [Local Preset Authoring Guide](./local-preset-authoring.md)
 
 ## Package Selection
@@ -87,6 +88,22 @@ void bootstrapLunaRuntime({
   mountDevtools: true,
 });
 ```
+
+To use a built-in protocol runtime without hand-written protocol route mocks, pass a protocol preset id:
+
+```ts
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  protocolPresetId: "builtin/uniswap_v3",
+  protocolPresetParams: {
+    chainId: 11155111,
+  },
+  walletFallbackMode: "manual-toggle",
+});
+```
+
+Built-in protocol presets target deterministic L3 frontend-flow support. They seed `protocolRuntime`, wallet token balances/allowances as integer base-unit strings, and runtime routes for `eth_call`, `eth_sendTransaction`, `eth_getTransactionReceipt`, and `eth_getLogs`.
 
 Production note:
 
@@ -193,6 +210,7 @@ expect({ pass: true }).toLunaPass();
 ## Next References
 
 - `docs/getting-started.md`
+- `docs/guides/protocol-support.md`
 - `docs/guides/local-preset-authoring.md`
 - `docs/guides/wagmi-setup.md`
 - `docs/guides/ethers-setup.md`

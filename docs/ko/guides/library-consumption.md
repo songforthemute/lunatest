@@ -11,6 +11,7 @@
 
 팀 전용 protocol / wallet preset을 직접 붙이고 싶다면 아래 문서를 같이 보면 됩니다.
 
+- [프로토콜/지갑 지원 범위](./protocol-support.md)
 - [Local Preset 작성 가이드](./local-preset-authoring.md)
 
 ## 어떤 패키지를 고르면 되나
@@ -89,6 +90,22 @@ void bootstrapLunaRuntime({
   mountDevtools: true,
 });
 ```
+
+직접 protocol route mock을 쓰지 않고 built-in protocol runtime을 쓰려면 protocol preset id를 넘깁니다.
+
+```ts
+void bootstrapLunaRuntime({
+  source: "./lunatest.lua",
+  nodeEnv,
+  protocolPresetId: "builtin/uniswap_v3",
+  protocolPresetParams: {
+    chainId: 11155111,
+  },
+  walletFallbackMode: "manual-toggle",
+});
+```
+
+Built-in protocol preset은 결정론적인 L3 frontend-flow 지원을 목표로 합니다. `protocolRuntime`, integer base-unit string 형태의 wallet token balance/allowance, 그리고 `eth_call`, `eth_sendTransaction`, `eth_getTransactionReceipt`, `eth_getLogs` runtime route를 함께 주입합니다.
 
 production에서는 기본 자동 활성화가 되지 않습니다.
 
@@ -177,6 +194,7 @@ await runStdioServer({
 
 ## 다음으로 보면 좋은 문서
 
+- [프로토콜/지갑 지원 범위](./protocol-support.md)
 - [Local Preset 작성 가이드](./local-preset-authoring.md)
 - [E2E 0→1 워크스루](./e2e-0to1.md)
 - [시나리오 예제 모음](./scenario-examples.md)

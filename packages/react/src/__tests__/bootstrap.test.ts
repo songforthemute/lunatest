@@ -209,8 +209,28 @@ describe("bootstrapLunaRuntime", () => {
     expect(result.configLoaded).toBe(true);
   });
 
-  it("applies registry-backed protocol and wallet presets before devtools mount", async () => {
-    const config = createConfig();
+  it("applies config, protocol, wallet, and direct wallet state in stable order", async () => {
+    const configRoutes: RouteMock[] = [
+      { endpointType: "ethereum", method: "eth_chainId", responseKey: "wallet.chainId" },
+    ];
+    const protocolRoutes: RouteMock[] = [
+      { endpointType: "ethereum", method: "eth_call", responseKey: "protocol.runtime" },
+    ];
+    const config = createConfig({
+      given: { wallet: { connected: true } },
+      intercept: {
+        routes: configRoutes,
+        state: { chain: { id: 1 } },
+      },
+    });
+    const protocolState = {
+      protocolRuntime: {
+        activeProtocol: "uniswap_v3",
+        supportLevel: "L3",
+      },
+    };
+    const protocolWallet = { enabled: false, connected: false, chainId: "0xaa36a7", accounts: [], permissions: [], assets: { nativeBalance: "0", tokens: {} } };
+    const explicitWallet = { enabled: false, connected: false, chainId: "0x1", accounts: [], permissions: [], assets: { nativeBalance: "0", tokens: {} } };
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
     mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
@@ -220,21 +240,25 @@ describe("bootstrapLunaRuntime", () => {
       protocolPresetId: "uniswap_v3",
       walletPresetId: "demo_sepolia",
       resolvedParams: {},
-      walletSession: { enabled: false, connected: false, chainId: "0xaa36a7", accounts: [], permissions: [], assets: { nativeBalance: "0", tokens: {} } },
-      interceptState: { chain: { id: 11155111 } },
-      routeMocks: [],
+      walletSession: protocolWallet,
+      interceptState: protocolState,
+      routeMocks: protocolRoutes,
       builtinScenarios: [],
     });
     mocks.materializeWalletPresetMock.mockResolvedValueOnce({
       walletPresetId: "empty_wallet",
       resolvedParams: {},
-      walletSession: { enabled: false, connected: false, chainId: "0x1", accounts: [], permissions: [], assets: { nativeBalance: "0", tokens: {} } },
+      walletSession: explicitWallet,
     });
 
     await bootstrapLunaRuntime({
       nodeEnv: "development",
       protocolPresetId: "uniswap_v3",
       walletPresetId: "empty_wallet",
+      walletPreset: {
+        address: "0x2222222222222222222222222222222222222222",
+        chainId: "0xaa36a7",
+      },
     });
 
     expect(mocks.materializeProtocolPresetMock).toHaveBeenCalledWith(
@@ -247,7 +271,25 @@ describe("bootstrapLunaRuntime", () => {
       undefined,
       { tag: "registry" },
     );
-    expect(mocks.setWalletSessionMock).toHaveBeenCalledTimes(2);
+    expect(mocks.setWalletSessionMock).toHaveBeenCalledTimes(3);
+    expect(mocks.setRouteMocksMock).toHaveBeenNthCalledWith(1, configRoutes);
+    expect(mocks.applyInterceptStateMock).toHaveBeenNthCalledWith(1, config.given);
+    expect(mocks.applyInterceptStateMock).toHaveBeenNthCalledWith(2, config.intercept?.state);
+    expect(mocks.setRouteMocksMock).toHaveBeenNthCalledWith(2, protocolRoutes);
+    expect(mocks.applyInterceptStateMock).toHaveBeenNthCalledWith(3, protocolState);
+    expect(mocks.setWalletSessionMock).toHaveBeenNthCalledWith(1, protocolWallet);
+    expect(mocks.setWalletSessionMock).toHaveBeenNthCalledWith(2, explicitWallet);
+    expect(mocks.setWalletSessionMock).toHaveBeenNthCalledWith(3, {
+      enabled: false,
+      connected: false,
+      chainId: "0xaa36a7",
+      accounts: ["0x2222222222222222222222222222222222222222"],
+      permissions: [],
+      assets: {
+        nativeBalance: "0",
+        tokens: {},
+      },
+    });
   });
 
   it("initializes wallet preset and passes fallback mode to devtools", async () => {

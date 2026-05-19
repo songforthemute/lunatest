@@ -44,6 +44,27 @@ type LunaRuntimeInterceptConfig = {
 
 `wallet.session`은 intercept runtime이 활성화되기 전에 wallet state를 미리 주입하는 public config hook입니다.
 
+wallet session에는 결정론 테스트 전용 metadata를 포함할 수 있습니다.
+
+```ts
+type LunaWalletSession = {
+  enabled: boolean;
+  connected: boolean;
+  chainId: string;
+  accounts: string[];
+  permissions: Array<{ parentCapability: string }>;
+  assets: {
+    nativeBalance: string;
+    tokens: Record<string, { symbol?: string; decimals?: number; balance: string; allowance: string }>;
+  };
+  knownChains?: Record<string, { chainId: string; chainName?: string; rpcUrls?: string[] }>;
+  watchedAssets?: Array<{ type: string; options: Record<string, unknown> }>;
+  behavior?: {
+    userRejectedMethods?: string[];
+  };
+};
+```
+
 ## `normalizeRuntimeInterceptConfig(input)`
 
 `normalizeRuntimeInterceptConfig()`는 runtime config를 다음과 같은 normalized object로 바꿉니다.
@@ -66,6 +87,20 @@ type LunaRuntimeInterceptConfig = {
 - `getWalletSession()`: 현재 session 반환
 - `connectWalletSession(address?)`: connected 상태로 전환하고 필요하면 address 하나를 주입
 - `disconnectWalletSession()`: disconnected 상태로 전환
+
+## Wallet method 지원
+
+interceptor는 frontend integration test에 필요한 주요 EIP-1193 및 wallet method를 처리합니다.
+
+- Chain/session: `eth_chainId`, `net_version`, `eth_accounts`, `eth_requestAccounts`, `wallet_switchEthereumChain`, `wallet_addEthereumChain`
+- Permission: `wallet_requestPermissions`, `wallet_getPermissions`, `wallet_revokePermissions`
+- Balance/gas/block: `eth_getBalance`, `eth_getTransactionCount`, `eth_blockNumber`, `eth_gasPrice`, `eth_estimateGas`, `eth_feeHistory`, `eth_maxPriorityFeePerGas`, `eth_getBlockByNumber`
+- Protocol/transaction: `eth_call`, `eth_sendTransaction`, `eth_getTransactionReceipt`, `eth_getLogs`
+- Signing/assets: `personal_sign`, `eth_signTypedData_v4`, `wallet_watchAsset`
+
+지원하지 않는 wallet method는 strict mode에서 provider error code `4200`으로 실패합니다. 결정론적인 user rejection은 `wallet.session.behavior.userRejectedMethods`로 모델링할 수 있습니다.
+
+wallet asset의 `nativeBalance`, token `balance`, token `allowance`는 integer base-unit string입니다. Runtime protocol handler는 ERC-20 approval과 지원 protocol transaction effect에서 이 값을 읽고 갱신합니다.
 
 ## 최소 예시
 

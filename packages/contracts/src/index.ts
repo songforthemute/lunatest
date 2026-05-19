@@ -74,6 +74,27 @@ export type LunaWalletAssetState = {
   tokens: Record<string, LunaWalletTokenAsset>;
 };
 
+export type LunaWalletChain = {
+  chainId: string;
+  chainName?: string;
+  rpcUrls?: string[];
+  blockExplorerUrls?: string[];
+  nativeCurrency?: {
+    name?: string;
+    symbol?: string;
+    decimals?: number;
+  };
+};
+
+export type LunaWalletWatchedAsset = {
+  type: string;
+  options: Record<string, unknown>;
+};
+
+export type LunaWalletBehavior = {
+  userRejectedMethods?: string[];
+};
+
 export type LunaWalletSession = {
   enabled: boolean;
   connected: boolean;
@@ -81,6 +102,9 @@ export type LunaWalletSession = {
   accounts: string[];
   permissions: LunaWalletPermission[];
   assets: LunaWalletAssetState;
+  knownChains?: Record<string, LunaWalletChain>;
+  watchedAssets?: LunaWalletWatchedAsset[];
+  behavior?: LunaWalletBehavior;
 };
 
 export type PresetKind = "dex" | "lending" | "wallet";
@@ -238,6 +262,57 @@ export function createLunaWalletAssetState(
   };
 }
 
+function normalizeChainId(chainId: string): string {
+  return chainId.toLowerCase();
+}
+
+function createLunaWalletKnownChains(
+  input: Record<string, LunaWalletChain> | undefined,
+  currentChainId: string,
+): Record<string, LunaWalletChain> {
+  const chains: Record<string, LunaWalletChain> = {};
+
+  for (const [key, value] of Object.entries(input ?? {})) {
+    if (!value || typeof value.chainId !== "string" || value.chainId.length === 0) {
+      continue;
+    }
+
+    const chainId = normalizeChainId(value.chainId);
+    chains[normalizeChainId(key)] = {
+      ...value,
+      chainId,
+      rpcUrls: value.rpcUrls ? [...value.rpcUrls] : undefined,
+      blockExplorerUrls: value.blockExplorerUrls ? [...value.blockExplorerUrls] : undefined,
+      nativeCurrency: value.nativeCurrency ? { ...value.nativeCurrency } : undefined,
+    };
+    chains[chainId] = chains[normalizeChainId(key)];
+  }
+
+  const normalizedCurrentChainId = normalizeChainId(currentChainId);
+  chains[normalizedCurrentChainId] = chains[normalizedCurrentChainId] ?? {
+    chainId: normalizedCurrentChainId,
+  };
+
+  return chains;
+}
+
+function createLunaWalletWatchedAssets(
+  input: LunaWalletWatchedAsset[] | undefined,
+): LunaWalletWatchedAsset[] {
+  return (input ?? []).map((asset) => ({
+    type: asset.type,
+    options: { ...asset.options },
+  }));
+}
+
+function createLunaWalletBehavior(
+  input: LunaWalletBehavior | undefined,
+): LunaWalletBehavior {
+  return {
+    userRejectedMethods: input?.userRejectedMethods ? [...input.userRejectedMethods] : [],
+  };
+}
+
 export function getLunaWalletTokenAsset(
   assets: LunaWalletAssetState,
   address: string,
@@ -294,6 +369,9 @@ export function createLunaWalletSession(
     accounts,
     permissions,
     assets: createLunaWalletAssetState(input.assets),
+    knownChains: createLunaWalletKnownChains(input.knownChains, input.chainId ?? "0x1"),
+    watchedAssets: createLunaWalletWatchedAssets(input.watchedAssets),
+    behavior: createLunaWalletBehavior(input.behavior),
   };
 }
 

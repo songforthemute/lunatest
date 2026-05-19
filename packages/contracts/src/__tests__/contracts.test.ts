@@ -79,6 +79,54 @@ describe("contracts utils", () => {
     });
   });
 
+  it("preserves deterministic wallet metadata", () => {
+    expect(
+      createLunaWalletSession({
+        knownChains: {
+          "0x1": {
+            chainId: "0x1",
+            chainName: "Ethereum",
+            rpcUrls: ["https://example.invalid/rpc"],
+          },
+        },
+        watchedAssets: [
+          {
+            type: "ERC20",
+            options: {
+              address: "0x2222222222222222222222222222222222222222",
+              symbol: "MOCK",
+              decimals: 18,
+            },
+          },
+        ],
+        behavior: {
+          userRejectedMethods: ["personal_sign"],
+        },
+      }),
+    ).toMatchObject({
+      knownChains: {
+        "0x1": {
+          chainId: "0x1",
+          chainName: "Ethereum",
+          rpcUrls: ["https://example.invalid/rpc"],
+        },
+      },
+      watchedAssets: [
+        {
+          type: "ERC20",
+          options: {
+            address: "0x2222222222222222222222222222222222222222",
+            symbol: "MOCK",
+            decimals: 18,
+          },
+        },
+      ],
+      behavior: {
+        userRejectedMethods: ["personal_sign"],
+      },
+    });
+  });
+
   it("extracts wallet permission keys from request params", () => {
     expect(
       extractPermissionKeys([{ eth_accounts: {}, wallet_requestPermissions: {} }]),

@@ -32,12 +32,18 @@ importers:
       '@lunatest/cli':
         specifier: workspace:*
         version: link:../packages/cli
+      '@lunatest/core':
+        specifier: workspace:*
+        version: link:../packages/core
       '@lunatest/mcp':
         specifier: workspace:*
         version: link:../packages/mcp
       '@lunatest/playwright-plugin':
         specifier: workspace:*
         version: link:../packages/playwright-plugin
+      '@lunatest/runtime-intercept':
+        specifier: workspace:*
+        version: link:../packages/runtime-intercept
     devDependencies:
       '@types/node':
         specifier: ^24.3.0

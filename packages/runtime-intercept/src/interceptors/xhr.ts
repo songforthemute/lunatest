@@ -9,6 +9,8 @@ import {
 } from "../matcher.js";
 import type { RuntimeLogger } from "../logger.js";
 import type { NormalizedRuntimeInterceptConfig } from "../types.js";
+import type { LunaWalletSession } from "@lunatest/contracts";
+import { resolveProtocolRequest } from "../protocols/engine.js";
 
 type JsonRpcPayload = {
   id?: unknown;
@@ -41,6 +43,12 @@ type XhrConstructor = new () => XhrLike;
 type RuntimeXhrEventHandler = ((event: Event) => void) | null;
 
 type RuntimeXhrListener = EventListenerOrEventListenerObject;
+
+type ProtocolRuntimeController = {
+  getWalletSession: () => LunaWalletSession;
+  setWalletSession: (session: Partial<LunaWalletSession>) => LunaWalletSession;
+  getRuntimeState: () => Record<string, unknown>;
+};
 
 function isRpcResponseShape(value: unknown): value is { result?: unknown; error?: unknown } {
   return isRecord(value) && ("result" in value || "error" in value);
@@ -95,6 +103,7 @@ function queue(task: () => void): void {
 export function installXhrInterceptor(
   config: NormalizedRuntimeInterceptConfig,
   logger: RuntimeLogger,
+  protocolRuntime?: ProtocolRuntimeController,
 ): () => void {
   const target = globalThis as { XMLHttpRequest?: XhrConstructor };
   const BaseXMLHttpRequest = target.XMLHttpRequest;
@@ -227,6 +236,29 @@ export function installXhrInterceptor(
         })
           .then((response) => {
             if (response === undefined && config.intercept.mode === "strict") {
+              if (protocolRuntime && isRecord(payload) && typeof payload.method === "string") {
+                const protocolResult = resolveProtocolRequest({
+                  method: payload.method,
+                  params: payload.params,
+                  runtimeState: protocolRuntime.getRuntimeState(),
+                  walletSession: protocolRuntime.getWalletSession(),
+                  setWalletSession: protocolRuntime.setWalletSession,
+                });
+                if (protocolResult.handled) {
+                  const rpcPayload = payload as JsonRpcPayload;
+                  this.fulfill(
+                    200,
+                    { "content-type": "application/json" },
+                    JSON.stringify({
+                      jsonrpc: "2.0",
+                      id: rpcPayload.id ?? null,
+                      result: protocolResult.result,
+                    }),
+                  );
+                  return;
+                }
+              }
+
               logger.debug("xhr.rpc.blocked", {
                 url: this.url,
                 method: this.method,
@@ -236,6 +268,29 @@ export function installXhrInterceptor(
             }
 
             if (response === undefined) {
+              if (protocolRuntime && isRecord(payload) && typeof payload.method === "string") {
+                const protocolResult = resolveProtocolRequest({
+                  method: payload.method,
+                  params: payload.params,
+                  runtimeState: protocolRuntime.getRuntimeState(),
+                  walletSession: protocolRuntime.getWalletSession(),
+                  setWalletSession: protocolRuntime.setWalletSession,
+                });
+                if (protocolResult.handled) {
+                  const rpcPayload = payload as JsonRpcPayload;
+                  this.fulfill(
+                    200,
+                    { "content-type": "application/json" },
+                    JSON.stringify({
+                      jsonrpc: "2.0",
+                      id: rpcPayload.id ?? null,
+                      result: protocolResult.result,
+                    }),
+                  );
+                  return;
+                }
+              }
+
               this.forwardToBase();
               return;
             }
