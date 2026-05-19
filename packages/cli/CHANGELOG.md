@@ -1,5 +1,29 @@
 # @lunatest/cli
 
+## 0.1.2
+
+### Patch Changes
+
+### Summary
+
+- [`b122163`](https://github.com/songforthemute/lunatest/commit/b1221634ade0c0bc1e2bf90648982a3b5a100f1c) Fix CI, release, package smoke, and usability audit drift.
+- [`b122163`](https://github.com/songforthemute/lunatest/commit/b1221634ade0c0bc1e2bf90648982a3b5a100f1c) - Prevent CI workspace wrappers from re-entering root recursive scripts.
+- [`b122163`](https://github.com/songforthemute/lunatest/commit/b1221634ade0c0bc1e2bf90648982a3b5a100f1c) - Run npm registry consumer smoke after release publish workflow success.
+- [`b122163`](https://github.com/songforthemute/lunatest/commit/b1221634ade0c0bc1e2bf90648982a3b5a100f1c) - Prevent `gen --ai` from overwriting existing scenario files.
+- [`b122163`](https://github.com/songforthemute/lunatest/commit/b1221634ade0c0bc1e2bf90648982a3b5a100f1c) - Publish a consistent contracts/core/runtime package set so npm consumers receive the wallet helper exports required by the current runtime packages.
+- [`b122163`](https://github.com/songforthemute/lunatest/commit/b1221634ade0c0bc1e2bf90648982a3b5a100f1c) - Clarify MCP `component.states` state coverage versus component coverage semantics.
+
+### Breaking
+
+- None
+
+### Packages
+
+- `@lunatest/contracts@0.1.1`: dependency range update
+- `@lunatest/core@0.1.2`: dependency range update
+- `@lunatest/runtime-intercept@0.1.1`: dependency range update
+- `@lunatest/mcp@0.1.2`: dependency range update
+
 ## 0.1.1
 
 ### Patch Changes
