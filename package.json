@@ -5,7 +5,7 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
-    "test:scripts": "node --test scripts/check-workspace-type-resolution.test.mjs scripts/ci-prebuild-workflows.test.mjs scripts/changeset-config.test.mjs scripts/package-metadata.test.mjs",
+    "test:scripts": "node --test scripts/check-workspace-type-resolution.test.mjs scripts/ci-prebuild-workflows.test.mjs scripts/changeset-config.test.mjs scripts/package-metadata.test.mjs scripts/docs-site.test.mjs",
     "lint": "pnpm -r --if-present run lint",
     "lint:workspace-types": "node scripts/check-workspace-type-resolution.mjs",
     "lint:deadcode": "knip --config knip.json --include files",
