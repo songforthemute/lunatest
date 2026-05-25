@@ -25,7 +25,7 @@
   "dependencies": {
     "@lunatest/contracts": "workspace:*",
     "wasmoon": "^1.16.0",
-    "zod": "^4.1.5"
+    "zod": "^4.4.3"
   },
   "files": [
     "dist"
@@ -36,7 +36,7 @@
     "lint": "tsc -p tsconfig.lint.json --pretty false"
   },
   "devDependencies": {
-    "fast-check": "^4.5.3"
+    "fast-check": "^4.8.0"
   },
   "repository": {
     "type": "git",

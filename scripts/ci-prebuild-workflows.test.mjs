@@ -124,3 +124,30 @@ test("GitHub workflows use Node 24 action runtimes", async () => {
     }
   }
 });
+
+test("GitHub workflows use the root package manager pnpm version", async () => {
+  const pkg = await readJson(new URL("../package.json", import.meta.url));
+  const pnpmVersion = pkg.packageManager.replace(/^pnpm@/, "");
+  const workflows = [
+    "../.github/workflows/benchmark.yml",
+    "../.github/workflows/ci.yml",
+    "../.github/workflows/docs.yml",
+    "../.github/workflows/release.yml",
+  ];
+  const escapedPnpmVersion = pnpmVersion.replaceAll(".", "\\.");
+
+  for (const workflowPath of workflows) {
+    const workflow = await readFile(new URL(workflowPath, import.meta.url), "utf8");
+
+    assert.match(
+      workflow,
+      new RegExp(`version:\\s+${escapedPnpmVersion}`),
+      `${workflowPath} should install pnpm ${pnpmVersion}`,
+    );
+    assert.doesNotMatch(
+      workflow,
+      new RegExp(`version:\\s+(?!${escapedPnpmVersion}\\b)\\d+\\.\\d+\\.\\d+`),
+      `${workflowPath} should not pin a different pnpm version`,
+    );
+  }
+});

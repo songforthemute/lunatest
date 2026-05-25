@@ -74,6 +74,20 @@
 4. Run `pnpm audit --json` before and after; document advisory delta.
 5. Run the full workspace verification set appropriate to dependency scope.
 
+**Refinement after audit delta check:**
+- Direct dependency bumps alone do not remove the `picomatch` and `smol-toml` advisories because current safe minor lines still pull vulnerable transitive versions.
+- Add targeted `pnpm.overrides` only for vetted patch releases with integrity metadata and no install-time scripts:
+  - `picomatch@<2.3.2 -> 2.3.2`
+  - `picomatch@>=4.0.0 <4.0.4 -> 4.0.4`
+  - `smol-toml@<1.6.1 -> 1.6.1`
+  - `postcss@<8.5.10 -> 8.5.10`
+  - `ws@>=8.0.0 <8.20.1 -> 8.20.1`
+- Keep `vite`/`vitest`/`esbuild` advisories out of PR 2 because that requires the dedicated Vite migration in PR 3.
+- Expected audit delta for PR 2:
+  - Before: high 4 / moderate 9
+  - After: high 2 / moderate 3
+  - Remaining: Vite/esbuild family only
+
 ## PR 3: Vite/Vitest Security Migration
 
 **Reason:**
