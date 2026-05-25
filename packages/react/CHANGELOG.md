@@ -1,5 +1,13 @@
 # @lunatest/react
 
+## 0.1.3
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.1.3`: dependency range update
+
 ## 0.1.2
 
 ### Patch Changes

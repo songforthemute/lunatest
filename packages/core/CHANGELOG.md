@@ -1,5 +1,17 @@
 # @lunatest/core
 
+## 0.1.3
+
+### Patch Changes
+
+### Summary
+
+- [`8641a37`](https://github.com/songforthemute/lunatest/commit/8641a37d49cfc89eaccd769a58b806db247d9485) Refresh vetted runtime dependency ranges and lockfile security overrides for the safe dependency remediation pass.
+
+### Breaking
+
+- None
+
 ## 0.1.2
 
 ### Patch Changes

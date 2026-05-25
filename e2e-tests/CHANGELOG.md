@@ -1,5 +1,15 @@
 # @lunatest/e2e-tests
 
+## 0.1.3
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.1.3`: dependency range update
+- `@lunatest/cli@0.1.3`: dependency range update
+- `@lunatest/mcp@0.1.3`: dependency range update
+
 ## 0.1.2
 
 ### Patch Changes
