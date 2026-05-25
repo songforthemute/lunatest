@@ -18,7 +18,7 @@
     "@lunatest/runtime-intercept": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.12.4",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }
