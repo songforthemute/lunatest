@@ -90,5 +90,37 @@ test("Docs workflow checks GitHub Pages before push deploy", async () => {
   assert.match(docsWorkflow, /settings\/pages/);
   assert.doesNotMatch(docsWorkflow, /--method POST/);
   assert.doesNotMatch(docsWorkflow, /-f build_type=workflow/);
-  assert.match(docsWorkflow, /actions\/deploy-pages@v4/);
+  assert.match(docsWorkflow, /actions\/deploy-pages@v5\.0\.0/);
+});
+
+test("GitHub workflows use Node 24 action runtimes", async () => {
+  const workflows = [
+    "../.github/workflows/benchmark.yml",
+    "../.github/workflows/ci.yml",
+    "../.github/workflows/docs.yml",
+    "../.github/workflows/release.yml",
+  ];
+  const expectedActionTags = new Map([
+    ["actions/checkout", "v6.0.2"],
+    ["actions/setup-node", "v6.4.0"],
+    ["actions/upload-artifact", "v7.0.1"],
+    ["actions/upload-pages-artifact", "v5.0.0"],
+    ["actions/deploy-pages", "v5.0.0"],
+    ["pnpm/action-setup", "v6.0.8"],
+    ["changesets/action", "v1.8.0"],
+  ]);
+
+  for (const workflowPath of workflows) {
+    const workflow = await readFile(new URL(workflowPath, import.meta.url), "utf8");
+    const usesStatements = workflow.matchAll(/uses:\s*([^\s#]+)/g);
+
+    for (const [, uses] of usesStatements) {
+      const [action, tag] = uses.split("@");
+      if (!expectedActionTags.has(action)) {
+        continue;
+      }
+
+      assert.equal(tag, expectedActionTags.get(action), `${workflowPath} uses ${uses}`);
+    }
+  }
 });

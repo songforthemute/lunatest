@@ -9,17 +9,17 @@ jobs:
   nightly-performance:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v6.0.8
         with:
           version: 10.30.2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run perf:absolute:ci
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: perf-current-absolute
           path: scripts/perf-current-absolute.json
@@ -27,11 +27,11 @@ jobs:
   nightly-e2e-extended:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v6.0.8
         with:
           version: 10.30.2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 24
           cache: pnpm
