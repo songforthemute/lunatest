@@ -25,11 +25,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v6.0.8
         with:
           version: 10.30.2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -45,7 +45,7 @@ jobs:
             echo "DOCS_BASE=/${REPO_NAME}/" >> "$GITHUB_ENV"
           fi
       - run: pnpm docs:build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5.0.0
         if: github.event_name == 'push'
         with:
           path: docs/.vitepress/dist
@@ -69,4 +69,4 @@ jobs:
           echo "::error::GitHub Pages is not enabled for ${GITHUB_REPOSITORY}. Enable Pages with GitHub Actions as the source before running docs deploy: https://github.com/${GITHUB_REPOSITORY}/settings/pages"
           exit 1
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5.0.0
