@@ -7,7 +7,6 @@ export default defineConfig({
   description: "Deterministic testing SDK for Web3 frontends",
   base,
   cleanUrls: true,
-  srcDir: "docs",
   themeConfig: {
     nav: [
       { text: "Getting Started", link: "/getting-started" },

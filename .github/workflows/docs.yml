@@ -45,6 +45,11 @@ jobs:
             echo "DOCS_BASE=/${REPO_NAME}/" >> "$GITHUB_ENV"
           fi
       - run: pnpm docs:build
+      - name: Verify docs Pages artifact
+        run: |
+          test -f docs/.vitepress/dist/index.html
+          test -f docs/.vitepress/dist/getting-started.html
+          test -f docs/.vitepress/dist/ko/index.html
       - uses: actions/upload-pages-artifact@v5.0.0
         if: github.event_name == 'push'
         with:

@@ -298,7 +298,7 @@ Malformed local presets do not break the entire registry. LunaTest keeps valid p
 
 You can start from the sample app presets directly:
 
-- [`team_swap.lua`](../../examples/swap-dapp/lunatest/presets/protocol/team_swap.lua)
-- [`team_wallet.lua`](../../examples/swap-dapp/lunatest/presets/wallet/team_wallet.lua)
+- [`team_swap.lua`](https://github.com/songforthemute/lunatest/blob/main/examples/swap-dapp/lunatest/presets/protocol/team_swap.lua)
+- [`team_wallet.lua`](https://github.com/songforthemute/lunatest/blob/main/examples/swap-dapp/lunatest/presets/wallet/team_wallet.lua)
 
 These are the same shapes used by the sample app bootstrap path.
