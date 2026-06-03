@@ -42,6 +42,9 @@ try {
     `packages:
   - "."
 
+minimumReleaseAge: 10080
+blockExoticSubdeps: true
+
 overrides:
 ${workspaceOverrides}
 `,
