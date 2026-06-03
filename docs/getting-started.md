@@ -19,6 +19,8 @@ Package status: `Published` (stable packages available on npm).
 
 실사용 예제는 [Library Consumption Guide](./guides/library-consumption.md)에서 확인할 수 있습니다.
 
+No-RPC/no-wallet 문서 데모는 [Live Demo](./guides/live-demo.md)에서 바로 실행할 수 있습니다.
+
 Swap 데모(실지갑 + Sepolia + Uniswap V3)는
 [Sepolia Swap Demo Guide](./guides/swap-demo-sepolia-uniswapv3.md)에서 확인할 수 있습니다.
 

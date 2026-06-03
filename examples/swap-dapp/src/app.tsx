@@ -771,7 +771,10 @@ export function App() {
               ))}
             </ul>
           ) : null}
-          <p>Copy `examples/swap-dapp/.env.example` to `.env.local` and set valid Sepolia values.</p>
+          <p>
+            Copy `examples/swap-dapp/.env.example` to `.env.local` and set valid Sepolia
+            values, or set `VITE_LUNATEST_DEMO_MODE=deterministic` for the docs-safe demo.
+          </p>
         </section>
       </main>
     );
@@ -785,10 +788,15 @@ export function App() {
         <p className="eyebrow">LunaTest Sample</p>
         <h1>Sepolia + Uniswap V3 Swap</h1>
         <p className="hero-copy">
-          실지갑/실트랜잭션 경로를 기본으로 두고, 카오스 프리셋과 Lua 편집으로 극단 상황을 즉시
-          재현합니다.
+          {readyConfig.mode === "deterministic"
+            ? "문서용 deterministic mode입니다. 실제 RPC나 실지갑 없이 Luna Wallet과 고정 quote로 전체 흐름을 재현합니다."
+            : "실지갑/실트랜잭션 경로를 기본으로 두고, 카오스 프리셋과 Lua 편집으로 극단 상황을 즉시 재현합니다."}
         </p>
         <dl className="network-meta">
+          <div>
+            <dt>Mode</dt>
+            <dd>{readyConfig.mode}</dd>
+          </div>
           <div>
             <dt>Chain</dt>
             <dd>Sepolia (11155111)</dd>

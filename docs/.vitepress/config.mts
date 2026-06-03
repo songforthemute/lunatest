@@ -10,6 +10,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: "Getting Started", link: "/getting-started" },
+      { text: "Live Demo", link: "/guides/live-demo" },
       { text: "한국어", link: "/ko/" },
       { text: "Library Guide", link: "/guides/library-consumption" },
       { text: "Protocol Support", link: "/guides/protocol-support" },
@@ -26,6 +27,7 @@ export default defineConfig({
         items: [
           { text: "Index", link: "/" },
           { text: "Getting Started", link: "/getting-started" },
+          { text: "Live Demo", link: "/guides/live-demo" },
           { text: "한국어 문서", link: "/ko/" },
           { text: "Library Consumption", link: "/guides/library-consumption" },
           { text: "Wagmi Integration", link: "/wagmi-integration" },
@@ -36,6 +38,7 @@ export default defineConfig({
         items: [
           { text: "문서 인덱스", link: "/ko/" },
           { text: "빠른 시작", link: "/ko/getting-started" },
+          { text: "라이브 데모", link: "/ko/guides/live-demo" },
           { text: "라이브러리 소비자 가이드", link: "/ko/guides/library-consumption" },
           { text: "프로토콜/지갑 지원", link: "/ko/guides/protocol-support" },
           { text: "시나리오 예제", link: "/ko/guides/scenario-examples" },
@@ -64,6 +67,7 @@ export default defineConfig({
         text: "Guides",
         items: [
           { text: "Library Consumption", link: "/guides/library-consumption" },
+          { text: "Live Demo", link: "/guides/live-demo" },
           { text: "Protocol and Wallet Support", link: "/guides/protocol-support" },
           { text: "Sepolia Swap Demo", link: "/guides/swap-demo-sepolia-uniswapv3" },
           { text: "Local Preset Authoring", link: "/guides/local-preset-authoring" },
