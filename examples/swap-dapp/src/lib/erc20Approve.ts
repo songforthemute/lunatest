@@ -1,5 +1,7 @@
-import { Contract, MaxUint256, type JsonRpcSigner, type Provider } from "ethers";
+import { Contract, Interface, MaxUint256, type JsonRpcSigner, type Provider } from "ethers";
 import { ERC20_ABI } from "../config/uniswap";
+
+const ERC20_INTERFACE = new Interface(ERC20_ABI);
 
 export async function readTokenSymbol(
   provider: Provider,
@@ -54,4 +56,8 @@ export async function approveMax(
   const contract = new Contract(tokenAddress, ERC20_ABI, signer);
   const tx = await contract.approve(spender, MaxUint256);
   return tx.hash as string;
+}
+
+export function encodeApproveCalldata(spender: string, amount: bigint): string {
+  return ERC20_INTERFACE.encodeFunctionData("approve", [spender.toLowerCase(), amount]);
 }

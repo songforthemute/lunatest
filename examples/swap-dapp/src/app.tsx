@@ -23,6 +23,7 @@ import {
 import { toTokenPairSeed } from "./config/tokens";
 import {
   approveMax,
+  encodeApproveCalldata,
   readAllowance,
   readTokenBalance,
   readTokenDecimals,
@@ -481,7 +482,7 @@ export function App() {
           ? await sendInjectedTransaction(wallet.transport, {
               from: wallet.signerAddress,
               to: tokenInState.address,
-              data: "0x6c756e61746573745f617070726f7665",
+              data: encodeApproveCalldata(config.router, MaxUint256),
             })
           : await (async () => {
               const signer = await wallet.provider.getSigner();
