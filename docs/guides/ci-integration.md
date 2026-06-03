@@ -31,6 +31,13 @@ CI 전용 wrapper script(`build:workspace:ci`, `lint:workspace:ci`, `test:worksp
 로컬 개발에서는 기존 `test:e2e:smoke`, `test:e2e:extended`를 그대로 써도 됩니다.
 Workspace orchestration은 현재 pnpm wrapper를 기준으로 운영하며, 별도 turbo pipeline은 유지하지 않습니다.
 
+## Supply-Chain Install Policy
+
+`pnpm-workspace.yaml`은 npm registry에서 새로 발행된 버전을 바로 받지 않도록 `minimumReleaseAge: 10080`을 설정합니다. 단위는 분이며, 10080분은 7일입니다.
+또한 transitive dependency가 `github:`, remote tarball, local path 같은 exotic spec을 끌어오는 것을 막기 위해 `blockExoticSubdeps: true`를 명시합니다.
+
+예외가 필요할 때는 broad allowlist를 추가하지 않습니다. 긴급 보안 패치처럼 7일 대기를 건너뛰어야 하는 경우, 버전과 근거를 PR 본문에 남기고 `minimumReleaseAgeExclude`는 package name 단위의 좁은 예외로만 추가합니다. 예외를 추가하면 `scripts/dependency-policy.test.mjs`도 함께 갱신해야 합니다.
+
 ## Release Authentication
 
 - `main` 릴리스 파이프라인은 npm Trusted Publishing(GitHub OIDC)을 사용합니다.

@@ -17,6 +17,8 @@ const requiredOverrides = new Map([
   ["vite@>=7.0.0 <=7.3.1", "7.3.3"],
 ]);
 
+const expectedMinimumReleaseAgeMinutes = 10_080;
+
 async function readRootFile(path) {
   return readFile(new URL(`../${path}`, import.meta.url), "utf8");
 }
@@ -48,11 +50,33 @@ test("pnpm overrides live in pnpm-workspace.yaml", async () => {
   }
 });
 
+test("pnpm install-time supply-chain policy is explicit", async () => {
+  const workspace = await readRootFile("pnpm-workspace.yaml");
+
+  assert.match(
+    workspace,
+    new RegExp(`^minimumReleaseAge: ${expectedMinimumReleaseAgeMinutes}$`, "m"),
+    "pnpm-workspace.yaml must wait 7 days before accepting newly published versions",
+  );
+  assert.match(
+    workspace,
+    /^blockExoticSubdeps: true$/m,
+    "pnpm-workspace.yaml must block transitive exotic dependency specs",
+  );
+  assert.doesNotMatch(
+    workspace,
+    /^minimumReleaseAgeExclude:\s*\n(?:  - .+\n?)+/m,
+    "minimumReleaseAge exclusions must be reviewed before being added",
+  );
+});
+
 test("consumer pack smoke writes local tarball overrides to pnpm-workspace.yaml", async () => {
   const smokeScript = await readRootFile("scripts/consumer-smoke-pack.mjs");
 
   assert.match(smokeScript, /pnpm-workspace\.yaml/);
   assert.match(smokeScript, /createTarballOverrides/);
+  assert.match(smokeScript, /minimumReleaseAge/);
+  assert.match(smokeScript, /blockExoticSubdeps/);
   assert.doesNotMatch(smokeScript, /pnpm:\s*{\s*overrides/s);
   assert.doesNotMatch(smokeScript, /file:\$\{pkg\.tarball\}/);
 });
