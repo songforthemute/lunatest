@@ -15,6 +15,8 @@ test("docs build script keeps VitePress root and builds the live demo sub-app", 
   assert.match(buildScript, /VITE_LUNATEST_DEMO_MODE/);
   assert.match(buildScript, /deterministic/);
   assert.match(buildScript, /examples\/swap-dapp\/index\.html/);
+  assert.match(buildScript, /lunatest\.lua/);
+  assert.match(buildScript, /copyFileSync|copyFile/);
 });
 
 test("docs do not link to repository files through VitePress-relative examples paths", async () => {
@@ -39,6 +41,7 @@ test("Docs workflow verifies the Pages artifact has an index page", async () => 
   assert.match(workflow, /Verify docs Pages artifact/);
   assert.match(workflow, /test -f docs\/\.vitepress\/dist\/index\.html/);
   assert.match(workflow, /test -f docs\/\.vitepress\/dist\/examples\/swap-dapp\/index\.html/);
+  assert.match(workflow, /test -f docs\/\.vitepress\/dist\/examples\/swap-dapp\/lunatest\.lua/);
   assert.match(workflow, /"examples\/swap-dapp\/\*\*"/);
   assert.match(workflow, /"scripts\/build-docs-site\.mjs"/);
 });

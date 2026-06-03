@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { copyFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -9,6 +9,9 @@ const DOCS_DIST = path.join(ROOT, "docs", ".vitepress", "dist");
 const EXAMPLE_OUT_DIR = path.join(DOCS_DIST, "examples", "swap-dapp");
 const EXAMPLE_INDEX_LABEL = "examples/swap-dapp/index.html";
 const EXAMPLE_INDEX = path.join(EXAMPLE_OUT_DIR, "index.html");
+const EXAMPLE_LUA_LABEL = "examples/swap-dapp/lunatest.lua";
+const EXAMPLE_LUA_SOURCE = path.join(EXAMPLE_DIR, "lunatest.lua");
+const EXAMPLE_LUA_OUT = path.join(EXAMPLE_OUT_DIR, "lunatest.lua");
 const PNPM = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 
 function normalizeDocsBase(value) {
@@ -49,8 +52,14 @@ run(PNPM, ["exec", "vite", "build", "--base", exampleBase, "--outDir", exampleOu
     VITE_LUNATEST_DEMO_MODE: "deterministic",
   },
 });
+copyFileSync(EXAMPLE_LUA_SOURCE, EXAMPLE_LUA_OUT);
 
 if (!existsSync(EXAMPLE_INDEX)) {
   console.error(`[docs build] Missing live demo artifact: ${EXAMPLE_INDEX_LABEL}`);
+  process.exit(1);
+}
+
+if (!existsSync(EXAMPLE_LUA_OUT)) {
+  console.error(`[docs build] Missing live demo artifact: ${EXAMPLE_LUA_LABEL}`);
   process.exit(1);
 }

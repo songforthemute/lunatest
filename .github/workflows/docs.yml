@@ -55,6 +55,7 @@ jobs:
           test -f docs/.vitepress/dist/getting-started.html
           test -f docs/.vitepress/dist/ko/index.html
           test -f docs/.vitepress/dist/examples/swap-dapp/index.html
+          test -f docs/.vitepress/dist/examples/swap-dapp/lunatest.lua
       - uses: actions/upload-pages-artifact@v5.0.0
         if: github.event_name == 'push'
         with:
