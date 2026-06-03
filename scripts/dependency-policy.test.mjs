@@ -2,6 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import {
+  createTarballOverrides,
+  formatWorkspaceOverrides,
+} from "./pnpm-workspace-overrides.mjs";
+
 const requiredOverrides = new Map([
   ["picomatch@<2.3.2", "2.3.2"],
   ["picomatch@>=4.0.0 <4.0.4", "4.0.4"],
@@ -47,7 +52,21 @@ test("consumer pack smoke writes local tarball overrides to pnpm-workspace.yaml"
   const smokeScript = await readRootFile("scripts/consumer-smoke-pack.mjs");
 
   assert.match(smokeScript, /pnpm-workspace\.yaml/);
+  assert.match(smokeScript, /createTarballOverrides/);
   assert.doesNotMatch(smokeScript, /pnpm:\s*{\s*overrides/s);
+  assert.doesNotMatch(smokeScript, /file:\$\{pkg\.tarball\}/);
+});
+
+test("consumer pack smoke writes YAML-safe tarball override values", () => {
+  const overrides = createTarballOverrides([
+    { name: "@lunatest/core", tarball: "/tmp/lunatest/core.tgz" },
+  ]);
+  const escaped = formatWorkspaceOverrides({
+    "@lunatest/core": "file:C:\\Users\\runner\\core.tgz",
+  });
+
+  assert.equal(overrides["@lunatest/core"], "file:///tmp/lunatest/core.tgz");
+  assert.equal(escaped, '  "@lunatest/core": "file:C:\\\\Users\\\\runner\\\\core.tgz"');
 });
 
 test("swap example uses the patched Vite 6 line directly", async () => {
