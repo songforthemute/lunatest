@@ -21,6 +21,9 @@ try {
   const overrides = Object.fromEntries(
     tarballs.map((pkg) => [pkg.name, `file:${pkg.tarball}`]),
   );
+  const workspaceOverrides = Object.entries(overrides)
+    .map(([name, target]) => `  "${name}": "${target}"`)
+    .join("\n");
 
   writeFileSync(
     join(consumerDir, "package.json"),
@@ -29,13 +32,20 @@ try {
         name: "lunatest-consumer-smoke-pack",
         private: true,
         type: "module",
-        pnpm: {
-          overrides,
-        },
       },
       null,
       2,
     ),
+  );
+
+  writeFileSync(
+    join(consumerDir, "pnpm-workspace.yaml"),
+    `packages:
+  - "."
+
+overrides:
+${workspaceOverrides}
+`,
   );
 
   run("pnpm", ["add", ...packageNames(stablePackages)], consumerDir, {
