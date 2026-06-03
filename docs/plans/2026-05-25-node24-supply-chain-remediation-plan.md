@@ -76,7 +76,7 @@
 
 **Refinement after audit delta check:**
 - Direct dependency bumps alone do not remove the `picomatch` and `smol-toml` advisories because current safe minor lines still pull vulnerable transitive versions.
-- Add targeted `pnpm.overrides` only for vetted patch releases with integrity metadata and no install-time scripts:
+- Add targeted workspace overrides in `pnpm-workspace.yaml` only for vetted patch releases with integrity metadata and no install-time scripts:
   - `picomatch@<2.3.2 -> 2.3.2`
   - `picomatch@>=4.0.0 <4.0.4 -> 4.0.4`
   - `smol-toml@<1.6.1 -> 1.6.1`

@@ -3,6 +3,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { packageNames, stablePackages } from "./package-roster.mjs";
+import {
+  createTarballOverrides,
+  formatWorkspaceOverrides,
+} from "./pnpm-workspace-overrides.mjs";
 import { packPackage, run, startMcpSmoke } from "./smoke-helpers.mjs";
 
 const tempRoot = mkdtempSync(join(tmpdir(), "lunatest-consumer-pack-"));
@@ -18,9 +22,7 @@ try {
     tarball: packPackage(resolve(process.cwd(), pkg.dir), tarballsDir),
   }));
 
-  const overrides = Object.fromEntries(
-    tarballs.map((pkg) => [pkg.name, `file:${pkg.tarball}`]),
-  );
+  const workspaceOverrides = formatWorkspaceOverrides(createTarballOverrides(tarballs));
 
   writeFileSync(
     join(consumerDir, "package.json"),
@@ -29,13 +31,20 @@ try {
         name: "lunatest-consumer-smoke-pack",
         private: true,
         type: "module",
-        pnpm: {
-          overrides,
-        },
       },
       null,
       2,
     ),
+  );
+
+  writeFileSync(
+    join(consumerDir, "pnpm-workspace.yaml"),
+    `packages:
+  - "."
+
+overrides:
+${workspaceOverrides}
+`,
   );
 
   run("pnpm", ["add", ...packageNames(stablePackages)], consumerDir, {

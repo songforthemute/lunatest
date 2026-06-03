@@ -24,6 +24,11 @@ function formatWatchError(error: unknown): string {
   return ["Watch mode", "status=error", `message=${message}`].join("\n");
 }
 
+function formatWatchFallback(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return ["Watch mode", "status=fallback", `message=${message}`].join("\n");
+}
+
 async function resolveWatchFingerprint(config: ResolvedLunaCliConfig): Promise<string> {
   let sources: string[];
   try {
@@ -59,6 +64,7 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
   const history: string[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running = Promise.resolve();
+  let fallbackNoticeEmitted = false;
 
   const emit = async () => {
     try {
@@ -89,7 +95,8 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
     }
 
     timer = setTimeout(() => {
-      running = emit();
+      timer = null;
+      running = running.then(emit, emit);
     }, debounceMs);
   };
 
@@ -122,6 +129,32 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
     }
   })();
 
+  let resolvePollingFallback!: () => void;
+  const pollingFallbackSignal = new Promise<void>((resolve) => {
+    resolvePollingFallback = resolve;
+  });
+  let pollingFallbackStarted = false;
+  const startPollingFallback = () => {
+    if (!pollingFallbackStarted) {
+      pollingFallbackStarted = true;
+      resolvePollingFallback();
+    }
+  };
+
+  const emitFallbackNotice = (error: unknown) => {
+    if (fallbackNoticeEmitted) {
+      return;
+    }
+    fallbackNoticeEmitted = true;
+    const output = formatWatchFallback(error);
+    history.push(output);
+    options.onUpdate?.(output);
+  };
+
+  if (!configWatcher || !scenarioWatcher) {
+    startPollingFallback();
+  }
+
   const consume = async (iterator: AsyncIterable<unknown> | undefined) => {
     if (!iterator) {
       return;
@@ -133,12 +166,17 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
       }
     } catch (error) {
       if (!(error instanceof Error && error.name === "AbortError")) {
-        throw error;
+        emitFallbackNotice(error);
+        startPollingFallback();
       }
     }
   };
 
   const pollForChanges = async () => {
+    if (options.signal?.aborted) {
+      return;
+    }
+
     let previous = await resolveWatchFingerprint(options.config);
 
     await new Promise<void>((resolve, reject) => {
@@ -164,15 +202,34 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
     });
   };
 
+  const abortPromise = new Promise<void>((resolve) => {
+    if (options.signal?.aborted) {
+      resolve();
+      return;
+    }
+
+    options.signal?.addEventListener("abort", () => resolve(), { once: true });
+  });
+
+  const pollWhenNeeded = async () => {
+    if (!pollingFallbackStarted) {
+      await Promise.race([pollingFallbackSignal, abortPromise]);
+    }
+
+    if (options.signal?.aborted) {
+      return;
+    }
+
+    await pollForChanges();
+  };
+
   await Promise.race([
     Promise.all([
       consume(configWatcher),
       consume(scenarioWatcher),
-      !configWatcher || !scenarioWatcher ? pollForChanges() : Promise.resolve(),
+      pollWhenNeeded(),
     ]),
-    new Promise<void>((resolve) => {
-      options.signal?.addEventListener("abort", () => resolve(), { once: true });
-    }),
+    abortPromise,
   ]);
 
   if (timer) {
