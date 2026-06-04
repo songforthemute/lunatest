@@ -15,7 +15,7 @@
     "consumer-smoke:npm": "node scripts/consumer-smoke-npm.mjs",
     "consumer-smoke:npm:next": "node scripts/consumer-smoke-npm.mjs --channel=next --stable-tag=latest --next-tag=next",
     "docs:dev": "vitepress dev docs --host",
-    "docs:build": "vitepress build docs",
+    "docs:build": "node scripts/build-docs-site.mjs",
     "docs:preview": "vitepress preview docs",
     "build:workspace:ci": "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run build",
     "lint:workspace:ci": "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run lint",

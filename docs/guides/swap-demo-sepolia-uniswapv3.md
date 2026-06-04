@@ -6,6 +6,10 @@
 - 카오스 경로: 프리셋 버튼 + Lua 편집으로 런타임 상태 패치
 - CI 경로: 네트워크 비의존 테스트만 자동 실행
 
+문서 SPA에서 바로 실행해보려면 [Live Demo](./live-demo.md)를 사용하세요. Live Demo는
+`VITE_LUNATEST_DEMO_MODE=deterministic`으로 빌드되며 실제 RPC/실지갑 없이 동작합니다.
+이 문서는 실제 Sepolia RPC와 지갑을 사용하는 real-first 흐름을 설명합니다.
+
 ## What This Demo Covers
 
 1. Token pair, input amount, quote

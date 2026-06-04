@@ -1,12 +1,23 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { bootstrapLunaRuntime } from "@lunatest/react/browser";
+import { setWalletSession } from "@lunatest/runtime-intercept";
 import teamSwapPresetSource from "../lunatest/presets/protocol/team_swap.lua?raw";
 import teamWalletPresetSource from "../lunatest/presets/wallet/team_wallet.lua?raw";
 
 import { App } from "./app";
+import {
+  DETERMINISTIC_SWAP_CONFIG,
+  isDeterministicDemoMode,
+} from "./config/network";
+import { createDeterministicWalletSession } from "./demo/session";
 import "./styles.css";
 
+const envRecord =
+  typeof import.meta !== "undefined"
+    ? (import.meta.env as unknown as Record<string, string | undefined>)
+    : {};
+const deterministicDemoMode = isDeterministicDemoMode(envRecord);
 const nodeEnv =
   typeof import.meta !== "undefined"
     ? import.meta.env?.MODE
@@ -15,6 +26,7 @@ const nodeEnv =
       : undefined;
 
 void bootstrapLunaRuntime({
+  enable: deterministicDemoMode ? true : undefined,
   source: "./lunatest.lua",
   nodeEnv,
   mountDevtools: true,
@@ -33,6 +45,10 @@ void bootstrapLunaRuntime({
     address: "0x1111111111111111111111111111111111111111",
     chainId: 11155111,
   },
+}).then(() => {
+  if (deterministicDemoMode) {
+    setWalletSession(createDeterministicWalletSession(DETERMINISTIC_SWAP_CONFIG));
+  }
 }).catch((error: unknown) => {
   console.error("[lunatest] bootstrap failed", error);
 });
