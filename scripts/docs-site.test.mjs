@@ -45,3 +45,22 @@ test("Docs workflow verifies the Pages artifact has an index page", async () => 
   assert.match(workflow, /"examples\/swap-dapp\/\*\*"/);
   assert.match(workflow, /"scripts\/build-docs-site\.mjs"/);
 });
+
+test("Docs workflow runs a post-deploy live demo smoke check", async () => {
+  const workflow = await readFile(
+    new URL("../.github/workflows/docs.yml", import.meta.url),
+    "utf8",
+  );
+  const smokeScript = await readFile(
+    new URL("./check-docs-live-demo.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(workflow, /Smoke deployed live demo/);
+  assert.match(workflow, /DOCS_SITE_URL:\s*\$\{\{\s*steps\.deployment\.outputs\.page_url\s*\}\}/);
+  assert.match(workflow, /node scripts\/check-docs-live-demo\.mjs/);
+  assert.match(smokeScript, /guides\/live-demo/);
+  assert.match(smokeScript, /examples\/swap-dapp\//);
+  assert.match(smokeScript, /examples\/swap-dapp\/lunatest\.lua/);
+  assert.match(smokeScript, /swap_demo_runtime/);
+});
