@@ -104,9 +104,9 @@ test("workspace test runners use the patched Vitest 4 line directly", async () =
   const e2ePackage = await readRootJson("e2e-tests/package.json");
   const examplePackage = await readRootJson("examples/swap-dapp/package.json");
 
-  assert.equal(rootPackage.devDependencies.vitest, "4.1.0");
-  assert.equal(e2ePackage.devDependencies.vitest, "4.1.0");
-  assert.equal(examplePackage.devDependencies.vitest, "4.1.0");
+  assert.equal(rootPackage.devDependencies.vitest, "4.1.6");
+  assert.equal(e2ePackage.devDependencies.vitest, "4.1.6");
+  assert.equal(examplePackage.devDependencies.vitest, "4.1.6");
 });
 
 test("lockfile excludes Vite, esbuild, and Vitest advisory ranges", async () => {
@@ -116,7 +116,9 @@ test("lockfile excludes Vite, esbuild, and Vitest advisory ranges", async () => 
   assert.doesNotMatch(lockfile, /vite@7\.3\.1/);
   assert.doesNotMatch(lockfile, /esbuild@0\.21\.5/);
   assert.doesNotMatch(lockfile, /vitest@3\.2\.4/);
+  assert.doesNotMatch(lockfile, /vitest@4\.1\.[0-5]\b/);
+  assert.doesNotMatch(lockfile, /@vitest\/browser-[^:\n]+:\s*4\.1\.[0-5]\b/);
   assert.match(lockfile, /vite@6\.4\.2/);
   assert.match(lockfile, /esbuild@0\.25\./);
-  assert.match(lockfile, /vitest@4\.1\.0/);
+  assert.match(lockfile, /vitest@4\.1\.6/);
 });
