@@ -24,7 +24,7 @@
     "@lunatest/contracts": "workspace:*"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -b tsconfig.json --force",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.lint.json --pretty false"
   },
