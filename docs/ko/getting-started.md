@@ -67,6 +67,9 @@ pnpm docs:dev
 
 RPC/지갑 없이 바로 실행되는 문서용 데모는 [라이브 데모](./guides/live-demo.md)에서 확인할 수 있습니다.
 
+여러 built-in protocol preset을 한 번에 확인하는 deterministic 예제는
+[DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)를 참고하세요.
+
 정적 빌드 확인:
 
 ```bash
@@ -106,6 +109,7 @@ pnpm run perf:absolute:ci
 ## 다음 단계
 
 - 라이브러리 소비자 관점 사용법: [라이브러리 소비자 가이드](./guides/library-consumption.md)
+- 여러 protocol dogfood 예제: [DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)
 - 실지갑 + 카오스 루프 샘플: [Sepolia 스왑 데모](./guides/swap-demo-sepolia-uniswapv3.md)
 - 팀 전용 preset 작성: [Local Preset 작성 가이드](./guides/local-preset-authoring.md)
 - 실제 테스트 패턴: [시나리오 예제 모음](./guides/scenario-examples.md)

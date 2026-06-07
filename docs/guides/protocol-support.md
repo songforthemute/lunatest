@@ -25,6 +25,8 @@ LunaTest built-ins target **L3**. Exact protocol simulation remains out of scope
 
 Use project-local presets when your application depends on a protocol, selector, or state shape that is not covered by the built-ins. See [Local Preset Authoring](./local-preset-authoring.md).
 
+For a runnable cross-protocol dogfood app, use [DeFi Dashboard Dogfood](./defi-dashboard-dogfood.md). It materializes every built-in preset through public APIs and verifies the injected provider path without claiming L4 simulation.
+
 ## Built-in method matrix
 
 | Preset | Supported deterministic methods/selectors |

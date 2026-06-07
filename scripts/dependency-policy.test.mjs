@@ -95,20 +95,24 @@ test("consumer pack smoke writes YAML-safe tarball override values", () => {
   assert.equal(escaped, '  "@lunatest/core": "file:C:\\\\Users\\\\runner\\\\core.tgz"');
 });
 
-test("swap example uses the patched Vite 6 line directly", async () => {
-  const examplePackage = await readRootJson("examples/swap-dapp/package.json");
+test("example apps use the patched Vite 6 line directly", async () => {
+  const swapExamplePackage = await readRootJson("examples/swap-dapp/package.json");
+  const defiDashboardPackage = await readRootJson("examples/defi-dashboard/package.json");
 
-  assert.equal(examplePackage.devDependencies.vite, "6.4.2");
+  assert.equal(swapExamplePackage.devDependencies.vite, "6.4.2");
+  assert.equal(defiDashboardPackage.devDependencies.vite, "6.4.2");
 });
 
 test("workspace test runners use the patched Vitest 4 line directly", async () => {
   const rootPackage = await readRootJson("package.json");
   const e2ePackage = await readRootJson("e2e-tests/package.json");
-  const examplePackage = await readRootJson("examples/swap-dapp/package.json");
+  const swapExamplePackage = await readRootJson("examples/swap-dapp/package.json");
+  const defiDashboardPackage = await readRootJson("examples/defi-dashboard/package.json");
 
   assert.equal(rootPackage.devDependencies.vitest, "4.1.6");
   assert.equal(e2ePackage.devDependencies.vitest, "4.1.6");
-  assert.equal(examplePackage.devDependencies.vitest, "4.1.6");
+  assert.equal(swapExamplePackage.devDependencies.vitest, "4.1.6");
+  assert.equal(defiDashboardPackage.devDependencies.vitest, "4.1.6");
 });
 
 test("Vitest browser advisory guard matches peer and package lockfile forms", () => {

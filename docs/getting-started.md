@@ -21,6 +21,9 @@ Package status: `Published` (stable packages available on npm).
 
 No-RPC/no-wallet 문서 데모는 [Live Demo](./guides/live-demo.md)에서 바로 실행할 수 있습니다.
 
+Multi-protocol deterministic dogfood 예제는
+[DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)에서 확인할 수 있습니다.
+
 Swap 데모(실지갑 + Sepolia + Uniswap V3)는
 [Sepolia Swap Demo Guide](./guides/swap-demo-sepolia-uniswapv3.md)에서 확인할 수 있습니다.
 

@@ -75,6 +75,7 @@ pnpm release:publish:next
 - getting started: `docs/getting-started.md`
 - CI and gates: `docs/guides/ci-integration.md`
 - protocol and wallet support: `docs/guides/protocol-support.md`
+- DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - local preset authoring: `docs/guides/local-preset-authoring.md`
 
@@ -252,6 +253,8 @@ void bootstrapLunaRuntime({
 Production bootstrap is explicit opt-in. If you want runtime intercept outside development, pass `enable: true` or `configOverride: { enable: true }`. For browser-only bootstrap/devtools, prefer the `@lunatest/react/browser` entry.
 
 Built-in protocol presets (`builtin/uniswap_v2`, `builtin/uniswap_v3`, `builtin/curve`, `builtin/aave`) target deterministic L3 frontend-flow support. They do not replace an exact EVM fork. See `docs/guides/protocol-support.md` for the protocol and wallet method support matrix.
+
+For a runnable multi-protocol dogfood app that exercises those presets through public LunaTest APIs and `window.ethereum.request`, use `examples/defi-dashboard` or `docs/guides/defi-dashboard-dogfood.md`.
 
 ### 6) Vitest matcher
 
