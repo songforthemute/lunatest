@@ -31,7 +31,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node ./scripts/copy-preset-assets.mjs",
+    "build": "tsc -b tsconfig.json --force && node ./scripts/copy-preset-assets.mjs",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.lint.json --pretty false"
   },

@@ -21,6 +21,7 @@
 
 PR에서는 머지를 막아야 할 리스크를 빠르게 잡고, 야간 배치에서는 확장 시나리오로 품질 저하를 조기에 탐지합니다.
 `test:e2e:*`는 workspace source integration 경로를 검증합니다. 패키지 public entrypoint 소비 검증은 `consumer-smoke:pack`과 `consumer-smoke:npm`이 담당합니다.
+`consumer-smoke:pack`은 stable/next 공개 패키지를 모두 로컬 tarball로 설치하고 React 18/19 peer 조합에서 root/browser entrypoint, CLI bin, MCP bin, plugin entrypoint를 검증합니다.
 `consumer-smoke-pack` job은 quality 이후에 실행되며, publish 전 tarball 소비 검증을 담당합니다. `performance-regression`는 이 job과 `e2e-smoke`가 끝난 뒤에만 실행됩니다.
 
 `pnpm lint:workspace-types`는 workspace 패키지의 `dist` 산출물을 임시로 제거한 상태에서 lint를 다시 실행해,
@@ -43,8 +44,8 @@ Workspace orchestration은 현재 pnpm wrapper를 기준으로 운영하며, 별
 - `main` 릴리스 파이프라인은 npm Trusted Publishing(GitHub OIDC)을 사용합니다.
 - 장기 `NPM_TOKEN` publish 비밀값에 의존하지 않으며, GitHub Actions의 `id-token: write` 권한이 필요합니다.
 - npm provenance 검증을 통과하려면 각 공개 패키지의 `package.json`에 있는 `repository.url`이 GitHub repository(`https://github.com/songforthemute/lunatest`)와 일치해야 합니다.
-- `pnpm pack:check-integrity`는 publish 전에 tarball 내부 `package.json`의 repository metadata까지 검증합니다. 새 공개 패키지를 추가할 때는 `scripts/package-roster.mjs`와 package manifest를 함께 갱신해야 합니다.
-- release workflow는 Changesets가 version PR을 만드는 단계(`hasChangesets == 'true'`)에서는 npm smoke를 건너뜁니다. version PR merge 후 실제 publish 경로에서는 `pnpm consumer-smoke:npm -- --tag=latest`와 `pnpm consumer-smoke:npm:next`를 실행해 npm registry 소비 경로를 검증합니다.
+- `pnpm pack:check-integrity`는 publish 전에 tarball 내부 `package.json`의 repository metadata와 `main`/`types`/`exports`/`bin` manifest target 존재를 검증합니다. 새 공개 패키지를 추가할 때는 `scripts/package-roster.mjs`와 package manifest를 함께 갱신해야 합니다.
+- release workflow는 Changesets가 version PR을 만드는 단계(`hasChangesets == 'true'`)에서는 npm smoke를 건너뜁니다. version PR merge 후 실제 publish 경로에서는 `pnpm consumer-smoke:npm -- --tag=latest`와 `pnpm consumer-smoke:npm:next`를 실행해 npm registry 소비 경로를 검증합니다. npm smoke도 React 18/19 peer 조합을 순회하지만, 새로 publish된 LunaTest package 자체가 7일 publish-age gate에 막히지 않도록 임시 npm consumer에는 workspace `minimumReleaseAge` 정책을 적용하지 않습니다.
 
 ## Maintenance Rules
 

@@ -2,7 +2,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { packageNames, stablePackages } from "./package-roster.mjs";
+import {
+  createConsumerSmokeScript,
+  reactPeerMatrix,
+} from "./consumer-smoke-fixtures.mjs";
+import { packageNames, publicPackages } from "./package-roster.mjs";
 import {
   createTarballOverrides,
   formatWorkspaceOverrides,
@@ -15,31 +19,35 @@ const consumerDir = join(tempRoot, "consumer");
 
 try {
   mkdirSync(tarballsDir, { recursive: true });
-  mkdirSync(consumerDir, { recursive: true });
 
-  const tarballs = stablePackages.map((pkg) => ({
+  const tarballs = publicPackages.map((pkg) => ({
     name: pkg.name,
     tarball: packPackage(resolve(process.cwd(), pkg.dir), tarballsDir),
   }));
 
   const workspaceOverrides = formatWorkspaceOverrides(createTarballOverrides(tarballs));
 
-  writeFileSync(
-    join(consumerDir, "package.json"),
-    JSON.stringify(
-      {
-        name: "lunatest-consumer-smoke-pack",
-        private: true,
-        type: "module",
-      },
-      null,
-      2,
-    ),
-  );
+  for (const reactPeer of reactPeerMatrix) {
+    const matrixConsumerDir = join(consumerDir, reactPeer.label);
 
-  writeFileSync(
-    join(consumerDir, "pnpm-workspace.yaml"),
-    `packages:
+    mkdirSync(matrixConsumerDir, { recursive: true });
+
+    writeFileSync(
+      join(matrixConsumerDir, "package.json"),
+      JSON.stringify(
+        {
+          name: `lunatest-consumer-smoke-pack-${reactPeer.label}`,
+          private: true,
+          type: "module",
+        },
+        null,
+        2,
+      ),
+    );
+
+    writeFileSync(
+      join(matrixConsumerDir, "pnpm-workspace.yaml"),
+      `packages:
   - "."
 
 minimumReleaseAge: 10080
@@ -48,40 +56,35 @@ blockExoticSubdeps: true
 overrides:
 ${workspaceOverrides}
 `,
-  );
+    );
 
-  run("pnpm", ["add", ...packageNames(stablePackages)], consumerDir, {
-    stdio: "inherit",
-  });
+    run(
+      "pnpm",
+      ["add", ...reactPeer.dependencies, ...packageNames(publicPackages)],
+      matrixConsumerDir,
+      {
+        stdio: "inherit",
+      },
+    );
 
-  writeFileSync(
-    join(consumerDir, "smoke.mjs"),
-    `
-import { loadLunaConfig, executeLuaScenario } from "@lunatest/core";
-import { bootstrapLunaRuntime } from "@lunatest/react";
-import { setRouteMocks } from "@lunatest/runtime-intercept";
-import { createMcpServer } from "@lunatest/mcp";
-import { loadLunaConfig as loadLunaConfigBrowser } from "@lunatest/core/browser";
+    writeFileSync(
+      join(matrixConsumerDir, "smoke.mjs"),
+      createConsumerSmokeScript({ includeNextPackages: true }),
+    );
 
-if (typeof loadLunaConfig !== "function") throw new Error("loadLunaConfig export missing");
-if (typeof loadLunaConfigBrowser !== "function") throw new Error("browser loadLunaConfig export missing");
-if (typeof executeLuaScenario !== "function") throw new Error("executeLuaScenario export missing");
-if (typeof bootstrapLunaRuntime !== "function") throw new Error("bootstrapLunaRuntime export missing");
-if (typeof setRouteMocks !== "function") throw new Error("setRouteMocks export missing");
-if (typeof createMcpServer !== "function") throw new Error("createMcpServer export missing");
-`,
-  );
+    run("node", ["./smoke.mjs"], matrixConsumerDir, { stdio: "inherit" });
+    run("pnpm", ["exec", "lunatest", "doctor"], matrixConsumerDir, { stdio: "inherit" });
+    startMcpSmoke(matrixConsumerDir);
 
-  run("node", ["./smoke.mjs"], consumerDir, { stdio: "inherit" });
-  run("pnpm", ["exec", "lunatest", "doctor"], consumerDir, { stdio: "inherit" });
-  startMcpSmoke(consumerDir);
+    const lockfile = readFileSync(join(matrixConsumerDir, "pnpm-lock.yaml"), "utf8");
+    for (const packageName of packageNames(publicPackages)) {
+      if (!lockfile.includes(packageName)) {
+        throw new Error(`${packageName} package install not found in consumer lockfile`);
+      }
+    }
 
-  const lockfile = readFileSync(join(consumerDir, "pnpm-lock.yaml"), "utf8");
-  if (!lockfile.includes("@lunatest/runtime-intercept")) {
-    throw new Error("runtime-intercept package install not found in consumer lockfile");
+    process.stdout.write(`[consumer-smoke:pack] OK (${reactPeer.label})\n`);
   }
-
-  process.stdout.write("[consumer-smoke:pack] OK\n");
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

@@ -86,4 +86,4 @@ pnpm run perf:regression:ci
 pnpm run perf:absolute:ci
 ```
 
-`test:e2e:*` checks workspace-source integration behavior. Use `pnpm consumer-smoke:pack` or `pnpm consumer-smoke:npm` when you need to verify package public entrypoints from a packed tarball or npm registry.
+`test:e2e:*` checks workspace-source integration behavior. Use `pnpm consumer-smoke:pack` or `pnpm consumer-smoke:npm` when you need to verify package public entrypoints from a packed tarball or npm registry. `consumer-smoke:pack` installs every public stable/next tarball and checks React 18/19 peer compatibility.

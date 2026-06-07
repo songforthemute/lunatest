@@ -250,6 +250,7 @@ Built-in protocol preset(`builtin/uniswap_v2`, `builtin/uniswap_v3`, `builtin/cu
 - CI workspace 품질 명령: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
 - Dead-code 게이트: 빠른 unused-file 점검은 `pnpm lint:deadcode`, 더 넓은 감사는 `pnpm lint:deadcode:strict`
 - `test:e2e:*`는 workspace source integration을 검증하고, 패키지 entrypoint 소비 검증은 `pnpm consumer-smoke:pack`과 `pnpm consumer-smoke:npm`이 담당합니다.
+- 패키징된 tarball smoke는 stable/next 공개 패키지 전체와 React 18/19 peer 호환성을 함께 검증합니다.
 
 ## 라이선스
 

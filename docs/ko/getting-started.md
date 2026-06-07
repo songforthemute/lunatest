@@ -101,7 +101,7 @@ pnpm run perf:regression:ci
 pnpm run perf:absolute:ci
 ```
 
-`test:e2e:*`는 workspace source integration 동작을 검증합니다. 패키지 public entrypoint를 tarball 또는 npm registry 기준으로 검증할 때는 `pnpm consumer-smoke:pack` 또는 `pnpm consumer-smoke:npm`을 사용합니다.
+`test:e2e:*`는 workspace source integration 동작을 검증합니다. 패키지 public entrypoint를 tarball 또는 npm registry 기준으로 검증할 때는 `pnpm consumer-smoke:pack` 또는 `pnpm consumer-smoke:npm`을 사용합니다. `consumer-smoke:pack`은 stable/next 공개 tarball 전체를 설치하고 React 18/19 peer 호환성까지 확인합니다.
 
 ## 다음 단계
 

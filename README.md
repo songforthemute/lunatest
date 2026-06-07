@@ -333,6 +333,7 @@ expect({ pass: true }).toLunaPass();
 - Workspace-source E2E smoke (PR): `pnpm run test:e2e:smoke:ci`
 - Workspace-source E2E extended (nightly): `pnpm run test:e2e:extended:ci`
 - Package entry smoke: `pnpm consumer-smoke:pack`, `pnpm consumer-smoke:npm`
+- Packed tarball smoke covers every public stable/next package plus React 18/19 peer compatibility.
 - Performance regression: `pnpm run perf:regression:ci`
 - Performance absolute: `pnpm run perf:absolute:ci`
 
