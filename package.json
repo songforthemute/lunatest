@@ -39,7 +39,7 @@
     "knip": "^5.88.1",
     "typescript": "^5.9.2",
     "vitepress": "^1.6.4",
-    "vitest": "4.1.0"
+    "vitest": "4.1.6"
   },
   "repository": {
     "type": "git",

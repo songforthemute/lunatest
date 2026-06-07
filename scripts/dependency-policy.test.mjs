@@ -18,6 +18,8 @@ const requiredOverrides = new Map([
 ]);
 
 const expectedMinimumReleaseAgeMinutes = 10_080;
+const vulnerableVitestBrowserAdvisoryRange =
+  /@vitest\/browser-[^@:'"\n]+(?:['"]?:\s*4\.1\.[0-5]\b|@4\.1\.[0-5]\b)/;
 
 async function readRootFile(path) {
   return readFile(new URL(`../${path}`, import.meta.url), "utf8");
@@ -104,9 +106,31 @@ test("workspace test runners use the patched Vitest 4 line directly", async () =
   const e2ePackage = await readRootJson("e2e-tests/package.json");
   const examplePackage = await readRootJson("examples/swap-dapp/package.json");
 
-  assert.equal(rootPackage.devDependencies.vitest, "4.1.0");
-  assert.equal(e2ePackage.devDependencies.vitest, "4.1.0");
-  assert.equal(examplePackage.devDependencies.vitest, "4.1.0");
+  assert.equal(rootPackage.devDependencies.vitest, "4.1.6");
+  assert.equal(e2ePackage.devDependencies.vitest, "4.1.6");
+  assert.equal(examplePackage.devDependencies.vitest, "4.1.6");
+});
+
+test("Vitest browser advisory guard matches peer and package lockfile forms", () => {
+  const vulnerableLockfileForms = [
+    "      '@vitest/browser-playwright': 4.1.5",
+    "  '@vitest/browser-playwright@4.1.5':",
+    "  '@vitest/browser-preview@4.1.0':",
+    "  '@vitest/browser-webdriverio@4.1.5(vitest@4.1.5)':",
+  ];
+  const patchedLockfileForms = [
+    "      '@vitest/browser-playwright': 4.1.6",
+    "  '@vitest/browser-playwright@4.1.6':",
+    "  '@vitest/browser-preview@4.2.0':",
+    "  '@vitest/browser-webdriverio@4.1.6(vitest@4.1.6)':",
+  ];
+
+  for (const lockfileLine of vulnerableLockfileForms) {
+    assert.match(lockfileLine, vulnerableVitestBrowserAdvisoryRange);
+  }
+  for (const lockfileLine of patchedLockfileForms) {
+    assert.doesNotMatch(lockfileLine, vulnerableVitestBrowserAdvisoryRange);
+  }
 });
 
 test("lockfile excludes Vite, esbuild, and Vitest advisory ranges", async () => {
@@ -116,7 +140,9 @@ test("lockfile excludes Vite, esbuild, and Vitest advisory ranges", async () => 
   assert.doesNotMatch(lockfile, /vite@7\.3\.1/);
   assert.doesNotMatch(lockfile, /esbuild@0\.21\.5/);
   assert.doesNotMatch(lockfile, /vitest@3\.2\.4/);
+  assert.doesNotMatch(lockfile, /vitest@4\.1\.[0-5]\b/);
+  assert.doesNotMatch(lockfile, vulnerableVitestBrowserAdvisoryRange);
   assert.match(lockfile, /vite@6\.4\.2/);
   assert.match(lockfile, /esbuild@0\.25\./);
-  assert.match(lockfile, /vitest@4\.1\.0/);
+  assert.match(lockfile, /vitest@4\.1\.6/);
 });
