@@ -9,6 +9,11 @@
 - `examples/swap-dapp`
 - [Sepolia 스왑 데모 가이드](./swap-demo-sepolia-uniswapv3.md)
 
+지갑, RPC key, forked chain 없이 여러 built-in protocol을 결정론적으로 확인하는 예제가 필요하면 아래를 보세요.
+
+- `examples/defi-dashboard`
+- [DeFi Dashboard Dogfood](./defi-dashboard-dogfood.md)
+
 팀 전용 protocol / wallet preset을 직접 붙이고 싶다면 아래 문서를 같이 보면 됩니다.
 
 - [프로토콜/지갑 지원 범위](./protocol-support.md)

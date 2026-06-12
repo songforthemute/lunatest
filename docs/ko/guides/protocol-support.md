@@ -25,6 +25,8 @@ LunaTest built-in preset은 **L3**를 목표로 합니다. 정확한 protocol si
 
 애플리케이션이 built-in 범위를 벗어난 protocol, selector, state shape에 의존한다면 project-local preset을 추가하세요. [Local Preset 작성](./local-preset-authoring.md)을 참고하면 됩니다.
 
+여러 built-in preset을 실제 주입 provider 경로로 확인하는 runnable 예제는 [DeFi Dashboard Dogfood](./defi-dashboard-dogfood.md)를 참고하세요. 이 예제는 public API로 preset을 materialize하고 L3 경로를 검증하지만, L4 simulation을 주장하지는 않습니다.
+
 ## Built-in method matrix
 
 | Preset | 지원 deterministic method/selector |

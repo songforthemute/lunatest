@@ -19,6 +19,21 @@ test("docs build script keeps VitePress root and builds the live demo sub-app", 
   assert.match(buildScript, /copyFileSync|copyFile/);
 });
 
+test("docs navigation exposes the DeFi dashboard dogfood guide", async () => {
+  const config = await readFile(new URL("../docs/.vitepress/config.mts", import.meta.url), "utf8");
+  const index = await readFile(new URL("../docs/index.md", import.meta.url), "utf8");
+  const koIndex = await readFile(new URL("../docs/ko/index.md", import.meta.url), "utf8");
+  const guide = await readFile(new URL("../docs/guides/defi-dashboard-dogfood.md", import.meta.url), "utf8");
+  const koGuide = await readFile(new URL("../docs/ko/guides/defi-dashboard-dogfood.md", import.meta.url), "utf8");
+
+  assert.match(config, /\/guides\/defi-dashboard-dogfood/);
+  assert.match(config, /\/ko\/guides\/defi-dashboard-dogfood/);
+  assert.match(index, /guides\/defi-dashboard-dogfood\.md/);
+  assert.match(koIndex, /guides\/defi-dashboard-dogfood\.md/);
+  assert.match(guide, /@lunatest\/example-defi-dashboard/);
+  assert.match(koGuide, /@lunatest\/example-defi-dashboard/);
+});
+
 test("docs do not link to repository files through VitePress-relative examples paths", async () => {
   const docs = [
     "../docs/guides/local-preset-authoring.md",

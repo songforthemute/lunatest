@@ -7,6 +7,11 @@ If you want a full 0→1 reference app (real wallet + Sepolia + Uniswap V3 + Lua
 - `examples/swap-dapp`
 - [Sepolia Swap Demo Guide](./swap-demo-sepolia-uniswapv3.md)
 
+If you want a deterministic multi-protocol dogfood app that runs without a wallet, RPC key, or forked chain, see:
+
+- `examples/defi-dashboard`
+- [DeFi Dashboard Dogfood](./defi-dashboard-dogfood.md)
+
 If you want to add your own team-specific protocol or wallet presets, see:
 
 - [Protocol and Wallet Support](./protocol-support.md)
