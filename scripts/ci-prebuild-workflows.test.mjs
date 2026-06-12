@@ -6,6 +6,10 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
+function countOccurrences(source, needle) {
+  return source.split(needle).length - 1;
+}
+
 test("package.json exposes CI wrapper scripts", async () => {
   const pkg = await readJson(new URL("../package.json", import.meta.url));
 
@@ -56,6 +60,40 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   assert.doesNotMatch(ciWorkflow, /pnpm -r --filter=!@lunatest\/e2e-tests test/);
   assert.match(benchmarkWorkflow, /pnpm run perf:absolute:ci/);
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
+});
+
+test("merge-critical workflows expose manual dispatch fallback", async () => {
+  const workflows = [
+    ["CI", "../.github/workflows/ci.yml"],
+    ["Docs", "../.github/workflows/docs.yml"],
+    ["Release", "../.github/workflows/release.yml"],
+  ];
+
+  for (const [name, workflowPath] of workflows) {
+    const workflow = await readFile(new URL(workflowPath, import.meta.url), "utf8");
+
+    assert.match(
+      workflow,
+      /^  workflow_dispatch:\s*$/m,
+      `${name} workflow should allow manual dispatch after merge automation suppression`,
+    );
+  }
+});
+
+test("Docs workflow tracks runnable documentation examples", async () => {
+  const docsWorkflow = await readFile(
+    new URL("../.github/workflows/docs.yml", import.meta.url),
+    "utf8",
+  );
+  const examplePaths = ["examples/swap-dapp/**", "examples/defi-dashboard/**"];
+
+  for (const examplePath of examplePaths) {
+    assert.equal(
+      countOccurrences(docsWorkflow, `- "${examplePath}"`),
+      2,
+      `${examplePath} should trigger both PR and main docs builds`,
+    );
+  }
 });
 
 test("Release workflow runs npm smoke after publish action success", async () => {
