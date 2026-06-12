@@ -103,6 +103,18 @@ test("example apps use the patched Vite 6 line directly", async () => {
   assert.equal(defiDashboardPackage.devDependencies.vite, "6.4.2");
 });
 
+test("DeFi dashboard clean-checkout scripts prebuild workspace dependencies", async () => {
+  const pkg = await readRootJson("examples/defi-dashboard/package.json");
+
+  assert.equal(
+    pkg.scripts["build:deps"],
+    "pnpm --filter @lunatest/contracts --filter @lunatest/core --filter @lunatest/runtime-intercept build",
+  );
+  assert.equal(pkg.scripts.predev, "pnpm run build:deps");
+  assert.equal(pkg.scripts.pretest, "pnpm run build:deps");
+  assert.equal(pkg.scripts.prebuild, "pnpm run build:deps");
+});
+
 test("workspace test runners use the patched Vitest 4 line directly", async () => {
   const rootPackage = await readRootJson("package.json");
   const e2ePackage = await readRootJson("e2e-tests/package.json");

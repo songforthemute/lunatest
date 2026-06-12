@@ -44,6 +44,9 @@ export type DefiDashboardSnapshot = {
 
 const DEFAULT_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
+// React StrictMode 개발 모드의 중복 effect가 runtime singleton을 동시에 바꾸지 않도록 공유한다.
+let snapshotInFlight: Promise<DefiDashboardSnapshot> | null = null;
+
 function stripHexPrefix(value: string): string {
   return value.replace(/^0x/i, "");
 }
@@ -343,23 +346,33 @@ export function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export async function createDefiDashboardSnapshot(): Promise<DefiDashboardSnapshot> {
-  const protocols = [
-    await runUniswapV2(),
-    await runUniswapV3(),
-    await runCurve(),
-    await runAave(),
-  ];
-  const walletSession = getWalletSession();
-  disableLunaRuntimeIntercept();
+async function buildDefiDashboardSnapshot(): Promise<DefiDashboardSnapshot> {
+  try {
+    const protocols = [
+      await runUniswapV2(),
+      await runUniswapV3(),
+      await runCurve(),
+      await runAave(),
+    ];
+    const walletSession = getWalletSession();
 
-  return {
-    generatedAt: new Date().toISOString(),
-    wallet: {
-      account: walletSession.accounts[0] ?? DEFAULT_ACCOUNT,
-      chainId: walletSession.chainId,
-      nativeBalance: formatBaseUnit(walletSession.assets.nativeBalance, 18),
-    },
-    protocols,
-  };
+    return {
+      generatedAt: new Date().toISOString(),
+      wallet: {
+        account: walletSession.accounts[0] ?? DEFAULT_ACCOUNT,
+        chainId: walletSession.chainId,
+        nativeBalance: formatBaseUnit(walletSession.assets.nativeBalance, 18),
+      },
+      protocols,
+    };
+  } finally {
+    disableLunaRuntimeIntercept();
+  }
+}
+
+export function createDefiDashboardSnapshot(): Promise<DefiDashboardSnapshot> {
+  snapshotInFlight ??= buildDefiDashboardSnapshot().finally(() => {
+    snapshotInFlight = null;
+  });
+  return snapshotInFlight;
 }

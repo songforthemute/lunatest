@@ -4,9 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:deps": "pnpm --filter @lunatest/contracts --filter @lunatest/core --filter @lunatest/runtime-intercept build",
+    "predev": "pnpm run build:deps",
     "dev": "vite",
+    "prebuild": "pnpm run build:deps",
     "build": "tsc -p tsconfig.json --noEmit && node ./scripts/build.mjs",
     "preview": "vite preview",
+    "pretest": "pnpm run build:deps",
     "test": "vitest run",
     "lint": "tsc -p tsconfig.json --noEmit"
   },

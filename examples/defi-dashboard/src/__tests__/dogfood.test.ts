@@ -25,6 +25,15 @@ describe("DeFi dashboard protocol dogfood", () => {
     expect(snapshot.protocols.find((protocol) => protocol.id === "uniswap_v3")?.quoteOut).toBe("1800");
   });
 
+  it("shares an in-flight snapshot run for singleton runtime safety", async () => {
+    const first = createDefiDashboardSnapshot();
+    const second = createDefiDashboardSnapshot();
+    const results = await Promise.allSettled([first, second]);
+
+    expect(results.every((result) => result.status === "fulfilled")).toBe(true);
+    expect(second).toBe(first);
+  });
+
   it("formats deterministic base-unit values for dashboard display", () => {
     expect(formatBaseUnit("1000000", 6)).toBe("1.00");
     expect(formatBaseUnit("25000000000000000000", 18)).toBe("25.00");
