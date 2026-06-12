@@ -32,6 +32,20 @@ CI 전용 wrapper script(`build:workspace:ci`, `lint:workspace:ci`, `test:worksp
 로컬 개발에서는 기존 `test:e2e:smoke`, `test:e2e:extended`를 그대로 써도 됩니다.
 Workspace orchestration은 현재 pnpm wrapper를 기준으로 운영하며, 별도 turbo pipeline은 유지하지 않습니다.
 
+## Post-Merge Monitoring
+
+머지 후에는 merge commit 기준으로 `main` workflow가 실제로 생성됐는지 확인합니다. 자동화 토큰으로 만든 이벤트는 GitHub Actions가 새 workflow run을 만들지 않는 경우가 있으므로, run이 없으면 `workflow_dispatch` fallback으로 필요한 workflow를 수동 실행합니다.
+
+```sh
+gh run list --commit <merge-sha> --limit 20
+gh workflow run ci.yml --ref main
+gh workflow run docs.yml --ref main
+gh workflow run release.yml --ref main
+```
+
+수동 dispatch는 현재 `main`의 상태를 기준으로 실행됩니다. `release.yml`은 실제 릴리스 경로를 다시 실행해야 할 때만 dispatch합니다.
+Docs workflow의 path filter는 docs source뿐 아니라 docs site가 빌드하거나 링크하는 runnable example(`examples/swap-dapp/**`, `examples/defi-dashboard/**`)도 포함해야 합니다.
+
 ## Supply-Chain Install Policy
 
 `pnpm-workspace.yaml`은 npm registry에서 새로 발행된 버전을 바로 받지 않도록 `minimumReleaseAge: 10080`을 설정합니다. 단위는 분이며, 10080분은 7일입니다.
