@@ -1,0 +1,87 @@
+{
+  "result": {
+    "issues": [
+      {
+        "title": "Luna Wallet mock path cannot complete swap because seeded token balance is zero",
+        "severity": "medium",
+        "repro": [
+          "Open swap-dapp on localhost:5174",
+          "Enable Luna Wallet in LunaTest Devtools",
+          "Connect Wallet in the app",
+          "Click Quote",
+          "Click Approve",
+          "Observe Swap stays disabled with Insufficient token balance warning"
+        ],
+        "evidence": [
+          "screenshots/02-luna-wallet-enabled.png",
+          "screenshots/03-after-connect.png",
+          "screenshots/04-after-quote.png",
+          "screenshots/05-after-approve.png"
+        ]
+      }
+    ],
+    "observations": [
+      {
+        "devtoolsVisible": true,
+        "lunaToggleVisible": true
+      },
+      {
+        "walletModeText": "Transaction ProgressApprovalidleSwapidleWallet ModeLuna WalletAllowance0 TOKEN_INAmount In0.1 TOKEN_IN"
+      },
+      {
+        "quoteCardText": "QuoteFailed to execute 'fetch' on 'Window': Illegal invocationEnter amount and press Quote.",
+        "warningText": "WarningsInsufficient token balanceAllowance is below input amount"
+      },
+      {
+        "swapDisabled": true,
+        "activeWarnings": [
+          "Insufficient token balance",
+          "Allowance is below input amount"
+        ],
+        "stepperText": "State Machineidlewallet_connectedquote_readyapproval_requiredapproval_pendingready_to_swapswap_pendingswap_confirmedswap_failed"
+      }
+    ]
+  },
+  "consoleMessages": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    }
+  ]
+}

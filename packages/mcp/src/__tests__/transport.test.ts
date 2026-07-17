@@ -121,9 +121,12 @@ describe("mcp transport", () => {
     expect(componentStates).toEqual({
       id: "req-component-states",
       result: {
-        known: expect.arrayContaining(["SwapForm", "idle", "pending", "success"]),
-        covered: ["SwapForm"],
-        missing: [],
+        componentCoverage: {
+          known: true,
+          covered: true,
+          missing: false,
+        },
+        states: ["idle", "pending", "success"],
       },
     });
 

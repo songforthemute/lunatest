@@ -26,9 +26,9 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint:workspace-types
-      - run: pnpm -r lint
-      - run: pnpm -r build
-      - run: pnpm -r test
+      - run: pnpm run lint:workspace:ci
+      - run: pnpm run build:workspace:ci
+      - run: pnpm run test:workspace:ci
       - run: pnpm lint:deadcode
       - run: pnpm pack:check-integrity
       - run: pnpm consumer-smoke:pack
@@ -41,7 +41,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
-      - if: steps.changesets.outputs.published == 'true'
-        run: pnpm consumer-smoke:npm -- --tag=latest
-      - if: steps.changesets.outputs.published == 'true'
-        run: pnpm consumer-smoke:npm:next
+      - run: pnpm consumer-smoke:npm -- --tag=latest
+      - run: pnpm consumer-smoke:npm:next

@@ -21,9 +21,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint:workspace-types
-      - run: pnpm -r --filter=!@lunatest/e2e-tests build
-      - run: pnpm -r --filter=!@lunatest/e2e-tests lint
-      - run: pnpm -r --filter=!@lunatest/e2e-tests test
+      - run: pnpm run build:workspace:ci
+      - run: pnpm run lint:workspace:ci
+      - run: pnpm run test:workspace:ci
       - run: pnpm lint:deadcode
       - run: pnpm pack:check-integrity
 
@@ -40,7 +40,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r --filter=!@lunatest/e2e-tests build
+      - run: pnpm run build:workspace:ci
       - run: pnpm consumer-smoke:pack
 
   e2e-smoke:

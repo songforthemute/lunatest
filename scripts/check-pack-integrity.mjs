@@ -3,17 +3,9 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const packageDirs = [
-  "packages/contracts",
-  "packages/core",
-  "packages/runtime-intercept",
-  "packages/cli",
-  "packages/react",
-  "packages/mcp",
-  "packages/vitest-plugin",
-  "packages/playwright-plugin",
-];
+import { publicPackages } from "./package-roster.mjs";
 
+const packageDirs = publicPackages.map((p) => p.dir);
 const disallowedPathPatterns = [
   /^src\//,
   /^docs\//,

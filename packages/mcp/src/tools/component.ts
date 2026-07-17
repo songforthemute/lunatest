@@ -66,17 +66,14 @@ export function createComponentTools(
 
     async states(name: string) {
       const resolved = await resolveCoverage();
-      const known = Array.from(
-        new Set([
-          ...(states[name] ?? []),
-          ...(resolved.known.includes(name) ? [name] : []),
-        ]),
-      ).sort();
 
       return {
-        known,
-        covered: resolved.covered.includes(name) ? [name] : [],
-        missing: resolved.missing.includes(name) ? [name] : [],
+        componentCoverage: {
+          known: resolved.known.includes(name),
+          covered: resolved.covered.includes(name),
+          missing: resolved.missing.includes(name),
+        },
+        states: Array.from(new Set(states[name] ?? [])).sort(),
       };
     },
   };

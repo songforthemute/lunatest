@@ -3,15 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
-const stablePackages = [
-  { name: "@lunatest/contracts", dir: "packages/contracts" },
-  { name: "@lunatest/core", dir: "packages/core" },
-  { name: "@lunatest/runtime-intercept", dir: "packages/runtime-intercept" },
-  { name: "@lunatest/cli", dir: "packages/cli" },
-  { name: "@lunatest/react", dir: "packages/react" },
-  { name: "@lunatest/mcp", dir: "packages/mcp" },
-];
-
+import { stablePackages } from "./package-roster.mjs";
 function run(command, args, cwd, options = {}) {
   const result = spawnSync(command, args, {
     cwd,

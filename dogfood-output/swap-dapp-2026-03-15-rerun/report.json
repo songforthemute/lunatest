@@ -1,0 +1,72 @@
+{
+  "result": {
+    "issues": [
+      {
+        "title": "Quote path still triggers illegal invocation",
+        "severity": "high"
+      },
+      {
+        "title": "Luna Wallet mock path still does not reach enabled swap state",
+        "severity": "high",
+        "warningItems": [
+          "Insufficient token balance",
+          "Allowance is below input amount"
+        ]
+      }
+    ],
+    "observations": [
+      {
+        "quoteCardText": "QuoteFailed to execute 'fetch' on 'Window': Illegal invocationEnter amount and press Quote.",
+        "warningItems": [
+          "Insufficient token balance",
+          "Allowance is below input amount"
+        ],
+        "txCardText": "Transaction ProgressApprovalpendingSwapidleWallet ModeLuna WalletAllowance0 TOKEN_INAmount In0.1 TOKEN_INApprove Tx: 0x0000000000000000000000000000000000000000000000000000000000000001",
+        "swapEnabledAfterApprove": false,
+        "swapDisabled": true
+      }
+    ]
+  },
+  "consoleMessages": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    },
+    {
+      "type": "log",
+      "text": "JsonRpcProvider failed to detect network and cannot start up; retry in 1s (perhaps the URL is wrong or the node is not started)"
+    }
+  ]
+}

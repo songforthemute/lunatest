@@ -351,7 +351,7 @@ expect({ pass: true }).toLunaPass();
 
 ## Status
 
-Active development. Runtime/CLI/MCP/docs/CI gates are integrated, with npm publication pending first stable release.
+Active development. Runtime/CLI/MCP/docs/CI gates are integrated, and stable packages are published on npm.
 
 ## License
 

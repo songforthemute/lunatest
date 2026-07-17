@@ -11,7 +11,15 @@ test("package.json exposes CI wrapper scripts", async () => {
 
   assert.equal(
     pkg.scripts["build:workspace:ci"],
-    "pnpm -r --filter=!@lunatest/e2e-tests build",
+    "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run build",
+  );
+  assert.equal(
+    pkg.scripts["lint:workspace:ci"],
+    "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run lint",
+  );
+  assert.equal(
+    pkg.scripts["test:workspace:ci"],
+    "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run test",
   );
   assert.equal(
     pkg.scripts["test:e2e:smoke:ci"],
@@ -40,6 +48,15 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
 
   assert.match(ciWorkflow, /pnpm run test:e2e:smoke:ci/);
   assert.match(ciWorkflow, /pnpm run perf:regression:ci/);
+  assert.doesNotMatch(ciWorkflow, /pnpm -r --filter=!@lunatest\/e2e-tests build/);
   assert.match(benchmarkWorkflow, /pnpm run perf:absolute:ci/);
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
+});
+
+test("Release workflow runs npm smoke without gating on publish condition", async () => {
+  const releaseWorkflow = await readFile(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
+
+  assert.doesNotMatch(releaseWorkflow, /if: steps\.changesets\.outputs\.published == 'true'\s+run: pnpm consumer-smoke:npm/);
+  assert.match(releaseWorkflow, /pnpm consumer-smoke:npm -- --tag=latest/);
+  assert.match(releaseWorkflow, /pnpm consumer-smoke:npm:next/);
 });

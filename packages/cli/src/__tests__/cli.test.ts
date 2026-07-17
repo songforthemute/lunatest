@@ -203,6 +203,18 @@ describe("cli", () => {
     expect(parsed.tags).toEqual(["generated", "edge-case"]);
   });
 
+  it("fails gen when generated filename already exists on disk", async () => {
+    const { cwd } = await withConfiguredProject();
+    const existingPath = join(cwd, "scenarios", "generated-edge-case.lua");
+    
+    await writeFile(existingPath, "scenario { name = \"existing\" }", "utf8");
+
+    const result = await executeCommand(["gen", "--ai"], { cwd });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toContain("already exists");
+  });
+
   it("fails gen command without --ai", async () => {
     const result = await executeCommand(["gen"]);
 

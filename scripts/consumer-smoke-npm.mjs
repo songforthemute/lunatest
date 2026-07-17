@@ -3,19 +3,10 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const stablePackages = [
-  "@lunatest/contracts",
-  "@lunatest/core",
-  "@lunatest/runtime-intercept",
-  "@lunatest/cli",
-  "@lunatest/react",
-  "@lunatest/mcp",
-];
+import { stablePackages as rosterStable, nextPackages as rosterNext } from "./package-roster.mjs";
 
-const nextPackages = [
-  "@lunatest/vitest-plugin",
-  "@lunatest/playwright-plugin",
-];
+const stablePackages = rosterStable.map(p => p.name);
+const nextPackages = rosterNext.map(p => p.name);
 
 function readArg(name, defaultValue) {
   const prefix = `--${name}=`;
