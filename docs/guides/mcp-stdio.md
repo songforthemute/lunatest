@@ -75,7 +75,7 @@ Run the installed executable from the project root:
 pnpm exec lunatest-mcp
 ```
 
-The default command requires `./lunatest.config.json`. If that file is missing or invalid, startup writes a clear error and includes guidance to use `--empty` only when a generic server is intentional.
+The default command requires `./lunatest.config.json`. If that file is missing or cannot be parsed as JSON, startup writes a clear error and includes guidance to use `--empty` only when a generic server is intentional.
 
 Use `--help` to print usage and exit successfully:
 

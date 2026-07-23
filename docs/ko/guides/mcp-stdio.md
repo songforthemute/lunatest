@@ -75,7 +75,7 @@ scenarios/swap.lua  -> scenarios/swap
 pnpm exec lunatest-mcp
 ```
 
-기본 명령은 `./lunatest.config.json`을 요구합니다. 파일이 없거나 잘못되면 시작 과정에서 명확한 오류를 출력하고, generic 서버가 정말 필요한 경우에만 `--empty`를 사용하라고 안내합니다.
+기본 명령은 `./lunatest.config.json`을 요구합니다. 파일이 없거나 JSON으로 해석할 수 없으면 시작 과정에서 명확한 오류를 출력하고, generic 서버가 정말 필요한 경우에만 `--empty`를 사용하라고 안내합니다.
 
 사용법을 보고 성공적으로 종료하려면 `--help`를 사용합니다.
 

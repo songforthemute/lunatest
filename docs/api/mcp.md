@@ -28,9 +28,9 @@ Installing `@lunatest/mcp` also provides the `lunatest-mcp` executable. It is th
 pnpm exec lunatest-mcp
 ```
 
-By default it requires `./lunatest.config.json` in the current working directory. `--config <path>` selects a config and treats its directory as the project root; `--empty` starts an explicit generic empty server. `--help` exits successfully, and missing or invalid config reports a clear error with `--empty` guidance.
+By default it requires `./lunatest.config.json` in the current working directory. `--config <path>` selects a config and treats its directory as the project root; `--empty` starts an explicit generic empty server. `--help` exits successfully, and a missing or non-JSON config reports a clear error with `--empty` guidance.
 
-The executable loads Lua scenarios, coverage metadata/catalog, component coverage, and project-local preset resources before creating the server. Config-derived scenario IDs are project-relative without `.lua`, such as `lunatest` and `scenarios/swap`. Prompts remain available through `prompt.list`; `prompt.get` renders only caller-provided `params.input`. `scenario.create` and `scenario.mutate` remain process-memory only and do not write to `scenarioDir`.
+The executable loads Lua scenarios, coverage metadata/catalog, and component coverage before creating the server, then configures project-local preset discovery for preset and resource requests. Config-derived scenario IDs are project-relative without `.lua`, such as `lunatest` and `scenarios/swap`. Prompts remain available through `prompt.list`; `prompt.get` renders only caller-provided `params.input`. `scenario.create` and `scenario.mutate` remain process-memory only and do not write to `scenarioDir`.
 
 See the [MCP stdio Guide](../guides/mcp-stdio.md) for a complete project fixture, line-delimited JSON-RPC requests, and the persistence boundary.
 
