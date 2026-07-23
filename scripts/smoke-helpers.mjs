@@ -32,10 +32,24 @@ export function formatCommandFailure({ command, args, reason, stdout = "", stder
     .join("\n");
 }
 
+export function resolveInstalledPackageBin(packageName, cwd, platform = process.platform) {
+  const shell = platform === "win32";
+  return {
+    command: resolve(
+      cwd,
+      "node_modules",
+      ".bin",
+      `${packageName}${shell ? ".cmd" : ""}`,
+    ),
+    shell,
+  };
+}
+
 export function startCommand(command, args, cwd, options = {}) {
   const child = spawn(command, args, {
     cwd,
     env: options.env,
+    shell: options.shell ?? false,
     stdio: ["pipe", "pipe", "pipe"],
   });
   let stdout = "";
@@ -44,6 +58,7 @@ export function startCommand(command, args, cwd, options = {}) {
   let spawnError;
   const outputListeners = new Set();
   const stdoutListeners = new Set();
+  const inputErrorListeners = new Set();
 
   const snapshot = () => ({
     command,
@@ -69,6 +84,11 @@ export function startCommand(command, args, cwd, options = {}) {
     const text = Buffer.from(chunk).toString("utf8");
     stderr += text;
     options.onStderr?.(text);
+  });
+  child.stdin.on("error", (error) => {
+    for (const listener of inputErrorListeners) {
+      listener(error);
+    }
   });
   child.on("error", (error) => {
     spawnError = error;
@@ -123,6 +143,10 @@ export function startCommand(command, args, cwd, options = {}) {
     onStdout(listener) {
       stdoutListeners.add(listener);
       return () => stdoutListeners.delete(listener);
+    },
+    onInputError(listener) {
+      inputErrorListeners.add(listener);
+      return () => inputErrorListeners.delete(listener);
     },
     write(input) {
       if (!child.stdin.writable) {
@@ -192,7 +216,15 @@ export function createJsonRpcClient(process, options = {}) {
   const pending = new Map();
   let remainder = "";
   let protocolError;
+  let listenersReleased = false;
   let rejectPending = () => {};
+  const createProtocolError = (reason) =>
+    new Error(
+      formatCommandFailure({
+        ...process.snapshot(),
+        reason,
+      }),
+    );
   const unsubscribe = process.onStdout((chunk) => {
     remainder += chunk;
     const lines = remainder.split("\n");
@@ -207,7 +239,7 @@ export function createJsonRpcClient(process, options = {}) {
       try {
         response = JSON.parse(line);
       } catch {
-        protocolError = new Error(`Invalid JSON-RPC response: ${line}`);
+        protocolError ??= createProtocolError(`Invalid JSON-RPC response: ${line}`);
         rejectPending(protocolError);
         continue;
       }
@@ -237,6 +269,23 @@ export function createJsonRpcClient(process, options = {}) {
     }
     pending.clear();
   };
+  const releaseListeners = () => {
+    if (listenersReleased) {
+      return;
+    }
+
+    listenersReleased = true;
+    unsubscribe();
+    unsubscribeInputError();
+  };
+  const createInputError = (error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    return createProtocolError(`Unable to write JSON-RPC request: ${message}`);
+  };
+  const unsubscribeInputError = process.onInputError?.((error) => {
+    protocolError ??= createInputError(error);
+    rejectPending(protocolError);
+  }) ?? (() => {});
 
   return {
     process,
@@ -255,7 +304,14 @@ export function createJsonRpcClient(process, options = {}) {
       const response = new Promise((resolveResponse, rejectResponse) => {
         pending.set(key, { resolve: resolveResponse, reject: rejectResponse });
       });
-      process.write(`${JSON.stringify(request)}\n`);
+      response.catch(() => {});
+      try {
+        process.write(`${JSON.stringify(request)}\n`);
+      } catch (error) {
+        protocolError ??= createInputError(error);
+        rejectPending(protocolError);
+        return response;
+      }
 
       let timeout;
       try {
@@ -283,31 +339,41 @@ export function createJsonRpcClient(process, options = {}) {
       process.closeInput();
     },
     async waitForExit(timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS) {
-      try {
-        const result = await process.waitForExit(timeoutMs);
-        if (protocolError) {
-          throw protocolError;
-        }
-        if (result.code !== 0) {
-          throw new Error(
+      const result = await process.waitForExit(timeoutMs);
+      const exitError =
+        protocolError ??
+        (result.code !== 0
+          ? new Error(
+              formatCommandFailure({
+                ...process.snapshot(),
+                reason: `Exited with code ${result.code ?? "null"}${
+                  result.signal ? ` (${result.signal})` : ""
+                }`,
+              }),
+            )
+          : undefined);
+
+      if (exitError) {
+        rejectPending(exitError);
+      } else if (pending.size > 0) {
+        rejectPending(
+          new Error(
             formatCommandFailure({
               ...process.snapshot(),
-              reason: `Exited with code ${result.code ?? "null"}${
-                result.signal ? ` (${result.signal})` : ""
-              }`,
+              reason: "Exited before pending JSON-RPC requests completed",
             }),
-          );
-        }
-        return result;
-      } finally {
-        unsubscribe();
-        if (protocolError) {
-          rejectPending(protocolError);
-        }
+          ),
+        );
       }
+
+      releaseListeners();
+      if (exitError) {
+        throw exitError;
+      }
+      return result;
     },
     async dispose() {
-      unsubscribe();
+      releaseListeners();
       rejectPending(new Error("JSON-RPC client disposed"));
       return process.stop();
     },

@@ -15,6 +15,7 @@ import {
 } from "./pnpm-workspace-overrides.mjs";
 import {
   packPackage,
+  resolveInstalledPackageBin,
   run,
   runAsync,
   startCommand,
@@ -24,6 +25,8 @@ import {
 const tempRoot = mkdtempSync(join(tmpdir(), "lunatest-consumer-pack-"));
 const tarballsDir = join(tempRoot, "tarballs");
 const consumerDir = join(tempRoot, "consumer");
+const WATCH_RERUN_TIMEOUT_MS = 10_000;
+const WATCH_RERUN_ATTEMPT_TIMEOUT_MS = 750;
 
 function assertCoverageContract(report) {
   assert.ok(report.coveredTargets.features.includes("swap"));
@@ -31,8 +34,8 @@ function assertCoverageContract(report) {
   assert.ok(report.known.features.includes("approve"));
 }
 
-async function runMcpProjectWorkflow(command, args, cwd, expectedId) {
-  const client = startJsonRpcClient(command, args, cwd);
+async function runMcpProjectWorkflow(command, args, cwd, expectedId, options = {}) {
+  const client = startJsonRpcClient(command, args, cwd, options);
 
   try {
     const list = await client.request({ id: "list", method: "scenario.list" });
@@ -49,6 +52,42 @@ async function runMcpProjectWorkflow(command, args, cwd, expectedId) {
       await client.dispose();
     }
   }
+}
+
+async function waitForWatchRerun(watch, scenarioFile, updatedScenario) {
+  const deadline = Date.now() + WATCH_RERUN_TIMEOUT_MS;
+  let attempts = 0;
+  let lastError;
+
+  while (Date.now() < deadline) {
+    attempts += 1;
+    writeFileSync(
+      scenarioFile,
+      `${updatedScenario.trimEnd()}\n-- consumer-watch-touch=${attempts}\n`,
+      "utf8",
+    );
+
+    const remaining = deadline - Date.now();
+    try {
+      await watch.waitForOutput(
+        "PASS swap-smoke-updated",
+        Math.min(WATCH_RERUN_ATTEMPT_TIMEOUT_MS, remaining),
+      );
+      return;
+    } catch (error) {
+      lastError = error;
+      if (watch.snapshot().exitResult) {
+        break;
+      }
+    }
+  }
+
+  throw new Error(
+    [
+      `Watch did not report the updated scenario after ${attempts} writes`,
+      lastError instanceof Error ? lastError.message : String(lastError),
+    ].join("\n"),
+  );
 }
 
 async function runPackedConsumerWorkflow(consumerDir) {
@@ -73,15 +112,15 @@ async function runPackedConsumerWorkflow(consumerDir) {
   assert.match(generatedLua, /components = \{ "quotePanel" \}/);
   assert.match(generatedLua, /tags = \{ "generated", "edge-case" \}/);
 
-  const cliBin = join(consumerDir, "node_modules", ".bin", "lunatest");
-  const watch = startCommand(cliBin, ["watch"], consumerDir);
+  const watchBin = resolveInstalledPackageBin("lunatest", consumerDir);
+  const watch = startCommand(watchBin.command, ["watch"], consumerDir, {
+    shell: watchBin.shell,
+  });
   let watchExit;
   try {
     await watch.waitForOutput("Scenario Summary");
     await watch.waitForOutput("PASS swap-smoke");
-    await new Promise((resolveDelay) => setTimeout(resolveDelay, 100));
-    writeFileSync(fixture.scenarioFile, fixture.updatedScenario, "utf8");
-    await watch.waitForOutput("PASS swap-smoke-updated");
+    await waitForWatchRerun(watch, fixture.scenarioFile, fixture.updatedScenario);
   } finally {
     watchExit = await watch.stop("SIGINT");
   }
@@ -117,16 +156,22 @@ async function runPackedConsumerWorkflow(consumerDir) {
   }
 
   const siblingDir = join(dirname(consumerDir), "mcp-config-sibling");
-  const mcpBin = join(consumerDir, "node_modules", ".bin", "lunatest-mcp");
+  const mcpBin = resolveInstalledPackageBin("lunatest-mcp", consumerDir);
   mkdirSync(siblingDir, { recursive: true });
   await runMcpProjectWorkflow(
-    mcpBin,
+    mcpBin.command,
     ["--config", fixture.configFile],
     siblingDir,
     "scenarios/swap",
+    { shell: mcpBin.shell },
   );
 
-  const empty = startJsonRpcClient(mcpBin, ["--empty"], siblingDir);
+  const empty = startJsonRpcClient(
+    mcpBin.command,
+    ["--empty"],
+    siblingDir,
+    { shell: mcpBin.shell },
+  );
   try {
     const list = await empty.request({ id: "empty-list", method: "scenario.list" });
     assert.deepEqual(list.result, []);
