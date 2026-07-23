@@ -22,6 +22,19 @@ export {
 export type { PresetRegistry, PresetRegistryOptions, ProjectPresetSources } from "./presets/registry.js";
 export { loadProjectPresetSources } from "./presets/project-sources.node.js";
 export {
+  loadLunaProjectConfig,
+  type LoadLunaProjectConfigOptions,
+  type LunaProjectConfig,
+  type ResolvedLunaProjectConfig,
+} from "./project/config.node.js";
+export {
+  loadLunaProjectScenarios,
+  resolveLunaScenarioSources,
+  type LoadLunaProjectScenariosInput,
+  type LunaProjectScenario,
+  type ResolveLunaScenarioSourcesInput,
+} from "./project/scenarios.node.js";
+export {
   applyInterceptState,
   createScenarioRuntime,
   LuaConfigSchema,
@@ -31,7 +44,9 @@ export {
   type ScenarioRuntime,
 } from "./runtime/scenario-runtime.js";
 export {
+  createDeterministicScenarioAdapter,
   executeLuaScenario,
+  type ExecuteLuaScenarioAdapter,
   type ExecuteLuaScenarioInput,
   type ExecuteLuaScenarioResult,
 } from "./runner/execute-scenario.js";

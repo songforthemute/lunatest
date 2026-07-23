@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@lunatest/contracts": "workspace:*",
+    "tinyglobby": "^0.2.16",
     "wasmoon": "^1.16.0",
     "zod": "^4.4.3"
   },

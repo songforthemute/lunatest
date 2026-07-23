@@ -172,6 +172,9 @@ importers:
       '@lunatest/contracts':
         specifier: workspace:*
         version: link:../contracts
+      tinyglobby:
+        specifier: ^0.2.16
+        version: 0.2.16
       wasmoon:
         specifier: ^1.16.0
         version: 1.16.0
