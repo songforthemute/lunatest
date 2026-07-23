@@ -78,6 +78,26 @@ describe("loadLunaProjectConfig", () => {
     }
   });
 
+  it.each([
+    ["omitted", undefined],
+    ["false", false],
+  ])("rejects a missing explicitly selected config when requireConfig is %s", async (_, requireConfig) => {
+    const root = await createProjectRoot();
+    const configPath = join(root, "fixtures", "missing-config.json");
+
+    try {
+      await expect(
+        loadLunaProjectConfig({
+          cwd: root,
+          configPath: "fixtures/missing-config.json",
+          requireConfig,
+        }),
+      ).rejects.toThrow(`Selected LunaTest config not found: ${configPath}`);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("reports the expected config filename when config is required", async () => {
     const root = await createProjectRoot();
 

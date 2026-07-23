@@ -114,8 +114,12 @@ export async function loadLunaProjectConfig(
   const selectedConfigPath = resolve(cwd, options.configPath ?? "lunatest.config.json");
   const hasConfigFile = await canAccess(selectedConfigPath);
 
-  if (!hasConfigFile && (options.requireConfig || options.configPath)) {
-    throw new Error(`LunaTest config not found: ${selectedConfigPath}`);
+  if (!hasConfigFile && options.configPath) {
+    throw new Error(`Selected LunaTest config not found: ${selectedConfigPath}`);
+  }
+
+  if (!hasConfigFile && options.requireConfig) {
+    throw new Error(`Required LunaTest config not found: ${selectedConfigPath}`);
   }
 
   let config = { ...DEFAULT_CONFIG };

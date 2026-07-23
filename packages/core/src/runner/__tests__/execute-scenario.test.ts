@@ -52,10 +52,13 @@ describe("executeLuaScenario", () => {
     expect(fail.result?.diff).toContain("warning");
   });
 
-  it("applies routes, given state, and intercept state before resolving deterministic assertions", async () => {
+  it("applies routes, then lets intercept state override given state", async () => {
     const source = `scenario {
       name = "deterministic-intercept",
-      given = { wallet = { connected = true } },
+      given = {
+        wallet = { connected = true },
+        quote = { status = "loading" }
+      },
       when = { action = "swap" },
       intercept = {
         routes = {
@@ -74,7 +77,10 @@ describe("executeLuaScenario", () => {
     }`;
     const config = {
       name: "deterministic-intercept",
-      given: { wallet: { connected: true } },
+      given: {
+        wallet: { connected: true },
+        quote: { status: "loading" },
+      },
       when: { action: "swap" },
       intercept: {
         routes: [

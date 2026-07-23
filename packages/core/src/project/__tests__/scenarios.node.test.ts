@@ -12,9 +12,15 @@ import {
 describe("project scenario loading", () => {
   it("discovers default sources in sorted order and creates project-relative records", async () => {
     const root = await createProjectRoot();
+    const luaConfigPath = join(root, "scenarios", "lunatest.lua");
 
     try {
-      await writeFile(join(root, "lunatest.lua"), baseScenario("project-default"), "utf8");
+      await writeFile(
+        join(root, "lunatest.config.json"),
+        JSON.stringify({ luaConfigPath: "scenarios/lunatest.lua" }),
+        "utf8",
+      );
+      await writeFile(luaConfigPath, baseScenario("project-default"), "utf8");
       await writeFile(
         join(root, "scenarios", "swap.lua"),
         `scenario {
@@ -38,8 +44,10 @@ describe("project scenario loading", () => {
       });
       const items = await loadLunaProjectScenarios({ config: project });
 
-      expect(sources).toEqual([join(root, "lunatest.lua"), join(root, "scenarios", "swap.lua")]);
-      expect(items.map((item) => item.id)).toEqual(["lunatest", "scenarios/swap"]);
+      expect(sources).toEqual([luaConfigPath, join(root, "scenarios", "swap.lua")]);
+      expect(sources.filter((source) => source === luaConfigPath)).toHaveLength(1);
+      expect(items.map((item) => item.id)).toEqual(["scenarios/lunatest", "scenarios/swap"]);
+      expect(items.filter((item) => item.source === luaConfigPath)).toHaveLength(1);
       expect(items.map((item) => item.name)).toEqual(["project-default", "swap"]);
       expect(items[1]?.coverage).toEqual({
         features: ["swap"],
