@@ -20,6 +20,20 @@ Release channel: `latest`
 - `processJsonRpcLine`
 - `runStdioServer`
 
+## `lunatest-mcp` executable
+
+Installing `@lunatest/mcp` also provides the `lunatest-mcp` executable. It is the project-aware stdio entry point:
+
+```bash
+pnpm exec lunatest-mcp
+```
+
+By default it requires `./lunatest.config.json` in the current working directory. `--config <path>` selects a config and treats its directory as the project root; `--empty` starts an explicit generic empty server. `--help` exits successfully, and missing or invalid config reports a clear error with `--empty` guidance.
+
+The executable loads Lua scenarios, coverage metadata/catalog, component/prompt context, and project-local preset resources before creating the server. Config-derived scenario IDs are project-relative without `.lua`, such as `lunatest` and `scenarios/swap`. `scenario.create` and `scenario.mutate` remain process-memory only and do not write to `scenarioDir`.
+
+See the [MCP stdio Guide](../guides/mcp-stdio.md) for a complete project fixture, line-delimited JSON-RPC requests, and the persistence boundary.
+
 ## `createMcpServer(options)`
 
 ```ts
@@ -122,7 +136,9 @@ type ComponentStatesResult = {
 
 `resource.get("lunatest://protocols")` returns protocol metadata objects with `id`, `label`, `source`, `kind`, and `supportedChains`.
 
-## Minimal stdio example
+## Embedded stdio example
+
+`createMcpServer` remains the embedded API: it uses the options passed by the host and does not load a project config. Use the [MCP stdio Guide](../guides/mcp-stdio.md) and `pnpm exec lunatest-mcp` for config-aware project discovery.
 
 ```ts
 import { createMcpServer, runStdioServer } from "@lunatest/mcp";

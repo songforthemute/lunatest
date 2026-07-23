@@ -183,6 +183,10 @@ await wagmiConfig.transports?.[1]?.request({ method: "eth_chainId" });
 
 ## MCP stdio 서버 예시
 
+설치된 프로젝트 인식 `lunatest-mcp` 실행 파일의 `lunatest.config.json` 탐색, `--config`, `--empty`, JSON-RPC 예시는 [MCP stdio 사용 가이드](./mcp-stdio.md)를 보세요.
+
+아래 임베디드 API는 호스트 애플리케이션이 모든 scenario와 transport stream을 직접 전달할 때 계속 사용할 수 있습니다. config를 읽는 실행 파일과는 별도 방식입니다.
+
 ```ts
 import { createMcpServer, runStdioServer } from "@lunatest/mcp";
 
@@ -205,3 +209,4 @@ await runStdioServer({
 - [시나리오 예제 모음](./scenario-examples.md)
 - [React 통합 가이드](./react-integration.md)
 - [Playwright 라우팅 모킹](./playwright-routing.md)
+- [MCP stdio 사용 가이드](./mcp-stdio.md)
