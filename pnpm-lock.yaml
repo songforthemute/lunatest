@@ -161,9 +161,6 @@ importers:
       commander:
         specifier: ^14.0.3
         version: 14.0.3
-      tinyglobby:
-        specifier: ^0.2.16
-        version: 0.2.16
 
   packages/contracts: {}
 

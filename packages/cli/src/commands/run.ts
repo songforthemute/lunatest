@@ -1,4 +1,4 @@
-import { executeLuaScenario } from "@lunatest/core";
+import { createDeterministicScenarioAdapter, executeLuaScenario } from "@lunatest/core";
 import { readFile } from "node:fs/promises";
 import type { ResolvedLunaCliConfig } from "../config.js";
 import { resolveScenarioSources } from "./scenario-sources.js";
@@ -37,27 +37,7 @@ export async function runCommand(options: RunCommandOptions): Promise<string> {
   for (const source of filteredSources) {
     const execution = await executeLuaScenario({
       source,
-      adapter: {
-        runWhen({ config, runtime }) {
-          if (config.intercept?.routes) {
-            runtime.setRouteMocks(config.intercept.routes);
-          }
-
-          if (config.given) {
-            runtime.applyInterceptState(config.given);
-          }
-
-          if (config.intercept?.state) {
-            runtime.applyInterceptState(config.intercept.state);
-          }
-        },
-        resolveUi({ runtime }) {
-          return runtime.getInterceptState();
-        },
-        resolveState({ runtime }) {
-          return runtime.getInterceptState();
-        },
-      },
+      adapter: createDeterministicScenarioAdapter(),
     });
     const targetName = execution.scenarioName;
 
