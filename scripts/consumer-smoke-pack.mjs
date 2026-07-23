@@ -68,9 +68,13 @@ async function runPackedConsumerWorkflow(consumerDir) {
   assert.match(generation.stdout, /created=1/);
   const generatedLua = readFileSync(fixture.generatedScenarioFile, "utf8");
   assert.match(generatedLua, /coverage = \{/);
+  assert.match(generatedLua, /features = \{ "swap" \}/);
+  assert.match(generatedLua, /states = \{ "quoteLoaded" \}/);
+  assert.match(generatedLua, /components = \{ "quotePanel" \}/);
   assert.match(generatedLua, /tags = \{ "generated", "edge-case" \}/);
 
-  const watch = startCommand("pnpm", ["exec", "lunatest", "watch"], consumerDir);
+  const cliBin = join(consumerDir, "node_modules", ".bin", "lunatest");
+  const watch = startCommand(cliBin, ["watch"], consumerDir);
   let watchExit;
   try {
     await watch.waitForOutput("Scenario Summary");
@@ -81,10 +85,7 @@ async function runPackedConsumerWorkflow(consumerDir) {
   } finally {
     watchExit = await watch.stop("SIGINT");
   }
-  assert.ok(
-    watchExit.code === 0 || watchExit.signal === "SIGINT",
-    `watch did not stop cleanly: ${JSON.stringify(watchExit)}`,
-  );
+  assert.equal(watchExit.code, 0, `watch did not stop cleanly: ${JSON.stringify(watchExit)}`);
 
   const client = startJsonRpcClient("pnpm", ["exec", "lunatest-mcp"], consumerDir);
   try {

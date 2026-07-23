@@ -32,31 +32,6 @@ export function formatCommandFailure({ command, args, reason, stdout = "", stder
     .join("\n");
 }
 
-export function correlateJsonRpcResponses(requests, responses) {
-  const pending = new Map(requests.map((request) => [jsonRpcIdKey(request.id), request.id]));
-  const correlated = new Map();
-
-  for (const response of responses) {
-    const key = jsonRpcIdKey(response.id);
-    if (!pending.has(key)) {
-      throw new Error(`Unexpected JSON-RPC response ID: ${JSON.stringify(response.id)}`);
-    }
-    if (correlated.has(pending.get(key))) {
-      throw new Error(`Duplicate JSON-RPC response ID: ${JSON.stringify(response.id)}`);
-    }
-
-    correlated.set(pending.get(key), response);
-  }
-
-  for (const request of requests) {
-    if (!correlated.has(request.id)) {
-      throw new Error(`Missing JSON-RPC response ID: ${JSON.stringify(request.id)}`);
-    }
-  }
-
-  return correlated;
-}
-
 export function startCommand(command, args, cwd, options = {}) {
   const child = spawn(command, args, {
     cwd,
@@ -68,6 +43,7 @@ export function startCommand(command, args, cwd, options = {}) {
   let exitResult;
   let spawnError;
   const outputListeners = new Set();
+  const stdoutListeners = new Set();
 
   const snapshot = () => ({
     command,
@@ -82,6 +58,9 @@ export function startCommand(command, args, cwd, options = {}) {
     const text = Buffer.from(chunk).toString("utf8");
     stdout += text;
     options.onStdout?.(text);
+    for (const listener of stdoutListeners) {
+      listener(text);
+    }
     for (const listener of outputListeners) {
       listener();
     }
@@ -141,6 +120,10 @@ export function startCommand(command, args, cwd, options = {}) {
   return {
     child,
     snapshot,
+    onStdout(listener) {
+      stdoutListeners.add(listener);
+      return () => stdoutListeners.delete(listener);
+    },
     write(input) {
       if (!child.stdin.writable) {
         throw toFailure("stdin is not writable");
@@ -205,51 +188,47 @@ export async function runAsync(command, args, cwd, options = {}) {
   }
 }
 
-export function startJsonRpcClient(command, args, cwd, options = {}) {
+export function createJsonRpcClient(process, options = {}) {
   const pending = new Map();
   let remainder = "";
   let protocolError;
   let rejectPending = () => {};
-  const process = startCommand(command, args, cwd, {
-    ...options,
-    onStdout(chunk) {
-      options.onStdout?.(chunk);
-      remainder += chunk;
-      const lines = remainder.split("\n");
-      remainder = lines.pop() ?? "";
+  const unsubscribe = process.onStdout((chunk) => {
+    remainder += chunk;
+    const lines = remainder.split("\n");
+    remainder = lines.pop() ?? "";
 
-      for (const line of lines) {
-        if (!line.trim()) {
-          continue;
-        }
-
-        let response;
-        try {
-          response = JSON.parse(line);
-        } catch {
-          protocolError = new Error(`Invalid JSON-RPC response: ${line}`);
-          rejectPending(protocolError);
-          continue;
-        }
-
-        let key;
-        try {
-          key = jsonRpcIdKey(response.id);
-        } catch (error) {
-          protocolError = error;
-          rejectPending(protocolError);
-          continue;
-        }
-        const waiter = pending.get(key);
-        if (!waiter) {
-          protocolError = new Error(`Unexpected JSON-RPC response ID: ${JSON.stringify(response.id)}`);
-          rejectPending(protocolError);
-          continue;
-        }
-        pending.delete(key);
-        waiter.resolve(response);
+    for (const line of lines) {
+      if (!line.trim()) {
+        continue;
       }
-    },
+
+      let response;
+      try {
+        response = JSON.parse(line);
+      } catch {
+        protocolError = new Error(`Invalid JSON-RPC response: ${line}`);
+        rejectPending(protocolError);
+        continue;
+      }
+
+      let key;
+      try {
+        key = jsonRpcIdKey(response.id);
+      } catch (error) {
+        protocolError = error;
+        rejectPending(protocolError);
+        continue;
+      }
+      const waiter = pending.get(key);
+      if (!waiter) {
+        protocolError = new Error(`Unexpected JSON-RPC response ID: ${JSON.stringify(response.id)}`);
+        rejectPending(protocolError);
+        continue;
+      }
+      pending.delete(key);
+      waiter.resolve(response);
+    }
   });
 
   rejectPending = (error) => {
@@ -261,6 +240,9 @@ export function startJsonRpcClient(command, args, cwd, options = {}) {
 
   return {
     process,
+    pendingRequestCount() {
+      return pending.size;
+    },
     async request(request, timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS) {
       if (protocolError) {
         throw protocolError;
@@ -318,16 +300,22 @@ export function startJsonRpcClient(command, args, cwd, options = {}) {
         }
         return result;
       } finally {
+        unsubscribe();
         if (protocolError) {
           rejectPending(protocolError);
         }
       }
     },
     async dispose() {
+      unsubscribe();
       rejectPending(new Error("JSON-RPC client disposed"));
       return process.stop();
     },
   };
+}
+
+export function startJsonRpcClient(command, args, cwd, options = {}) {
+  return createJsonRpcClient(startCommand(command, args, cwd, options), options);
 }
 
 export function run(command, args, cwd, options = {}) {
