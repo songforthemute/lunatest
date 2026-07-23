@@ -14,12 +14,14 @@ const originalExitCode = process.exitCode;
 afterEach(() => {
   process.argv = originalArgv;
   process.exitCode = originalExitCode;
+  vi.restoreAllMocks();
   vi.resetModules();
   executeCommandMock.mockReset();
 });
 
 it("converts SIGINT into an abort signal for watch and removes its process listener", async () => {
   const signalListenerCount = process.listenerCount("SIGINT");
+  const pauseInput = vi.spyOn(process.stdin, "pause");
   process.argv = ["node", "lunatest", "watch"];
   let receivedOptions: { signal?: AbortSignal } | undefined;
 
@@ -42,6 +44,34 @@ it("converts SIGINT into an abort signal for watch and removes its process liste
   expect(receivedOptions?.signal).toBeInstanceOf(AbortSignal);
   expect(receivedOptions?.signal?.aborted).toBe(true);
   expect(process.listenerCount("SIGINT")).toBe(signalListenerCount);
+  expect(pauseInput).toHaveBeenCalledOnce();
+});
+
+it("converts closed standard input into an abort signal for watch and removes its stream listener", async () => {
+  const inputEndListenerCount = process.stdin.listenerCount("end");
+  process.argv = ["node", "lunatest", "watch"];
+  let receivedOptions: { signal?: AbortSignal } | undefined;
+
+  executeCommandMock.mockImplementation(async (_args, options) => {
+    receivedOptions = options;
+    if (options.signal) {
+      await new Promise<void>((resolve) => {
+        options.signal.addEventListener("abort", () => resolve(), { once: true });
+      });
+    }
+
+    return { exitCode: 0, output: "" };
+  });
+
+  const entrypoint = import("../index");
+  await vi.waitFor(() => expect(receivedOptions).toBeDefined());
+  expect(process.stdin.listenerCount("end")).toBe(inputEndListenerCount + 1);
+  process.stdin.emit("end");
+  await entrypoint;
+
+  expect(receivedOptions?.signal).toBeInstanceOf(AbortSignal);
+  expect(receivedOptions?.signal?.aborted).toBe(true);
+  expect(process.stdin.listenerCount("end")).toBe(inputEndListenerCount);
 });
 
 it("does not intercept SIGINT while a non-watch command is running", async () => {

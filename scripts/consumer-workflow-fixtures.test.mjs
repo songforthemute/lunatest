@@ -5,7 +5,11 @@ import test from "node:test";
 import { join } from "node:path";
 
 import { createConsumerWorkflowFixture } from "./consumer-workflow-fixtures.mjs";
-import { createJsonRpcClient, resolveInstalledPackageBin } from "./smoke-helpers.mjs";
+import {
+  closeInputAndWaitForExit,
+  createJsonRpcClient,
+  resolveInstalledPackageBin,
+} from "./smoke-helpers.mjs";
 
 function createFakeProcess({ writeErrors = [], waitForExitImpl } = {}) {
   const stdoutListeners = new Set();
@@ -20,6 +24,7 @@ function createFakeProcess({ writeErrors = [], waitForExitImpl } = {}) {
     writes: [],
     closeInputCalls: 0,
     stopCalls: 0,
+    stopSignals: [],
     onStdout(listener) {
       stdoutListeners.add(listener);
       return () => stdoutListeners.delete(listener);
@@ -55,8 +60,9 @@ function createFakeProcess({ writeErrors = [], waitForExitImpl } = {}) {
     async waitForExit(timeoutMs) {
       return waitForExitImpl?.(timeoutMs) ?? { code: 0, signal: null };
     },
-    async stop() {
+    async stop(signal) {
       this.stopCalls += 1;
+      this.stopSignals.push(signal);
       return { code: 0, signal: null };
     },
     emitStdout(chunk) {
@@ -203,6 +209,23 @@ test("installed package bin resolver reports missing or invalid package bin entr
     () => resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", invalidBin.consumerDir),
     /must be a relative file path inside its package/,
   );
+});
+
+test("EOF shutdown force-stops a watch process only after its graceful exit times out", async () => {
+  const process = createFakeProcess({
+    waitForExitImpl: async () => {
+      throw new Error("watch exit timed out");
+    },
+  });
+
+  await assert.rejects(
+    () => closeInputAndWaitForExit(process),
+    /watch exit timed out/,
+  );
+
+  assert.equal(process.closeInputCalls, 1);
+  assert.equal(process.stopCalls, 1);
+  assert.deepEqual(process.stopSignals, ["SIGKILL"]);
 });
 
 test("JSON-RPC client correlates typed response IDs from its process stream", async () => {

@@ -14,6 +14,7 @@ import {
   formatWorkspaceOverrides,
 } from "./pnpm-workspace-overrides.mjs";
 import {
+  closeInputAndWaitForExit,
   packPackage,
   resolveInstalledPackageBin,
   run,
@@ -120,7 +121,7 @@ async function runPackedConsumerWorkflow(consumerDir) {
     await watch.waitForOutput("PASS swap-smoke");
     await waitForWatchRerun(watch, fixture.scenarioFile, fixture.updatedScenario);
   } finally {
-    watchExit = await watch.stop("SIGINT");
+    watchExit = await closeInputAndWaitForExit(watch);
   }
   assert.equal(watchExit.code, 0, `watch did not stop cleanly: ${JSON.stringify(watchExit)}`);
 

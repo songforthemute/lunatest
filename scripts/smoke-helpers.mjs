@@ -222,6 +222,23 @@ export function startCommand(command, args, cwd, options = {}) {
   };
 }
 
+export async function closeInputAndWaitForExit(process, timeoutMs = DEFAULT_STOP_TIMEOUT_MS) {
+  process.closeInput();
+
+  try {
+    return await process.waitForExit(timeoutMs);
+  } catch (error) {
+    try {
+      await process.stop("SIGKILL", timeoutMs);
+    } catch (cleanupError) {
+      const cleanupMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+      throw new Error(`${error instanceof Error ? error.message : String(error)}\nCleanup failed: ${cleanupMessage}`);
+    }
+
+    throw error;
+  }
+}
+
 export async function runAsync(command, args, cwd, options = {}) {
   const process = startCommand(command, args, cwd, options);
 
