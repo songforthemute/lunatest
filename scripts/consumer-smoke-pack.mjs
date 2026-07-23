@@ -112,10 +112,8 @@ async function runPackedConsumerWorkflow(consumerDir) {
   assert.match(generatedLua, /components = \{ "quotePanel" \}/);
   assert.match(generatedLua, /tags = \{ "generated", "edge-case" \}/);
 
-  const watchBin = resolveInstalledPackageBin("lunatest", consumerDir);
-  const watch = startCommand(watchBin.command, ["watch"], consumerDir, {
-    shell: watchBin.shell,
-  });
+  const watchBin = resolveInstalledPackageBin("@lunatest/cli", "lunatest", consumerDir);
+  const watch = startCommand(watchBin.command, [...watchBin.args, "watch"], consumerDir);
   let watchExit;
   try {
     await watch.waitForOutput("Scenario Summary");
@@ -156,21 +154,19 @@ async function runPackedConsumerWorkflow(consumerDir) {
   }
 
   const siblingDir = join(dirname(consumerDir), "mcp-config-sibling");
-  const mcpBin = resolveInstalledPackageBin("lunatest-mcp", consumerDir);
+  const mcpBin = resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", consumerDir);
   mkdirSync(siblingDir, { recursive: true });
   await runMcpProjectWorkflow(
     mcpBin.command,
-    ["--config", fixture.configFile],
+    [...mcpBin.args, "--config", fixture.configFile],
     siblingDir,
     "scenarios/swap",
-    { shell: mcpBin.shell },
   );
 
   const empty = startJsonRpcClient(
     mcpBin.command,
-    ["--empty"],
+    [...mcpBin.args, "--empty"],
     siblingDir,
-    { shell: mcpBin.shell },
   );
   try {
     const list = await empty.request({ id: "empty-list", method: "scenario.list" });

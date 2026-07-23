@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { readFileSync, statSync } from "node:fs";
+import { isAbsolute, join, relative, resolve } from "node:path";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_STOP_TIMEOUT_MS = 2_000;
@@ -32,16 +33,50 @@ export function formatCommandFailure({ command, args, reason, stdout = "", stder
     .join("\n");
 }
 
-export function resolveInstalledPackageBin(packageName, cwd, platform = process.platform) {
-  const shell = platform === "win32";
+export function resolveInstalledPackageBin(packageName, binName, cwd) {
+  const packageRoot = resolve(cwd, "node_modules", packageName);
+  const manifestPath = join(packageRoot, "package.json");
+  let manifest;
+
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to read installed package manifest for ${packageName}: ${message}`);
+  }
+
+  const bin = manifest.bin;
+  const binEntry = typeof bin === "string" ? bin : bin?.[binName];
+  if (typeof binEntry !== "string" || !binEntry.trim()) {
+    throw new Error(`Installed package ${packageName} does not declare the ${binName} bin entry`);
+  }
+  if (isAbsolute(binEntry)) {
+    throw new Error(`Installed package ${packageName} bin ${binName} must be a relative file path inside its package`);
+  }
+
+  const binPath = resolve(packageRoot, binEntry);
+  const packageRelativePath = relative(packageRoot, binPath);
+  if (
+    !packageRelativePath ||
+    packageRelativePath === ".." ||
+    packageRelativePath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+    isAbsolute(packageRelativePath)
+  ) {
+    throw new Error(`Installed package ${packageName} bin ${binName} must be a relative file path inside its package`);
+  }
+
+  try {
+    if (!statSync(binPath).isFile()) {
+      throw new Error("not a file");
+    }
+  } catch {
+    throw new Error(`Installed package ${packageName} bin ${binName} points to a missing file: ${binEntry}`);
+  }
+
   return {
-    command: resolve(
-      cwd,
-      "node_modules",
-      ".bin",
-      `${packageName}${shell ? ".cmd" : ""}`,
-    ),
-    shell,
+    command: process.execPath,
+    args: [binPath],
+    shell: false,
   };
 }
 

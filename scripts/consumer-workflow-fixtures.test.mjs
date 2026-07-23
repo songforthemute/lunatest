@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import test from "node:test";
-import { resolve } from "node:path";
+import { join } from "node:path";
 
 import { createConsumerWorkflowFixture } from "./consumer-workflow-fixtures.mjs";
 import { createJsonRpcClient, resolveInstalledPackageBin } from "./smoke-helpers.mjs";
@@ -74,6 +76,31 @@ function createFakeProcess({ writeErrors = [], waitForExitImpl } = {}) {
   };
 }
 
+function createInstalledPackageFixture({ packageName, bin }) {
+  const consumerDir = mkdtempSync(join(tmpdir(), "lunatest-installed-bin-"));
+  const packageDir = join(consumerDir, "node_modules", ...packageName.split("/"));
+  mkdirSync(packageDir, { recursive: true });
+  writeFileSync(
+    join(packageDir, "package.json"),
+    JSON.stringify({ name: packageName, bin }),
+    "utf8",
+  );
+
+  return {
+    consumerDir,
+    packageDir,
+    writeBin(relativePath) {
+      const binPath = join(packageDir, relativePath);
+      mkdirSync(join(binPath, ".."), { recursive: true });
+      writeFileSync(binPath, "#!/usr/bin/env node\n", "utf8");
+      return binPath;
+    },
+    cleanup() {
+      rmSync(consumerDir, { recursive: true, force: true });
+    },
+  };
+}
+
 test("consumer workflow fixture defines the configured scenario and deterministic AI adapter", () => {
   const fixture = createConsumerWorkflowFixture();
   const config = JSON.parse(fixture.files[fixture.configPath]);
@@ -103,25 +130,79 @@ test("consumer workflow fixture defines the configured scenario and deterministi
   assert.match(fixture.updatedScenario, /name = "swap-smoke-updated"/);
 });
 
-test("installed package bin resolver selects CLI and MCP platform executables with shell mode", () => {
-  const consumerDir = "/tmp/lunatest consumer";
+test("installed package bin resolver runs manifest bins through Node on every platform", (t) => {
+  const fixture = createInstalledPackageFixture({
+    packageName: "@lunatest/cli",
+    bin: { lunatest: "./dist/index.js" },
+  });
+  t.after(() => fixture.cleanup());
+  const binPath = fixture.writeBin("dist/index.js");
 
-  assert.deepEqual(resolveInstalledPackageBin("lunatest", consumerDir, "linux"), {
-    command: resolve(consumerDir, "node_modules", ".bin", "lunatest"),
+  const resolved = resolveInstalledPackageBin(
+    "@lunatest/cli",
+    "lunatest",
+    fixture.consumerDir,
+  );
+
+  assert.deepEqual(resolved, {
+    command: process.execPath,
+    args: [binPath],
     shell: false,
   });
-  assert.deepEqual(resolveInstalledPackageBin("lunatest", consumerDir, "win32"), {
-    command: resolve(consumerDir, "node_modules", ".bin", "lunatest.cmd"),
-    shell: true,
+  assert.deepEqual([...resolved.args, "watch"], [binPath, "watch"]);
+
+  for (const platform of ["linux", "win32"]) {
+    assert.equal(resolved.command, process.execPath, `${platform} uses Node directly`);
+    assert.equal(resolved.shell, false, `${platform} does not launch a shell shim`);
+    assert.equal(resolved.args[0].endsWith(".cmd"), false, `${platform} does not use .cmd`);
+  }
+});
+
+test("installed package bin resolver supports string bin entries", (t) => {
+  const fixture = createInstalledPackageFixture({
+    packageName: "@lunatest/mcp",
+    bin: "./dist/bin/mcp-stdio.js",
   });
-  assert.deepEqual(resolveInstalledPackageBin("lunatest-mcp", consumerDir, "linux"), {
-    command: resolve(consumerDir, "node_modules", ".bin", "lunatest-mcp"),
-    shell: false,
+  t.after(() => fixture.cleanup());
+  const binPath = fixture.writeBin("dist/bin/mcp-stdio.js");
+
+  assert.deepEqual(
+    resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", fixture.consumerDir),
+    {
+      command: process.execPath,
+      args: [binPath],
+      shell: false,
+    },
+  );
+});
+
+test("installed package bin resolver reports missing or invalid package bin entries", (t) => {
+  const missingPackageDir = mkdtempSync(join(tmpdir(), "lunatest-missing-bin-"));
+  t.after(() => rmSync(missingPackageDir, { recursive: true, force: true }));
+  assert.throws(
+    () => resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", missingPackageDir),
+    /Unable to read installed package manifest for @lunatest\/mcp/,
+  );
+
+  const missingBin = createInstalledPackageFixture({
+    packageName: "@lunatest/mcp",
+    bin: { other: "./dist/other.js" },
   });
-  assert.deepEqual(resolveInstalledPackageBin("lunatest-mcp", consumerDir, "win32"), {
-    command: resolve(consumerDir, "node_modules", ".bin", "lunatest-mcp.cmd"),
-    shell: true,
+  t.after(() => missingBin.cleanup());
+  assert.throws(
+    () => resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", missingBin.consumerDir),
+    /does not declare the lunatest-mcp bin entry/,
+  );
+
+  const invalidBin = createInstalledPackageFixture({
+    packageName: "@lunatest/mcp",
+    bin: { "lunatest-mcp": "../outside.js" },
   });
+  t.after(() => invalidBin.cleanup());
+  assert.throws(
+    () => resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", invalidBin.consumerDir),
+    /must be a relative file path inside its package/,
+  );
 });
 
 test("JSON-RPC client correlates typed response IDs from its process stream", async () => {
