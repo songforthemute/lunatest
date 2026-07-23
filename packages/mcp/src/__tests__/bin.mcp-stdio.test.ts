@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   createMcpStdioApp,
   createProjectMcpServer,
+  formatMcpStdioError,
   parseMcpStdioArgs,
 } from "../bin/mcp-stdio-app";
 
@@ -169,5 +170,15 @@ describe("mcp stdio launcher", () => {
     expect(() => parseMcpStdioArgs(["--empty", "--config", "lunatest.config.json"])).toThrow(
       "Option --empty cannot be combined with --config",
     );
+  });
+
+  it("formats launcher errors without exposing stack-only paths", () => {
+    const error = new Error("Required LunaTest config not found");
+    error.stack = `${error.name}: ${error.message}\n    at /private/tmp/project/launcher.ts:12:3`;
+
+    const output = formatMcpStdioError(error);
+
+    expect(output).toBe("Required LunaTest config not found");
+    expect(output).not.toContain("/private/tmp/project/launcher.ts");
   });
 });

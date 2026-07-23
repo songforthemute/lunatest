@@ -27,6 +27,10 @@ export type McpStdioApp =
   | { kind: "help"; usage: string }
   | { kind: "server"; server: ReturnType<typeof createMcpServer> };
 
+export function formatMcpStdioError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function createArgumentError(message: string): Error {
   return new Error(`${message}\n\n${MCP_STDIO_USAGE}`);
 }

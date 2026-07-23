@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createMcpStdioApp } from "./mcp-stdio-app.js";
+import { createMcpStdioApp, formatMcpStdioError } from "./mcp-stdio-app.js";
 import { runStdioServer } from "../transport/stdio.js";
 
 async function main(): Promise<void> {
@@ -20,7 +20,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  const message = error instanceof Error ? error.stack ?? error.message : String(error);
-  process.stderr.write(`${message}\n`);
+  process.stderr.write(`${formatMcpStdioError(error)}\n`);
   process.exitCode = 1;
 });
