@@ -114,7 +114,7 @@ printf '%s\n' \
 같은 프로젝트 컨텍스트가 나머지 server surface에도 사용됩니다.
 
 - `component.tree`, `component.states`는 component coverage를 조회합니다.
-- `prompt.list`, `prompt.get`은 현재 프로젝트의 coverage/component 컨텍스트를 사용해 prompt를 렌더링합니다.
+- `prompt.list`는 사용할 수 있는 prompt를 나열합니다. `prompt.get`은 호출자가 전달한 `params.input`만 렌더링하므로, prompt에 필요한 coverage 또는 component 정보는 요청에 포함해야 합니다.
 - `resource.get`은 `lunatest://protocols`를 포함한 resource를 노출하며, 프로젝트 local preset은 선택된 프로젝트 루트에서 탐색합니다.
 
 ## 프로토콜 규칙

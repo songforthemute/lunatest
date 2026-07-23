@@ -114,7 +114,7 @@ printf '%s\n' \
 The same project context feeds the rest of the server surface:
 
 - `component.tree` and `component.states` inspect component coverage.
-- `prompt.list` and `prompt.get` render prompts against the active project coverage/component context.
+- `prompt.list` lists the available prompts. `prompt.get` renders only caller-provided `params.input`; include any coverage or component details needed by that prompt in the request.
 - `resource.get` exposes resources, including `lunatest://protocols`; project-local preset discovery uses the selected project root.
 
 ## Protocol rules

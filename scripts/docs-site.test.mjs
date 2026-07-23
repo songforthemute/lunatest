@@ -67,6 +67,19 @@ test("MCP stdio documentation describes the project-aware executable in both lan
   for (const doc of [libraryGuide, koLibraryGuide, api, koApi]) {
     assert.match(doc, /mcp-stdio/);
   }
+
+  assert.match(guide, /prompt\.get` renders only caller-provided `params\.input`/);
+  assert.match(koGuide, /prompt\.get`은 호출자가 전달한 `params\.input`만 렌더링/);
+  assert.match(api, /prompt\.get` renders only caller-provided `params\.input`/);
+  assert.match(koApi, /prompt\.get`은 호출자가 전달한 `params\.input`만 렌더링/);
+
+  for (const doc of [guide, api]) {
+    assert.doesNotMatch(doc, /active project coverage\/component context/);
+  }
+
+  for (const doc of [koGuide, koApi]) {
+    assert.doesNotMatch(doc, /현재 프로젝트의 coverage\/component 컨텍스트/);
+  }
 });
 
 test("docs do not link to repository files through VitePress-relative examples paths", async () => {
