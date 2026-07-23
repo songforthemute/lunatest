@@ -86,12 +86,40 @@ async function withConfiguredProject(): Promise<{
   );
 
   const adapterScript = join(dir, "adapter.mjs");
+  const expectedScenario = {
+    id: scenarioFile.slice(0, -4).split("\\").join("/"),
+    name: "swap-smoke",
+    source: scenarioFile,
+    coverage: {
+      features: ["swap"],
+      states: ["quoteLoaded"],
+      components: ["quotePanel"],
+    },
+  };
+  const expectedMissingCoverage = {
+    features: ["approve"],
+    states: ["approvalPending"],
+    components: ["actionButtonRow"],
+  };
   await writeFile(
     adapterScript,
     `
 const chunks = [];
 for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
 const input = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+const expectedScenario = ${JSON.stringify(expectedScenario)};
+const expectedMissingCoverage = ${JSON.stringify(expectedMissingCoverage)};
+const scenario = input.scenarios?.find((item) => item.id === expectedScenario.id);
+if (!scenario) throw new Error("scenario catalog missing");
+if (
+  scenario.id !== expectedScenario.id ||
+  scenario.name !== expectedScenario.name ||
+  scenario.source !== expectedScenario.source ||
+  JSON.stringify(scenario.coverage) !== JSON.stringify(expectedScenario.coverage)
+) throw new Error("scenario catalog contract mismatch");
+if (JSON.stringify(input.coverage?.missing) !== JSON.stringify(expectedMissingCoverage)) {
+  throw new Error("coverage missing contract mismatch");
+}
 if (!Array.isArray(input.prompts)) throw new Error("prompts missing");
 	process.stdout.write(JSON.stringify([
 	  {
