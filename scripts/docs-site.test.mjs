@@ -34,6 +34,54 @@ test("docs navigation exposes the DeFi dashboard dogfood guide", async () => {
   assert.match(koGuide, /@lunatest\/example-defi-dashboard/);
 });
 
+test("MCP stdio documentation describes the project-aware executable in both languages", async () => {
+  const config = await readFile(new URL("../docs/.vitepress/config.mts", import.meta.url), "utf8");
+  const readDoc = async (path) => readFile(new URL(path, import.meta.url), "utf8").catch(() => "");
+  const [guide, koGuide, libraryGuide, koLibraryGuide, api, koApi] = await Promise.all([
+    readDoc("../docs/guides/mcp-stdio.md"),
+    readDoc("../docs/ko/guides/mcp-stdio.md"),
+    readDoc("../docs/guides/library-consumption.md"),
+    readDoc("../docs/ko/guides/library-consumption.md"),
+    readDoc("../docs/api/mcp.md"),
+    readDoc("../docs/ko/api/mcp.md"),
+  ]);
+
+  assert.match(config, /\{ text: "MCP stdio", link: "\/guides\/mcp-stdio" \}/);
+  assert.match(config, /\{ text: "MCP stdio", link: "\/ko\/guides\/mcp-stdio" \}/);
+
+  for (const doc of [guide, koGuide]) {
+    assert.match(doc, /pnpm exec lunatest-mcp/);
+    assert.match(doc, /--config <path>/);
+    assert.match(doc, /--empty/);
+    assert.match(doc, /lunatest\.lua/);
+    assert.match(doc, /scenarios\/swap\.lua/);
+    assert.match(doc, /scenario\.list/);
+    assert.match(doc, /scenario\.run/);
+    assert.match(doc, /coverage\.report/);
+    assert.match(doc, /coverage\.gaps/);
+    assert.match(doc, /coverage\.suggest/);
+    assert.match(doc, /process-memory|프로세스 메모리/);
+    assert.doesNotMatch(doc, /packages\/mcp\/dist/);
+  }
+
+  for (const doc of [libraryGuide, koLibraryGuide, api, koApi]) {
+    assert.match(doc, /mcp-stdio/);
+  }
+
+  assert.match(guide, /prompt\.get` renders only caller-provided `params\.input`/);
+  assert.match(koGuide, /prompt\.get`은 호출자가 전달한 `params\.input`만 렌더링/);
+  assert.match(api, /prompt\.get` renders only caller-provided `params\.input`/);
+  assert.match(koApi, /prompt\.get`은 호출자가 전달한 `params\.input`만 렌더링/);
+
+  for (const doc of [guide, api]) {
+    assert.doesNotMatch(doc, /active project coverage\/component context/);
+  }
+
+  for (const doc of [koGuide, koApi]) {
+    assert.doesNotMatch(doc, /현재 프로젝트의 coverage\/component 컨텍스트/);
+  }
+});
+
 test("docs do not link to repository files through VitePress-relative examples paths", async () => {
   const docs = [
     "../docs/guides/local-preset-authoring.md",

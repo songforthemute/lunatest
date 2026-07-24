@@ -2,9 +2,18 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { loadLunaConfig } from "@lunatest/core";
+vi.mock("@lunatest/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@lunatest/core")>();
+
+  return {
+    ...actual,
+    createDeterministicScenarioAdapter: vi.fn(actual.createDeterministicScenarioAdapter),
+  };
+});
+
+import { createDeterministicScenarioAdapter, loadLunaConfig } from "@lunatest/core";
 
 import { executeCommand } from "../cli";
 import { loadConfig } from "../config";
@@ -18,6 +27,7 @@ afterEach(async () => {
       await rm(dir, { recursive: true, force: true });
     }),
   );
+  vi.mocked(createDeterministicScenarioAdapter).mockClear();
 });
 
 async function withLuaScenarioFile(): Promise<string> {
@@ -76,12 +86,40 @@ async function withConfiguredProject(): Promise<{
   );
 
   const adapterScript = join(dir, "adapter.mjs");
+  const expectedScenario = {
+    id: scenarioFile.slice(0, -4).split("\\").join("/"),
+    name: "swap-smoke",
+    source: scenarioFile,
+    coverage: {
+      features: ["swap"],
+      states: ["quoteLoaded"],
+      components: ["quotePanel"],
+    },
+  };
+  const expectedMissingCoverage = {
+    features: ["approve"],
+    states: ["approvalPending"],
+    components: ["actionButtonRow"],
+  };
   await writeFile(
     adapterScript,
     `
 const chunks = [];
 for await (const chunk of process.stdin) chunks.push(Buffer.from(chunk));
 const input = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+const expectedScenario = ${JSON.stringify(expectedScenario)};
+const expectedMissingCoverage = ${JSON.stringify(expectedMissingCoverage)};
+const scenario = input.scenarios?.find((item) => item.id === expectedScenario.id);
+if (!scenario) throw new Error("scenario catalog missing");
+if (
+  scenario.id !== expectedScenario.id ||
+  scenario.name !== expectedScenario.name ||
+  scenario.source !== expectedScenario.source ||
+  JSON.stringify(scenario.coverage) !== JSON.stringify(expectedScenario.coverage)
+) throw new Error("scenario catalog contract mismatch");
+if (JSON.stringify(input.coverage?.missing) !== JSON.stringify(expectedMissingCoverage)) {
+  throw new Error("coverage missing contract mismatch");
+}
 if (!Array.isArray(input.prompts)) throw new Error("prompts missing");
 	process.stdout.write(JSON.stringify([
 	  {
@@ -132,6 +170,62 @@ describe("cli", () => {
     expect(result.output).toContain("failed=0");
   });
 
+  it("preserves fallback paths when no project config exists", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "lunatest-cli-default-config-"));
+    tempDirs.push(cwd);
+
+    await expect(loadConfig(cwd)).resolves.toMatchObject({
+      cwd,
+      configPath: null,
+      scenarioDir: "scenarios",
+      luaConfigPath: "lunatest.lua",
+      resolvedScenarioDir: join(cwd, "scenarios"),
+      resolvedLuaConfigPath: join(cwd, "lunatest.lua"),
+    });
+  });
+
+  it("uses the shared deterministic adapter for given and intercept state", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "lunatest-cli-deterministic-adapter-"));
+    tempDirs.push(dir);
+    const file = join(dir, "deterministic.lua");
+    await writeFile(
+      file,
+      `scenario {
+  name = "cli-deterministic-intercept",
+  given = {
+    wallet = { connected = true },
+    quote = { status = "loading" }
+  },
+  when = { action = "swap" },
+  intercept = {
+    routes = {
+      { endpointType = "ethereum", method = "eth_chainId", responseKey = "chain-id" }
+    },
+    state = { quote = { status = "ready" } }
+  },
+  then_ui = {
+    wallet = { connected = true },
+    quote = { status = "ready" }
+  },
+  then_state = {
+    wallet = { connected = true },
+    quote = { status = "ready" }
+  }
+}
+`,
+      "utf8",
+    );
+
+    const result = await executeCommand(["run", "--scenario", file]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain("Scenario Summary");
+    expect(result.output).toContain(`PASS cli-deterministic-intercept source=${file}`);
+    expect(result.output).toContain("passed=1");
+    expect(result.output).toContain("failed=0");
+    expect(createDeterministicScenarioAdapter).toHaveBeenCalledTimes(1);
+  });
+
   it("runs validate command with glob scenario path", async () => {
     const file = await withLuaScenarioFile();
     const result = await executeCommand(["validate", "--scenario", file]);
@@ -159,8 +253,26 @@ describe("cli", () => {
     const result = await executeCommand(["coverage"], { cwd });
 
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain("\"known\"");
-    expect(result.output).toContain("\"missing\"");
+    expect(JSON.parse(result.output)).toEqual({
+      total: 6,
+      covered: 3,
+      ratio: 0.5,
+      known: {
+        features: ["approve", "swap"],
+        states: ["approvalPending", "quoteLoaded"],
+        components: ["actionButtonRow", "quotePanel"],
+      },
+      coveredTargets: {
+        features: ["swap"],
+        states: ["quoteLoaded"],
+        components: ["quotePanel"],
+      },
+      missing: {
+        features: ["approve"],
+        states: ["approvalPending"],
+        components: ["actionButtonRow"],
+      },
+    });
   });
 
   it("runs devtools command with --open", async () => {

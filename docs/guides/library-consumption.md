@@ -171,6 +171,10 @@ const web3LikeProvider = createWeb3JsAdapter(provider);
 
 ## MCP stdio Example
 
+For the installed, project-aware `lunatest-mcp` executable, including `lunatest.config.json` discovery, `--config`, `--empty`, and JSON-RPC examples, see the [MCP stdio Guide](./mcp-stdio.md).
+
+The embedded API below remains useful when the host application supplies every scenario and transport stream itself. It is distinct from the config-aware executable.
+
 ```ts
 import { createMcpServer, runStdioServer } from "@lunatest/mcp";
 
@@ -220,4 +224,5 @@ expect({ pass: true }).toLunaPass();
 - `docs/guides/wagmi-setup.md`
 - `docs/guides/ethers-setup.md`
 - `docs/guides/web3js-setup.md`
+- `docs/guides/mcp-stdio.md`
 - `docs/ko/guides/e2e-0to1.md`

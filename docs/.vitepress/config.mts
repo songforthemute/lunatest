@@ -69,6 +69,7 @@ export default defineConfig({
         text: "Guides",
         items: [
           { text: "Library Consumption", link: "/guides/library-consumption" },
+          { text: "MCP stdio", link: "/guides/mcp-stdio" },
           { text: "Live Demo", link: "/guides/live-demo" },
           { text: "Protocol and Wallet Support", link: "/guides/protocol-support" },
           { text: "DeFi Dashboard Dogfood", link: "/guides/defi-dashboard-dogfood" },

@@ -10,7 +10,7 @@ import {
 
 type LuaScenarioSource = string | URL | LuaConfig;
 
-type ExecuteAdapter = {
+export type ExecuteLuaScenarioAdapter = {
   runWhen?: (context: {
     config: LuaConfig;
     runtime: ScenarioRuntime;
@@ -35,7 +35,7 @@ type ExecuteAdapter = {
 
 export type ExecuteLuaScenarioInput = {
   source: LuaScenarioSource;
-  adapter?: ExecuteAdapter;
+  adapter?: ExecuteLuaScenarioAdapter;
 };
 
 export type ExecuteLuaScenarioResult = {
@@ -76,6 +76,30 @@ function normalizeScenario(config: LuaConfig): {
     },
     then_ui: config.then_ui ?? {},
     then_state: config.then_state,
+  };
+}
+
+export function createDeterministicScenarioAdapter(): ExecuteLuaScenarioAdapter {
+  return {
+    runWhen({ config, runtime }) {
+      if (config.intercept?.routes) {
+        runtime.setRouteMocks(config.intercept.routes);
+      }
+
+      if (config.given) {
+        runtime.applyInterceptState(config.given);
+      }
+
+      if (config.intercept?.state) {
+        runtime.applyInterceptState(config.intercept.state);
+      }
+    },
+    resolveUi({ runtime }) {
+      return runtime.getInterceptState();
+    },
+    resolveState({ runtime }) {
+      return runtime.getInterceptState();
+    },
   };
 }
 
