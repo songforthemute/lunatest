@@ -208,12 +208,13 @@ try {
     tarball: packPackage(resolve(process.cwd(), pkg.dir), tarballsDir),
   }));
 
-  const workspaceOverrides = formatWorkspaceOverrides(createTarballOverrides(tarballs));
-
   for (const reactPeer of reactPeerMatrix) {
     const matrixConsumerDir = join(consumerDir, reactPeer.label);
 
     mkdirSync(matrixConsumerDir, { recursive: true });
+    const workspaceOverrides = formatWorkspaceOverrides(
+      createTarballOverrides(tarballs, matrixConsumerDir),
+    );
 
     writeFileSync(
       join(matrixConsumerDir, "package.json"),

@@ -43,3 +43,15 @@
 1. Audit other direct pnpm child-process invocations and include only callers that are cross-platform build paths.
 2. Run `pnpm -r lint`, `pnpm run build:workspace:ci`, `pnpm docs:build`, and `pnpm consumer-smoke:pack`.
 3. Push the PR update and require all Linux, macOS, and Windows consumer jobs to succeed. Do not exclude examples or weaken the workflow.
+
+### Task 4: Keep packed tarball overrides independent of absolute temp paths
+
+**Files:**
+- Modify: `scripts/pnpm-workspace-overrides.mjs`
+- Modify: `scripts/consumer-smoke-pack.mjs`
+- Modify: `scripts/dependency-policy.test.mjs`
+
+1. Generate each `file:` override relative to its matrix consumer workspace instead of from an absolute `file://` URI.
+2. Normalize Windows separators to `/` so the YAML target has no drive path, backslash escaping, or encoded short-path characters.
+3. Reproduce POSIX and Windows `RUNNER~1` temp paths and assert the rendered value is `file:../../tarballs/...`; reject cross-drive paths that cannot be represented relative to the consumer workspace.
+4. Re-run the Windows native consumer job through the existing PR gate.

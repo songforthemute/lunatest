@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { win32 } from "node:path";
 
 import {
   createTarballOverrides,
@@ -76,23 +77,46 @@ test("consumer pack smoke writes local tarball overrides to pnpm-workspace.yaml"
   const smokeScript = await readRootFile("scripts/consumer-smoke-pack.mjs");
 
   assert.match(smokeScript, /pnpm-workspace\.yaml/);
-  assert.match(smokeScript, /createTarballOverrides/);
+  assert.match(smokeScript, /createTarballOverrides\(tarballs, matrixConsumerDir\)/);
   assert.match(smokeScript, /minimumReleaseAge/);
   assert.match(smokeScript, /blockExoticSubdeps/);
   assert.doesNotMatch(smokeScript, /pnpm:\s*{\s*overrides/s);
   assert.doesNotMatch(smokeScript, /file:\$\{pkg\.tarball\}/);
 });
 
-test("consumer pack smoke writes YAML-safe tarball override values", () => {
-  const overrides = createTarballOverrides([
-    { name: "@lunatest/core", tarball: "/tmp/lunatest/core.tgz" },
-  ]);
-  const escaped = formatWorkspaceOverrides({
-    "@lunatest/core": "file:C:\\Users\\runner\\core.tgz",
-  });
+test("consumer pack smoke writes platform-safe workspace-relative tarball overrides", () => {
+  const posixOverrides = createTarballOverrides(
+    [{ name: "@lunatest/core", tarball: "/tmp/lunatest-consumer-pack/tarballs/lunatest-core-0.1.3.tgz" }],
+    "/tmp/lunatest-consumer-pack/consumer/react18",
+  );
+  const consumerDir = "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\lunatest-consumer-pack\\consumer\\react18";
+  const overrides = createTarballOverrides(
+    [
+      {
+        name: "@lunatest/core",
+        tarball: "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\lunatest-consumer-pack\\tarballs\\lunatest-core-0.1.3.tgz",
+      },
+    ],
+    consumerDir,
+    win32.relative,
+  );
 
-  assert.equal(overrides["@lunatest/core"], "file:///tmp/lunatest/core.tgz");
-  assert.equal(escaped, '  "@lunatest/core": "file:C:\\\\Users\\\\runner\\\\core.tgz"');
+  assert.equal(posixOverrides["@lunatest/core"], "file:../../tarballs/lunatest-core-0.1.3.tgz");
+  assert.equal(overrides["@lunatest/core"], "file:../../tarballs/lunatest-core-0.1.3.tgz");
+  assert.doesNotMatch(overrides["@lunatest/core"], /%7E/i);
+  assert.equal(
+    formatWorkspaceOverrides(overrides),
+    '  "@lunatest/core": "file:../../tarballs/lunatest-core-0.1.3.tgz"',
+  );
+  assert.throws(
+    () => createTarballOverrides(
+      [{ name: "@lunatest/core", tarball: "D:\\tarballs\\lunatest-core-0.1.3.tgz" }],
+      consumerDir,
+      win32.relative,
+      win32.isAbsolute,
+    ),
+    /must be relative to the consumer workspace/,
+  );
 });
 
 test("example apps use the patched Vite 6 line directly", async () => {
