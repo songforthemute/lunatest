@@ -10,6 +10,18 @@ function countOccurrences(source, needle) {
   return source.split(needle).length - 1;
 }
 
+function getWorkflowJob(workflow, jobName) {
+  const jobHeader = `  ${jobName}:\n`;
+  const start = workflow.indexOf(jobHeader);
+
+  assert.notEqual(start, -1, `CI workflow should define the ${jobName} job`);
+
+  const bodyStart = start + jobHeader.length;
+  const nextJobOffset = workflow.slice(bodyStart).search(/^  [A-Za-z0-9_-]+:\n/m);
+
+  return workflow.slice(start, nextJobOffset === -1 ? workflow.length : bodyStart + nextJobOffset);
+}
+
 test("package.json exposes CI wrapper scripts", async () => {
   const pkg = await readJson(new URL("../package.json", import.meta.url));
 
@@ -60,6 +72,43 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   assert.doesNotMatch(ciWorkflow, /pnpm -r --filter=!@lunatest\/e2e-tests test/);
   assert.match(benchmarkWorkflow, /pnpm run perf:absolute:ci/);
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
+});
+
+test("CI runs packed consumer smoke on all supported desktop platforms", async () => {
+  const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+  const linuxJob = getWorkflowJob(ciWorkflow, "consumer-smoke-pack");
+  const performanceJob = getWorkflowJob(ciWorkflow, "performance-regression");
+
+  assert.match(linuxJob, /^  consumer-smoke-pack:\n    runs-on: ubuntu-latest\n    needs: quality\n/m);
+  assert.match(
+    performanceJob,
+    /^  performance-regression:\n    if: github\.event_name == 'pull_request' \|\| github\.event_name == 'push'\n    runs-on: ubuntu-latest\n    needs: \[quality, consumer-smoke-pack, e2e-smoke\]\n/m,
+  );
+  assert.doesNotMatch(performanceJob, /consumer-smoke-pack-(?:windows|macos)/);
+
+  for (const [jobName, runner] of [
+    ["consumer-smoke-pack-windows", "windows-latest"],
+    ["consumer-smoke-pack-macos", "macos-latest"],
+  ]) {
+    const job = getWorkflowJob(ciWorkflow, jobName);
+
+    assert.match(
+      job,
+      new RegExp(
+        `^  ${jobName}:\\n    if: github\\.event_name == 'pull_request' \\|\\| github\\.ref == 'refs/heads/main'\\n    runs-on: ${runner}\\n    needs: quality\\n`,
+        "m",
+      ),
+    );
+    assert.match(job, /actions\/checkout@v6\.0\.2/);
+    assert.match(job, /pnpm\/action-setup@v6\.0\.8/);
+    assert.match(job, /version: 10\.33\.4/);
+    assert.match(job, /actions\/setup-node@v6\.4\.0/);
+    assert.match(job, /node-version: 24/);
+    assert.match(job, /cache: pnpm/);
+    assert.match(job, /pnpm install --frozen-lockfile/);
+    assert.match(job, /pnpm run build:workspace:ci/);
+    assert.match(job, /pnpm consumer-smoke:pack/);
+  }
 });
 
 test("merge-critical workflows expose manual dispatch fallback", async () => {
