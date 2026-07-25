@@ -23,24 +23,14 @@ export function resolveCommandInvocation(command, args, options = {}) {
   return { command, args, shell };
 }
 
-function isWindowsPnpmCmdInvocation(invocation, platform) {
-  return (
-    platform === "win32" &&
-    invocation.shell === false &&
-    invocation.args[0] === "/d" &&
-    invocation.args[1] === "/c" &&
-    invocation.args[2] === "pnpm.cmd"
-  );
-}
-
-export function terminateCommandProcess(child, invocation, options = {}) {
+export function terminateCommandProcess(child, options = {}) {
   const {
     platform = process.platform,
     runSync = spawnSync,
     signal = "SIGTERM",
   } = options;
 
-  if (isWindowsPnpmCmdInvocation(invocation, platform) && Number.isInteger(child.pid) && child.pid > 0) {
+  if (platform === "win32" && Number.isInteger(child.pid) && child.pid > 0) {
     try {
       const result = runSync(
         "taskkill.exe",
@@ -260,14 +250,14 @@ export function startCommand(command, args, cwd, options = {}) {
     },
     async stop(signal = "SIGTERM", timeoutMs = DEFAULT_STOP_TIMEOUT_MS) {
       if (!exitResult) {
-        terminateCommandProcess(child, invocation, { signal });
+        terminateCommandProcess(child, { signal });
       }
 
       try {
         return await this.waitForExit(timeoutMs);
       } catch (error) {
         if (!exitResult) {
-          terminateCommandProcess(child, invocation, { signal: "SIGKILL" });
+          terminateCommandProcess(child, { signal: "SIGKILL" });
           return this.waitForExit(timeoutMs);
         }
         throw error;

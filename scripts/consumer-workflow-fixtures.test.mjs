@@ -168,7 +168,7 @@ test("command invocation resolver runs Windows pnpm through cmd.exe without a sh
   );
 });
 
-test("MCP smoke and Windows pnpm cleanup use direct safe process invocations", (t) => {
+test("MCP smoke invocation and Windows Node CLI adapter tree cleanup use safe process invocations", (t) => {
   const fixture = createInstalledPackageFixture({
     packageName: "@lunatest/mcp",
     bin: { "lunatest-mcp": "./dist/bin/mcp-stdio.js" },
@@ -183,25 +183,25 @@ test("MCP smoke and Windows pnpm cleanup use direct safe process invocations", (
   });
 
   const taskkillCalls = [];
-  const wrappedChild = {
+  const nodeChild = {
+    command: process.execPath,
     pid: 4242,
     killCalls: [],
     kill(signal) {
       this.killCalls.push(signal);
     },
   };
-  const windowsPnpm = smokeHelpers.resolveCommandInvocation("pnpm", ["exec", "lunatest"], {
-    platform: "win32",
-    comSpec: "cmd.exe",
-  });
 
-  smokeHelpers.terminateCommandProcess(wrappedChild, windowsPnpm, {
-    platform: "win32",
-    runSync(command, args, options) {
-      taskkillCalls.push({ command, args, options });
-      return { status: 0 };
+  smokeHelpers.terminateCommandProcess(
+    nodeChild,
+    {
+      platform: "win32",
+      runSync(command, args, options) {
+        taskkillCalls.push({ command, args, options });
+        return { status: 0 };
+      },
     },
-  });
+  );
 
   assert.deepEqual(taskkillCalls, [
     {
@@ -210,29 +210,60 @@ test("MCP smoke and Windows pnpm cleanup use direct safe process invocations", (
       options: { shell: false, stdio: "ignore" },
     },
   ]);
-  assert.deepEqual(wrappedChild.killCalls, []);
+  assert.deepEqual(nodeChild.killCalls, []);
 
-  for (const [invocation, platform] of [
-    [{ command: process.execPath, args: ["cli.mjs"], shell: false }, "win32"],
-    [{ command: "pnpm", args: ["exec", "lunatest"], shell: false }, "linux"],
-  ]) {
-    const child = {
-      pid: 4242,
-      killCalls: [],
-      kill(signal) {
-        this.killCalls.push(signal);
-      },
-    };
-
-    smokeHelpers.terminateCommandProcess(child, invocation, {
-      platform,
+  const posixChild = {
+    command: process.execPath,
+    pid: 4242,
+    killCalls: [],
+    kill(signal) {
+      this.killCalls.push(signal);
+    },
+  };
+  smokeHelpers.terminateCommandProcess(
+    posixChild,
+    {
+      platform: "linux",
       runSync() {
-        throw new Error("taskkill should not run for direct invocations");
+        throw new Error("taskkill should not run on POSIX");
       },
-    });
+    },
+  );
 
-    assert.deepEqual(child.killCalls, ["SIGTERM"]);
-  }
+  assert.deepEqual(posixChild.killCalls, ["SIGTERM"]);
+});
+
+test("consumer smoke command plan keeps every CLI and MCP flow Node-direct", async () => {
+  const { createConsumerSmokeCommandPlan } = await import("./consumer-smoke-commands.mjs");
+  const cliBin = { command: process.execPath, args: ["/fixtures/cli.mjs"], shell: false };
+  const mcpBin = { command: process.execPath, args: ["/fixtures/mcp.mjs"], shell: false };
+
+  assert.deepEqual(
+    createConsumerSmokeCommandPlan({
+      cliBin,
+      mcpBin,
+      configPath: "/fixtures/lunatest.config.json",
+    }),
+    {
+      cli: {
+        validate: { command: process.execPath, args: ["/fixtures/cli.mjs", "validate"], shell: false },
+        run: { command: process.execPath, args: ["/fixtures/cli.mjs", "run"], shell: false },
+        coverage: { command: process.execPath, args: ["/fixtures/cli.mjs", "coverage"], shell: false },
+        generate: { command: process.execPath, args: ["/fixtures/cli.mjs", "gen", "--ai"], shell: false },
+        watch: { command: process.execPath, args: ["/fixtures/cli.mjs", "watch"], shell: false },
+        doctor: { command: process.execPath, args: ["/fixtures/cli.mjs", "doctor"], shell: false },
+      },
+      mcp: {
+        default: { command: process.execPath, args: ["/fixtures/mcp.mjs"], shell: false },
+        project: {
+          command: process.execPath,
+          args: ["/fixtures/mcp.mjs", "--config", "/fixtures/lunatest.config.json"],
+          shell: false,
+        },
+        empty: { command: process.execPath, args: ["/fixtures/mcp.mjs", "--empty"], shell: false },
+      },
+    },
+  );
 });
 
 test("installed package bin resolver runs manifest bins through Node on every platform", (t) => {
