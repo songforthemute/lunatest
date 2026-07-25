@@ -1,6 +1,7 @@
 # CI Integration
 
 권장 CI 구성은 PR 스모크 게이트와 야간 확장 게이트를 분리해 운영하는 방식입니다.
+로컬 개발 명령은 빠른 반복을 우선하고, fresh checkout에서 실행되는 CI는 필요한 prebuild를 명시적으로 수행합니다.
 
 ## PR Required Gates
 
@@ -10,9 +11,11 @@
 4. `pnpm run test:workspace:ci`
 5. `pnpm lint:deadcode`
 6. `pnpm pack:check-integrity`
-7. `pnpm consumer-smoke:pack`
-8. `pnpm run test:e2e:smoke:ci`
-9. `pnpm run perf:regression:ci`
+7. Linux packed consumer smoke (`consumer-smoke-pack`)
+8. Windows packed consumer smoke (`consumer-smoke-pack-windows`)
+9. macOS packed consumer smoke (`consumer-smoke-pack-macos`)
+10. `pnpm run test:e2e:smoke:ci`
+11. `pnpm run perf:regression:ci`
 
 ## Nightly Gates
 
@@ -21,15 +24,33 @@
 
 PR에서는 머지를 막아야 할 리스크를 빠르게 잡고, 야간 배치에서는 확장 시나리오로 품질 저하를 조기에 탐지합니다.
 `test:e2e:*`는 workspace source integration 경로를 검증합니다. 패키지 public entrypoint 소비 검증은 `consumer-smoke:pack`과 `consumer-smoke:npm`이 담당합니다.
-`consumer-smoke:pack`은 stable/next 공개 패키지를 모두 로컬 tarball로 설치하고 React 18/19 peer 조합에서 root/browser entrypoint, CLI bin, MCP bin, plugin entrypoint를 검증합니다.
-`consumer-smoke-pack` job은 quality 이후에 실행되며, publish 전 tarball 소비 검증을 담당합니다. `performance-regression`는 이 job과 `e2e-smoke`가 끝난 뒤에만 실행됩니다.
+`consumer-smoke:pack`은 stable/next 공개 패키지를 모두 로컬 tarball로 설치하고 React 18/19 peer 조합에서 public package entrypoint, CLI bin, MCP bin, plugin entrypoint를 검증합니다.
+
+## Local Commands and CI Preconditions
+
+로컬 개발에서는 기존 `test:e2e:smoke`, `test:e2e:extended`를 그대로 사용해 빠르게 반복할 수 있습니다. packed consumer 검증을 로컬에서 재현할 때는 CI와 같은 prebuild를 먼저 실행합니다.
+
+```sh
+pnpm run build:workspace:ci
+pnpm consumer-smoke:pack
+```
+
+CI 전용 wrapper script(`build:workspace:ci`, `lint:workspace:ci`, `test:workspace:ci`, `test:e2e:*:ci`, `perf:*:ci`)는 fresh checkout에서 필요한 prebuild coupling을 중앙화합니다. `build/lint/test:workspace:ci`는 root workspace package와 `@lunatest/e2e-tests`를 명시적으로 제외해 root recursive script가 다시 전체 workspace를 실행하지 않도록 고정합니다. `test:e2e:*:ci`와 `perf:*:ci`는 wrapper 안에서 build를 수행합니다. consumer smoke job은 각 runner에서 `pnpm run build:workspace:ci`를 실행한 다음 `pnpm consumer-smoke:pack`을 실행합니다.
+
+## Cross-Platform Packed Consumer Gates
+
+`consumer-smoke-pack`은 기존 Linux gate이며 Ubuntu에서 `quality` 이후 실행됩니다. `consumer-smoke-pack-windows`와 `consumer-smoke-pack-macos`는 같은 tarball 소비 검증을 각각 Windows와 macOS에서 native로 실행합니다. 세 gate는 Linux, Windows, macOS의 package resolution과 public entrypoint 소비 경로를 함께 확인합니다.
+
+Windows/macOS native gate는 pull request와 `main` push에서만 실행합니다. feature branch push에서는 PR 실행과 중복되는 native runner 비용을 피하기 위해 의도적으로 건너뜁니다. Release workflow는 계속 Ubuntu에서만 실행됩니다.
+
+`performance-regression`는 Linux `consumer-smoke-pack`과 `e2e-smoke`가 끝난 뒤에만 실행됩니다. Windows/macOS gate를 성능 측정의 선행 조건으로 추가하지 않아, native platform 검증과 성능 회귀 측정의 목적 및 비용을 분리합니다.
+
+Workflow가 성공해도 그 자체로 merge를 강제하지는 않습니다. GitHub branch protection 또는 ruleset에서 required check를 별도로 구성하기 전까지는 필수 gate가 아닙니다. 이 enforcement 설정은 workflow 변경과 분리된 governance 작업으로 관리합니다.
 
 `pnpm lint:workspace-types`는 workspace 패키지의 `dist` 산출물을 임시로 제거한 상태에서 lint를 다시 실행해,
 fresh checkout에서도 내부 타입 해석이 build artifact에 의존하지 않는다는 점을 검증합니다.
 `pnpm lint:deadcode`는 빠른 PR gate로 unused file drift를 확인합니다. 더 넓은 unused export/dependency 감사가 필요할 때는 `pnpm lint:deadcode:strict`를 수동 또는 릴리스 전 점검으로 실행합니다.
 
-CI 전용 wrapper script(`build:workspace:ci`, `lint:workspace:ci`, `test:workspace:ci`, `test:e2e:*:ci`, `perf:*:ci`)는 fresh checkout에서 필요한 prebuild coupling을 중앙화합니다. `build/lint/test:workspace:ci`는 root workspace package와 `@lunatest/e2e-tests`를 명시적으로 제외해 root recursive script가 다시 전체 workspace를 실행하지 않도록 고정합니다. `main` 브랜치 릴리스와 PR CI 모두 이 wrapper를 기준으로 workspace quality, E2E, 성능 게이트를 실행합니다.
-로컬 개발에서는 기존 `test:e2e:smoke`, `test:e2e:extended`를 그대로 써도 됩니다.
 Workspace orchestration은 현재 pnpm wrapper를 기준으로 운영하며, 별도 turbo pipeline은 유지하지 않습니다.
 
 ## Post-Merge Monitoring
