@@ -5,8 +5,22 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_STOP_TIMEOUT_MS = 2_000;
 
-export function resolveCommandExecutable(command, platform = process.platform) {
-  return command === "pnpm" && platform === "win32" ? "pnpm.cmd" : command;
+export function resolveCommandInvocation(command, args, options = {}) {
+  const {
+    platform = process.platform,
+    comSpec = process.env.ComSpec,
+    shell = false,
+  } = options;
+
+  if (command === "pnpm" && platform === "win32") {
+    return {
+      command: comSpec ?? "cmd.exe",
+      args: ["/d", "/c", "pnpm.cmd", ...args],
+      shell: false,
+    };
+  }
+
+  return { command, args, shell };
 }
 
 function jsonRpcIdKey(id) {
@@ -85,10 +99,11 @@ export function resolveInstalledPackageBin(packageName, binName, cwd) {
 }
 
 export function startCommand(command, args, cwd, options = {}) {
-  const child = spawn(resolveCommandExecutable(command), args, {
+  const invocation = resolveCommandInvocation(command, args, { shell: options.shell ?? false });
+  const child = spawn(invocation.command, invocation.args, {
     cwd,
     env: options.env,
-    shell: options.shell ?? false,
+    shell: invocation.shell,
     stdio: ["pipe", "pipe", "pipe"],
   });
   let stdout = "";
@@ -100,8 +115,8 @@ export function startCommand(command, args, cwd, options = {}) {
   const inputErrorListeners = new Set();
 
   const snapshot = () => ({
-    command,
-    args,
+    command: invocation.command,
+    args: invocation.args,
     stdout,
     stderr,
     exitResult,
@@ -441,24 +456,24 @@ export function startJsonRpcClient(command, args, cwd, options = {}) {
 }
 
 export function run(command, args, cwd, options = {}) {
-  const result = spawnSync(resolveCommandExecutable(command), args, {
+  const invocation = resolveCommandInvocation(command, args, { shell: options.shell ?? false });
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd,
     encoding: "utf8",
     stdio: "pipe",
     ...options,
+    shell: invocation.shell,
   });
 
   if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
     throw new Error(
-      [
-        `Command failed: ${command} ${args.join(" ")}`,
-        stdout ? `stdout:\n${stdout}` : "",
-        stderr ? `stderr:\n${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
+      formatCommandFailure({
+        command: invocation.command,
+        args: invocation.args,
+        reason: result.error?.message ?? `Exited with code ${result.status ?? "null"}`,
+        stdout: result.stdout ?? "",
+        stderr: result.stderr ?? "",
+      }),
     );
   }
 
@@ -486,23 +501,26 @@ export function packPackage(packageDir, outputDir) {
 
 export function startMcpSmoke(consumerDir) {
   const command = "pnpm";
+  const args = ["exec", "lunatest-mcp", "--empty"];
+  const invocation = resolveCommandInvocation(command, args);
   const result = spawnSync(
-    resolveCommandExecutable(command),
-    ["exec", "lunatest-mcp", "--empty"],
+    invocation.command,
+    invocation.args,
     {
       cwd: consumerDir,
       encoding: "utf8",
       stdio: "pipe",
       input: `${JSON.stringify({ id: "empty-list", method: "scenario.list" })}\n`,
       timeout: DEFAULT_TIMEOUT_MS,
+      shell: invocation.shell,
     },
   );
 
   if (result.status !== 0) {
     throw new Error(
       formatCommandFailure({
-        command,
-        args: ["exec", "lunatest-mcp", "--empty"],
+        command: invocation.command,
+        args: invocation.args,
         reason: result.error?.message ?? `Exited with code ${result.status ?? "null"}`,
         stdout: result.stdout ?? "",
         stderr: result.stderr ?? "",
@@ -516,8 +534,8 @@ export function startMcpSmoke(consumerDir) {
   } catch {
     throw new Error(
       formatCommandFailure({
-        command,
-        args: ["exec", "lunatest-mcp", "--empty"],
+        command: invocation.command,
+        args: invocation.args,
         reason: "Expected a JSON-RPC response",
         stdout: result.stdout ?? "",
         stderr: result.stderr ?? "",

@@ -137,10 +137,35 @@ test("consumer workflow fixture defines the configured scenario and deterministi
   assert.match(fixture.updatedScenario, /name = "swap-smoke-updated"/);
 });
 
-test("command executable resolver uses the pnpm.cmd shim only on Windows", () => {
-  assert.equal(smokeHelpers.resolveCommandExecutable("pnpm", "win32"), "pnpm.cmd");
-  assert.equal(smokeHelpers.resolveCommandExecutable("pnpm", "linux"), "pnpm");
-  assert.equal(smokeHelpers.resolveCommandExecutable("node", "win32"), "node");
+test("command invocation resolver runs Windows pnpm through cmd.exe without a shell", () => {
+  const pnpmArgs = ["exec", "lunatest", "validate"];
+
+  assert.deepEqual(
+    smokeHelpers.resolveCommandInvocation("pnpm", pnpmArgs, {
+      platform: "win32",
+      comSpec: "C:\\Windows\\System32\\cmd.exe",
+    }),
+    {
+      command: "C:\\Windows\\System32\\cmd.exe",
+      args: ["/d", "/c", "pnpm.cmd", ...pnpmArgs],
+      shell: false,
+    },
+  );
+  assert.deepEqual(
+    smokeHelpers.resolveCommandInvocation("pnpm", pnpmArgs, { platform: "linux" }),
+    { command: "pnpm", args: pnpmArgs, shell: false },
+  );
+  assert.deepEqual(
+    smokeHelpers.resolveCommandInvocation("node", ["smoke.mjs"], { platform: "win32" }),
+    { command: "node", args: ["smoke.mjs"], shell: false },
+  );
+  assert.deepEqual(
+    smokeHelpers.resolveCommandInvocation("node", ["smoke.mjs"], {
+      platform: "win32",
+      shell: true,
+    }),
+    { command: "node", args: ["smoke.mjs"], shell: true },
+  );
 });
 
 test("installed package bin resolver runs manifest bins through Node on every platform", (t) => {
