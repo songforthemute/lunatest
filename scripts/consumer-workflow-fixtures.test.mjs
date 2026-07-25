@@ -168,6 +168,73 @@ test("command invocation resolver runs Windows pnpm through cmd.exe without a sh
   );
 });
 
+test("MCP smoke and Windows pnpm cleanup use direct safe process invocations", (t) => {
+  const fixture = createInstalledPackageFixture({
+    packageName: "@lunatest/mcp",
+    bin: { "lunatest-mcp": "./dist/bin/mcp-stdio.js" },
+  });
+  t.after(() => fixture.cleanup());
+  const binPath = fixture.writeBin("dist/bin/mcp-stdio.js");
+
+  assert.deepEqual(smokeHelpers.resolveMcpSmokeInvocation(fixture.consumerDir), {
+    command: process.execPath,
+    args: [binPath, "--empty"],
+    shell: false,
+  });
+
+  const taskkillCalls = [];
+  const wrappedChild = {
+    pid: 4242,
+    killCalls: [],
+    kill(signal) {
+      this.killCalls.push(signal);
+    },
+  };
+  const windowsPnpm = smokeHelpers.resolveCommandInvocation("pnpm", ["exec", "lunatest"], {
+    platform: "win32",
+    comSpec: "cmd.exe",
+  });
+
+  smokeHelpers.terminateCommandProcess(wrappedChild, windowsPnpm, {
+    platform: "win32",
+    runSync(command, args, options) {
+      taskkillCalls.push({ command, args, options });
+      return { status: 0 };
+    },
+  });
+
+  assert.deepEqual(taskkillCalls, [
+    {
+      command: "taskkill.exe",
+      args: ["/pid", "4242", "/T", "/F"],
+      options: { shell: false, stdio: "ignore" },
+    },
+  ]);
+  assert.deepEqual(wrappedChild.killCalls, []);
+
+  for (const [invocation, platform] of [
+    [{ command: process.execPath, args: ["cli.mjs"], shell: false }, "win32"],
+    [{ command: "pnpm", args: ["exec", "lunatest"], shell: false }, "linux"],
+  ]) {
+    const child = {
+      pid: 4242,
+      killCalls: [],
+      kill(signal) {
+        this.killCalls.push(signal);
+      },
+    };
+
+    smokeHelpers.terminateCommandProcess(child, invocation, {
+      platform,
+      runSync() {
+        throw new Error("taskkill should not run for direct invocations");
+      },
+    });
+
+    assert.deepEqual(child.killCalls, ["SIGTERM"]);
+  }
+});
+
 test("installed package bin resolver runs manifest bins through Node on every platform", (t) => {
   const fixture = createInstalledPackageFixture({
     packageName: "@lunatest/cli",

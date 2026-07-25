@@ -100,6 +100,23 @@ test("consumer pack smoke covers all public tarballs and React peer matrix", asy
   ]);
 });
 
+test("packed consumer timeout-sensitive commands invoke installed CLI and MCP bins directly", async () => {
+  const script = await readFile(new URL("../scripts/consumer-smoke-pack.mjs", import.meta.url), "utf8");
+
+  assert.match(
+    script,
+    /const cliBin = resolveInstalledPackageBin\("@lunatest\/cli", "lunatest", matrixConsumerDir\);/,
+  );
+  assert.match(script, /run\(cliBin\.command, \[\.\.\.cliBin\.args, "doctor"\], matrixConsumerDir/);
+  assert.match(script, /runAsync\(cliBin\.command, \[\.\.\.cliBin\.args, "validate"\], consumerDir\)/);
+  assert.match(script, /runAsync\(cliBin\.command, \[\.\.\.cliBin\.args, "gen", "--ai"\], consumerDir\)/);
+  assert.match(script, /const mcpBin = resolveInstalledPackageBin\("@lunatest\/mcp", "lunatest-mcp", consumerDir\);/);
+  assert.match(script, /startJsonRpcClient\(mcpBin\.command, \[\.\.\.mcpBin\.args\], consumerDir\)/);
+  assert.doesNotMatch(script, /runAsync\("pnpm", \["exec", "lunatest"/);
+  assert.doesNotMatch(script, /startJsonRpcClient\("pnpm"/);
+  assert.doesNotMatch(script, /run\("pnpm", \["exec", "lunatest", "doctor"\]/);
+});
+
 test("consumer smoke script exercises stable, next, browser, bin, and React entrypoints", () => {
   const script = createConsumerSmokeScript({ includeNextPackages: true });
 

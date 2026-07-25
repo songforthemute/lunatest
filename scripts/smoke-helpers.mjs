@@ -23,6 +23,41 @@ export function resolveCommandInvocation(command, args, options = {}) {
   return { command, args, shell };
 }
 
+function isWindowsPnpmCmdInvocation(invocation, platform) {
+  return (
+    platform === "win32" &&
+    invocation.shell === false &&
+    invocation.args[0] === "/d" &&
+    invocation.args[1] === "/c" &&
+    invocation.args[2] === "pnpm.cmd"
+  );
+}
+
+export function terminateCommandProcess(child, invocation, options = {}) {
+  const {
+    platform = process.platform,
+    runSync = spawnSync,
+    signal = "SIGTERM",
+  } = options;
+
+  if (isWindowsPnpmCmdInvocation(invocation, platform) && Number.isInteger(child.pid) && child.pid > 0) {
+    try {
+      const result = runSync(
+        "taskkill.exe",
+        ["/pid", String(child.pid), "/T", "/F"],
+        { shell: false, stdio: "ignore" },
+      );
+      if (result.status === 0 && !result.error) {
+        return;
+      }
+    } catch {
+      // taskkill을 사용할 수 없으면 기존 child signal 경로를 보존한다.
+    }
+  }
+
+  child.kill(signal);
+}
+
 function jsonRpcIdKey(id) {
   if (id !== null && typeof id !== "string" && typeof id !== "number") {
     throw new Error(`Invalid JSON-RPC response ID: ${JSON.stringify(id)}`);
@@ -225,14 +260,14 @@ export function startCommand(command, args, cwd, options = {}) {
     },
     async stop(signal = "SIGTERM", timeoutMs = DEFAULT_STOP_TIMEOUT_MS) {
       if (!exitResult) {
-        child.kill(signal);
+        terminateCommandProcess(child, invocation, { signal });
       }
 
       try {
         return await this.waitForExit(timeoutMs);
       } catch (error) {
         if (!exitResult) {
-          child.kill("SIGKILL");
+          terminateCommandProcess(child, invocation, { signal: "SIGKILL" });
           return this.waitForExit(timeoutMs);
         }
         throw error;
@@ -500,9 +535,7 @@ export function packPackage(packageDir, outputDir) {
 }
 
 export function startMcpSmoke(consumerDir) {
-  const command = "pnpm";
-  const args = ["exec", "lunatest-mcp", "--empty"];
-  const invocation = resolveCommandInvocation(command, args);
+  const invocation = resolveMcpSmokeInvocation(consumerDir);
   const result = spawnSync(
     invocation.command,
     invocation.args,
@@ -546,4 +579,14 @@ export function startMcpSmoke(consumerDir) {
   if (response.id !== "empty-list" || !Array.isArray(response.result) || response.result.length > 0) {
     throw new Error("lunatest-mcp --empty did not return an empty scenario list");
   }
+}
+
+export function resolveMcpSmokeInvocation(consumerDir) {
+  const mcpBin = resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", consumerDir);
+
+  return {
+    command: mcpBin.command,
+    args: [...mcpBin.args, "--empty"],
+    shell: false,
+  };
 }
