@@ -410,6 +410,75 @@ describe("cli", () => {
     expect(output).toContain("swap-updated");
   });
 
+  it("canonicalizes watch targets before starting filesystem watchers", async () => {
+    const { cwd } = await withConfiguredProject();
+    const config = await loadConfig(cwd);
+    await writeFile(config.resolvedLuaConfigPath, "return {}\n", "utf8");
+    const controller = new AbortController();
+    const watchedTargets: string[] = [];
+    const canonicalPaths = new Map([
+      [config.resolvedLuaConfigPath, "C:\\Users\\runneradmin\\project\\lunatest.lua"],
+      [config.resolvedScenarioDir, "C:\\Users\\runneradmin\\project\\scenarios"],
+    ]);
+    const idleWatcher = {
+      async *[Symbol.asyncIterator]() {
+        await new Promise<void>((resolve) => {
+          controller.signal.addEventListener("abort", resolve, { once: true });
+        });
+      },
+    };
+
+    setTimeout(() => controller.abort(), 25);
+
+    await watchCommand({
+      config,
+      signal: controller.signal,
+      realpathImpl(target) {
+        return Promise.resolve(canonicalPaths.get(target) ?? target);
+      },
+      watchImpl(target) {
+        watchedTargets.push(String(target));
+        return idleWatcher;
+      },
+    });
+
+    expect(watchedTargets).toEqual([...canonicalPaths.values()]);
+  });
+
+  it("retains watch targets when canonicalization races with the filesystem", async () => {
+    const { cwd } = await withConfiguredProject();
+    const config = await loadConfig(cwd);
+    await writeFile(config.resolvedLuaConfigPath, "return {}\n", "utf8");
+    const controller = new AbortController();
+    const watchedTargets: string[] = [];
+    const idleWatcher = {
+      async *[Symbol.asyncIterator]() {
+        await new Promise<void>((resolve) => {
+          controller.signal.addEventListener("abort", resolve, { once: true });
+        });
+      },
+    };
+
+    setTimeout(() => controller.abort(), 25);
+
+    await watchCommand({
+      config,
+      signal: controller.signal,
+      realpathImpl() {
+        return Promise.reject(new Error("file changed before realpath"));
+      },
+      watchImpl(target) {
+        watchedTargets.push(String(target));
+        return idleWatcher;
+      },
+    });
+
+    expect(watchedTargets).toEqual([
+      config.resolvedLuaConfigPath,
+      config.resolvedScenarioDir,
+    ]);
+  });
+
   it("falls back to polling when recursive watch is unavailable", async () => {
     const { cwd, scenarioFile } = await withConfiguredProject();
     const config = await loadConfig(cwd);

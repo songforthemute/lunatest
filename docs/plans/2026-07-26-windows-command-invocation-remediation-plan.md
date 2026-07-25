@@ -55,3 +55,14 @@
 2. Normalize Windows separators to `/` so the YAML target has no drive path, backslash escaping, or encoded short-path characters.
 3. Reproduce POSIX and Windows `RUNNER~1` temp paths and assert the rendered value is `file:../../tarballs/...`; reject cross-drive paths that cannot be represented relative to the consumer workspace.
 4. Re-run the Windows native consumer job through the existing PR gate.
+
+### Task 5: Canonicalize CLI watch targets before filesystem subscription
+
+**Files:**
+- Modify: `packages/cli/src/commands/watch.ts`
+- Modify: `packages/cli/src/__tests__/cli.test.ts`
+
+1. Resolve the Lua config file and scenario directory through `fs/promises.realpath()` before passing either target to `fs/promises.watch()`.
+2. Retain the original accessible target if canonicalization races with a file-system change, preserving the existing watch/polling fallback behavior.
+3. Add a regression test that supplies canonical long paths and verifies both watcher subscriptions receive those paths.
+4. This fixes Node 24/libuv's Windows 8.3 short-path assertion in `fs-event.c`, which GitHub-hosted runners trigger because `%TEMP%` may contain `RUNNER~1`.

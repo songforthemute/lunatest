@@ -1,5 +1,5 @@
 import { watch } from "node:fs/promises";
-import { access, stat } from "node:fs/promises";
+import { access, realpath, stat } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 
 import type { ResolvedLunaCliConfig } from "../config.js";
@@ -8,6 +8,7 @@ import { loadScenarioCatalog } from "../scenario-catalog.js";
 import { resolveScenarioSources } from "./scenario-sources.js";
 
 type WatchImpl = typeof watch;
+type RealpathImpl = typeof realpath;
 
 export type WatchCommandOptions = {
   config: ResolvedLunaCliConfig;
@@ -17,6 +18,7 @@ export type WatchCommandOptions = {
   pollIntervalMs?: number;
   onUpdate?: (output: string) => void;
   watchImpl?: WatchImpl;
+  realpathImpl?: RealpathImpl;
 };
 
 function formatWatchError(error: unknown): string {
@@ -57,10 +59,20 @@ async function resolveWatchFingerprint(config: ResolvedLunaCliConfig): Promise<s
   return fingerprint.sort().join("|");
 }
 
+async function resolveWatchTarget(target: string, realpathImpl: RealpathImpl): Promise<string> {
+  try {
+    // Windows 8.3 short path가 libuv 파일 감시를 중단시키지 않도록 실제 경로를 사용한다.
+    return await realpathImpl(target);
+  } catch {
+    return target;
+  }
+}
+
 export async function watchCommand(options: WatchCommandOptions): Promise<string> {
   const debounceMs = options.debounceMs ?? 300;
   const pollIntervalMs = options.pollIntervalMs ?? 250;
   const watchImpl = options.watchImpl ?? watch;
+  const realpathImpl = options.realpathImpl ?? realpath;
   const history: string[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running = Promise.resolve();
@@ -107,9 +119,12 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
       if (!(await canAccess(options.config.resolvedLuaConfigPath))) {
         return undefined;
       }
-      return watchImpl(options.config.resolvedLuaConfigPath, {
-        signal: options.signal,
-      });
+      return watchImpl(
+        await resolveWatchTarget(options.config.resolvedLuaConfigPath, realpathImpl),
+        {
+          signal: options.signal,
+        },
+      );
     } catch {
       return undefined;
     }
@@ -120,10 +135,13 @@ export async function watchCommand(options: WatchCommandOptions): Promise<string
       if (!(await canAccess(options.config.resolvedScenarioDir))) {
         return undefined;
       }
-      return watchImpl(options.config.resolvedScenarioDir, {
-        recursive: true,
-        signal: options.signal,
-      });
+      return watchImpl(
+        await resolveWatchTarget(options.config.resolvedScenarioDir, realpathImpl),
+        {
+          recursive: true,
+          signal: options.signal,
+        },
+      );
     } catch {
       return undefined;
     }
