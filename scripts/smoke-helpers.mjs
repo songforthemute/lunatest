@@ -5,6 +5,49 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_STOP_TIMEOUT_MS = 2_000;
 
+export function resolveCommandInvocation(command, args, options = {}) {
+  const {
+    platform = process.platform,
+    comSpec = process.env.ComSpec,
+    shell = false,
+  } = options;
+
+  if (command === "pnpm" && platform === "win32") {
+    return {
+      command: comSpec ?? "cmd.exe",
+      args: ["/d", "/c", "pnpm.cmd", ...args],
+      shell: false,
+    };
+  }
+
+  return { command, args, shell };
+}
+
+export function terminateCommandProcess(child, options = {}) {
+  const {
+    platform = process.platform,
+    runSync = spawnSync,
+    signal = "SIGTERM",
+  } = options;
+
+  if (platform === "win32" && Number.isInteger(child.pid) && child.pid > 0) {
+    try {
+      const result = runSync(
+        "taskkill.exe",
+        ["/pid", String(child.pid), "/T", "/F"],
+        { shell: false, stdio: "ignore" },
+      );
+      if (result.status === 0 && !result.error) {
+        return;
+      }
+    } catch {
+      // taskkill을 사용할 수 없으면 기존 child signal 경로를 보존한다.
+    }
+  }
+
+  child.kill(signal);
+}
+
 function jsonRpcIdKey(id) {
   if (id !== null && typeof id !== "string" && typeof id !== "number") {
     throw new Error(`Invalid JSON-RPC response ID: ${JSON.stringify(id)}`);
@@ -81,10 +124,11 @@ export function resolveInstalledPackageBin(packageName, binName, cwd) {
 }
 
 export function startCommand(command, args, cwd, options = {}) {
-  const child = spawn(command, args, {
+  const invocation = resolveCommandInvocation(command, args, { shell: options.shell ?? false });
+  const child = spawn(invocation.command, invocation.args, {
     cwd,
     env: options.env,
-    shell: options.shell ?? false,
+    shell: invocation.shell,
     stdio: ["pipe", "pipe", "pipe"],
   });
   let stdout = "";
@@ -96,8 +140,8 @@ export function startCommand(command, args, cwd, options = {}) {
   const inputErrorListeners = new Set();
 
   const snapshot = () => ({
-    command,
-    args,
+    command: invocation.command,
+    args: invocation.args,
     stdout,
     stderr,
     exitResult,
@@ -206,14 +250,14 @@ export function startCommand(command, args, cwd, options = {}) {
     },
     async stop(signal = "SIGTERM", timeoutMs = DEFAULT_STOP_TIMEOUT_MS) {
       if (!exitResult) {
-        child.kill(signal);
+        terminateCommandProcess(child, { signal });
       }
 
       try {
         return await this.waitForExit(timeoutMs);
       } catch (error) {
         if (!exitResult) {
-          child.kill("SIGKILL");
+          terminateCommandProcess(child, { signal: "SIGKILL" });
           return this.waitForExit(timeoutMs);
         }
         throw error;
@@ -437,24 +481,24 @@ export function startJsonRpcClient(command, args, cwd, options = {}) {
 }
 
 export function run(command, args, cwd, options = {}) {
-  const result = spawnSync(command, args, {
+  const invocation = resolveCommandInvocation(command, args, { shell: options.shell ?? false });
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd,
     encoding: "utf8",
     stdio: "pipe",
     ...options,
+    shell: invocation.shell,
   });
 
   if (result.status !== 0) {
-    const stderr = result.stderr?.trim();
-    const stdout = result.stdout?.trim();
     throw new Error(
-      [
-        `Command failed: ${command} ${args.join(" ")}`,
-        stdout ? `stdout:\n${stdout}` : "",
-        stderr ? `stderr:\n${stderr}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
+      formatCommandFailure({
+        command: invocation.command,
+        args: invocation.args,
+        reason: result.error?.message ?? `Exited with code ${result.status ?? "null"}`,
+        stdout: result.stdout ?? "",
+        stderr: result.stderr ?? "",
+      }),
     );
   }
 
@@ -481,19 +525,25 @@ export function packPackage(packageDir, outputDir) {
 }
 
 export function startMcpSmoke(consumerDir) {
-  const result = spawnSync("pnpm", ["exec", "lunatest-mcp", "--empty"], {
-    cwd: consumerDir,
-    encoding: "utf8",
-    stdio: "pipe",
-    input: `${JSON.stringify({ id: "empty-list", method: "scenario.list" })}\n`,
-    timeout: DEFAULT_TIMEOUT_MS,
-  });
+  const invocation = resolveMcpSmokeInvocation(consumerDir);
+  const result = spawnSync(
+    invocation.command,
+    invocation.args,
+    {
+      cwd: consumerDir,
+      encoding: "utf8",
+      stdio: "pipe",
+      input: `${JSON.stringify({ id: "empty-list", method: "scenario.list" })}\n`,
+      timeout: DEFAULT_TIMEOUT_MS,
+      shell: invocation.shell,
+    },
+  );
 
   if (result.status !== 0) {
     throw new Error(
       formatCommandFailure({
-        command: "pnpm",
-        args: ["exec", "lunatest-mcp", "--empty"],
+        command: invocation.command,
+        args: invocation.args,
         reason: result.error?.message ?? `Exited with code ${result.status ?? "null"}`,
         stdout: result.stdout ?? "",
         stderr: result.stderr ?? "",
@@ -507,8 +557,8 @@ export function startMcpSmoke(consumerDir) {
   } catch {
     throw new Error(
       formatCommandFailure({
-        command: "pnpm",
-        args: ["exec", "lunatest-mcp", "--empty"],
+        command: invocation.command,
+        args: invocation.args,
         reason: "Expected a JSON-RPC response",
         stdout: result.stdout ?? "",
         stderr: result.stderr ?? "",
@@ -519,4 +569,14 @@ export function startMcpSmoke(consumerDir) {
   if (response.id !== "empty-list" || !Array.isArray(response.result) || response.result.length > 0) {
     throw new Error("lunatest-mcp --empty did not return an empty scenario list");
   }
+}
+
+export function resolveMcpSmokeInvocation(consumerDir) {
+  const mcpBin = resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", consumerDir);
+
+  return {
+    command: mcpBin.command,
+    args: [...mcpBin.args, "--empty"],
+    shell: false,
+  };
 }

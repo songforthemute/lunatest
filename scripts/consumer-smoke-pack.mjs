@@ -7,7 +7,11 @@ import {
   createConsumerSmokeScript,
   reactPeerMatrix,
 } from "./consumer-smoke-fixtures.mjs";
-import { writeConsumerWorkflowFixture } from "./consumer-workflow-fixtures.mjs";
+import { createConsumerSmokeCommandPlan } from "./consumer-smoke-commands.mjs";
+import {
+  createConsumerWorkflowFixture,
+  writeConsumerWorkflowFixture,
+} from "./consumer-workflow-fixtures.mjs";
 import { packageNames, publicPackages } from "./package-roster.mjs";
 import {
   createTarballOverrides,
@@ -28,6 +32,7 @@ const tarballsDir = join(tempRoot, "tarballs");
 const consumerDir = join(tempRoot, "consumer");
 const WATCH_RERUN_TIMEOUT_MS = 10_000;
 const WATCH_RERUN_ATTEMPT_TIMEOUT_MS = 750;
+const consumerConfigPath = createConsumerWorkflowFixture().configPath;
 
 function assertCoverageContract(report) {
   assert.ok(report.coveredTargets.features.includes("swap"));
@@ -35,8 +40,11 @@ function assertCoverageContract(report) {
   assert.ok(report.known.features.includes("approve"));
 }
 
-async function runMcpProjectWorkflow(command, args, cwd, expectedId, options = {}) {
-  const client = startJsonRpcClient(command, args, cwd, options);
+async function runMcpProjectWorkflow(invocation, cwd, expectedId, options = {}) {
+  const client = startJsonRpcClient(invocation.command, invocation.args, cwd, {
+    ...options,
+    shell: invocation.shell,
+  });
 
   try {
     const list = await client.request({ id: "list", method: "scenario.list" });
@@ -91,12 +99,20 @@ async function waitForWatchRerun(watch, scenarioFile, updatedScenario) {
   );
 }
 
-async function runPackedConsumerWorkflow(consumerDir) {
+async function runPackedConsumerWorkflow(consumerDir, commands) {
   const fixture = await writeConsumerWorkflowFixture(consumerDir);
-  const validate = await runAsync("pnpm", ["exec", "lunatest", "validate"], consumerDir);
-  const runResult = await runAsync("pnpm", ["exec", "lunatest", "run"], consumerDir);
-  const coverage = await runAsync("pnpm", ["exec", "lunatest", "coverage"], consumerDir);
-  const generation = await runAsync("pnpm", ["exec", "lunatest", "gen", "--ai"], consumerDir);
+  const validate = await runAsync(commands.cli.validate.command, commands.cli.validate.args, consumerDir, {
+    shell: commands.cli.validate.shell,
+  });
+  const runResult = await runAsync(commands.cli.run.command, commands.cli.run.args, consumerDir, {
+    shell: commands.cli.run.shell,
+  });
+  const coverage = await runAsync(commands.cli.coverage.command, commands.cli.coverage.args, consumerDir, {
+    shell: commands.cli.coverage.shell,
+  });
+  const generation = await runAsync(commands.cli.generate.command, commands.cli.generate.args, consumerDir, {
+    shell: commands.cli.generate.shell,
+  });
 
   assert.match(validate.stdout, /Validate Summary/);
   assert.match(validate.stdout, /failed=0/);
@@ -113,8 +129,9 @@ async function runPackedConsumerWorkflow(consumerDir) {
   assert.match(generatedLua, /components = \{ "quotePanel" \}/);
   assert.match(generatedLua, /tags = \{ "generated", "edge-case" \}/);
 
-  const watchBin = resolveInstalledPackageBin("@lunatest/cli", "lunatest", consumerDir);
-  const watch = startCommand(watchBin.command, [...watchBin.args, "watch"], consumerDir);
+  const watch = startCommand(commands.cli.watch.command, commands.cli.watch.args, consumerDir, {
+    shell: commands.cli.watch.shell,
+  });
   let watchExit;
   try {
     await watch.waitForOutput("Scenario Summary");
@@ -125,7 +142,9 @@ async function runPackedConsumerWorkflow(consumerDir) {
   }
   assert.equal(watchExit.code, 0, `watch did not stop cleanly: ${JSON.stringify(watchExit)}`);
 
-  const client = startJsonRpcClient("pnpm", ["exec", "lunatest-mcp"], consumerDir);
+  const client = startJsonRpcClient(commands.mcp.default.command, commands.mcp.default.args, consumerDir, {
+    shell: commands.mcp.default.shell,
+  });
   try {
     const list = await client.request({ id: "list", method: "scenario.list" });
     const run = await client.request({
@@ -155,19 +174,18 @@ async function runPackedConsumerWorkflow(consumerDir) {
   }
 
   const siblingDir = join(dirname(consumerDir), "mcp-config-sibling");
-  const mcpBin = resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", consumerDir);
   mkdirSync(siblingDir, { recursive: true });
   await runMcpProjectWorkflow(
-    mcpBin.command,
-    [...mcpBin.args, "--config", fixture.configFile],
+    commands.mcp.project,
     siblingDir,
     "scenarios/swap",
   );
 
   const empty = startJsonRpcClient(
-    mcpBin.command,
-    [...mcpBin.args, "--empty"],
+    commands.mcp.empty.command,
+    commands.mcp.empty.args,
     siblingDir,
+    { shell: commands.mcp.empty.shell },
   );
   try {
     const list = await empty.request({ id: "empty-list", method: "scenario.list" });
@@ -190,12 +208,13 @@ try {
     tarball: packPackage(resolve(process.cwd(), pkg.dir), tarballsDir),
   }));
 
-  const workspaceOverrides = formatWorkspaceOverrides(createTarballOverrides(tarballs));
-
   for (const reactPeer of reactPeerMatrix) {
     const matrixConsumerDir = join(consumerDir, reactPeer.label);
 
     mkdirSync(matrixConsumerDir, { recursive: true });
+    const workspaceOverrides = formatWorkspaceOverrides(
+      createTarballOverrides(tarballs, matrixConsumerDir),
+    );
 
     writeFileSync(
       join(matrixConsumerDir, "package.json"),
@@ -237,11 +256,21 @@ ${workspaceOverrides}
       createConsumerSmokeScript({ includeNextPackages: true }),
     );
 
+    const cliBin = resolveInstalledPackageBin("@lunatest/cli", "lunatest", matrixConsumerDir);
+    const mcpBin = resolveInstalledPackageBin("@lunatest/mcp", "lunatest-mcp", matrixConsumerDir);
+    const commands = createConsumerSmokeCommandPlan({
+      cliBin,
+      mcpBin,
+      configPath: join(matrixConsumerDir, consumerConfigPath),
+    });
     run("node", ["./smoke.mjs"], matrixConsumerDir, { stdio: "inherit" });
-    run("pnpm", ["exec", "lunatest", "doctor"], matrixConsumerDir, { stdio: "inherit" });
+    run(commands.cli.doctor.command, commands.cli.doctor.args, matrixConsumerDir, {
+      shell: commands.cli.doctor.shell,
+      stdio: "inherit",
+    });
 
     if (reactPeer.label === "react19") {
-      await runPackedConsumerWorkflow(matrixConsumerDir);
+      await runPackedConsumerWorkflow(matrixConsumerDir, commands);
     }
 
     const lockfile = readFileSync(join(matrixConsumerDir, "pnpm-lock.yaml"), "utf8");

@@ -1,9 +1,7 @@
-import { spawnSync } from "node:child_process";
+import { runBuildCommand } from "../../../scripts/build-command.mjs";
 
-const result = spawnSync("pnpm", ["exec", "vite", "build"], {
+const result = runBuildCommand("pnpm", ["exec", "vite", "build"], {
   cwd: process.cwd(),
-  encoding: "utf8",
-  stdio: "pipe",
 });
 
 const stdout = result.stdout ?? "";
@@ -13,13 +11,15 @@ const combined = `${stdout}\n${stderr}`;
 process.stdout.write(stdout);
 process.stderr.write(stderr);
 
-if (result.status !== 0) {
-  process.exit(result.status ?? 1);
+if (result.failureMessage) {
+  console.error(result.failureMessage);
 }
 
-if (/Module "node:[^"]+" has been externalized for browser compatibility/u.test(combined)) {
+if (result.exitCode !== 0) {
+  process.exitCode = result.exitCode;
+} else if (/Module "node:[^"]+" has been externalized for browser compatibility/u.test(combined)) {
   console.error(
     "[swap-dapp build] Browser build emitted node externalization warnings. This is a production-readiness regression.",
   );
-  process.exit(1);
+  process.exitCode = 1;
 }
