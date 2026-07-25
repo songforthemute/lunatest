@@ -74,6 +74,13 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
 });
 
+test("CI preserves pull request and main push triggers", async () => {
+  const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+
+  assert.match(ciWorkflow, /^  pull_request:\s*$/m);
+  assert.match(ciWorkflow, /^  push:\n    branches:\n      - main\n/m);
+});
+
 test("CI runs packed consumer smoke on all supported desktop platforms", async () => {
   const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
   const linuxJob = getWorkflowJob(ciWorkflow, "consumer-smoke-pack");

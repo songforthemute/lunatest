@@ -41,7 +41,7 @@ CI 전용 wrapper script(`build:workspace:ci`, `lint:workspace:ci`, `test:worksp
 
 `consumer-smoke-pack`은 기존 Linux gate이며 Ubuntu에서 `quality` 이후 실행됩니다. `consumer-smoke-pack-windows`와 `consumer-smoke-pack-macos`는 같은 tarball 소비 검증을 각각 Windows와 macOS에서 native로 실행합니다. 세 gate는 Linux, Windows, macOS의 package resolution과 public entrypoint 소비 경로를 함께 확인합니다.
 
-Windows/macOS native gate는 pull request와 `main` push에서만 실행합니다. feature branch push에서는 PR 실행과 중복되는 native runner 비용을 피하기 위해 의도적으로 건너뜁니다. Release workflow는 계속 Ubuntu에서만 실행됩니다.
+Windows/macOS native gate는 pull request, `main` push, 그리고 `main` ref를 선택한 manual dispatch에서만 실행합니다. feature branch push와 feature ref를 선택한 manual dispatch에서는 PR 실행과 중복되는 native runner 비용을 피하기 위해 의도적으로 건너뜁니다. Release workflow는 계속 Ubuntu에서만 실행됩니다.
 
 `performance-regression`는 Linux `consumer-smoke-pack`과 `e2e-smoke`가 끝난 뒤에만 실행됩니다. Windows/macOS gate를 성능 측정의 선행 조건으로 추가하지 않아, native platform 검증과 성능 회귀 측정의 목적 및 비용을 분리합니다.
 

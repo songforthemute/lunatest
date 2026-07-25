@@ -5,6 +5,7 @@ import test from "node:test";
 import { join } from "node:path";
 
 import { createConsumerWorkflowFixture } from "./consumer-workflow-fixtures.mjs";
+import * as smokeHelpers from "./smoke-helpers.mjs";
 import {
   closeInputAndWaitForExit,
   createJsonRpcClient,
@@ -134,6 +135,12 @@ test("consumer workflow fixture defines the configured scenario and deterministi
   assert.doesNotMatch(fixture.files[fixture.aiAdapterPath], /item\.id === "scenarios\/swap"/);
   assert.match(fixture.files[fixture.aiAdapterPath], /generated-edge-case/);
   assert.match(fixture.updatedScenario, /name = "swap-smoke-updated"/);
+});
+
+test("command executable resolver uses the pnpm.cmd shim only on Windows", () => {
+  assert.equal(smokeHelpers.resolveCommandExecutable("pnpm", "win32"), "pnpm.cmd");
+  assert.equal(smokeHelpers.resolveCommandExecutable("pnpm", "linux"), "pnpm");
+  assert.equal(smokeHelpers.resolveCommandExecutable("node", "win32"), "node");
 });
 
 test("installed package bin resolver runs manifest bins through Node on every platform", (t) => {

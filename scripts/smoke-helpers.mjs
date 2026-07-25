@@ -5,6 +5,10 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_STOP_TIMEOUT_MS = 2_000;
 
+export function resolveCommandExecutable(command, platform = process.platform) {
+  return command === "pnpm" && platform === "win32" ? "pnpm.cmd" : command;
+}
+
 function jsonRpcIdKey(id) {
   if (id !== null && typeof id !== "string" && typeof id !== "number") {
     throw new Error(`Invalid JSON-RPC response ID: ${JSON.stringify(id)}`);
@@ -81,7 +85,7 @@ export function resolveInstalledPackageBin(packageName, binName, cwd) {
 }
 
 export function startCommand(command, args, cwd, options = {}) {
-  const child = spawn(command, args, {
+  const child = spawn(resolveCommandExecutable(command), args, {
     cwd,
     env: options.env,
     shell: options.shell ?? false,
@@ -437,7 +441,7 @@ export function startJsonRpcClient(command, args, cwd, options = {}) {
 }
 
 export function run(command, args, cwd, options = {}) {
-  const result = spawnSync(command, args, {
+  const result = spawnSync(resolveCommandExecutable(command), args, {
     cwd,
     encoding: "utf8",
     stdio: "pipe",
@@ -481,18 +485,23 @@ export function packPackage(packageDir, outputDir) {
 }
 
 export function startMcpSmoke(consumerDir) {
-  const result = spawnSync("pnpm", ["exec", "lunatest-mcp", "--empty"], {
-    cwd: consumerDir,
-    encoding: "utf8",
-    stdio: "pipe",
-    input: `${JSON.stringify({ id: "empty-list", method: "scenario.list" })}\n`,
-    timeout: DEFAULT_TIMEOUT_MS,
-  });
+  const command = "pnpm";
+  const result = spawnSync(
+    resolveCommandExecutable(command),
+    ["exec", "lunatest-mcp", "--empty"],
+    {
+      cwd: consumerDir,
+      encoding: "utf8",
+      stdio: "pipe",
+      input: `${JSON.stringify({ id: "empty-list", method: "scenario.list" })}\n`,
+      timeout: DEFAULT_TIMEOUT_MS,
+    },
+  );
 
   if (result.status !== 0) {
     throw new Error(
       formatCommandFailure({
-        command: "pnpm",
+        command,
         args: ["exec", "lunatest-mcp", "--empty"],
         reason: result.error?.message ?? `Exited with code ${result.status ?? "null"}`,
         stdout: result.stdout ?? "",
@@ -507,7 +516,7 @@ export function startMcpSmoke(consumerDir) {
   } catch {
     throw new Error(
       formatCommandFailure({
-        command: "pnpm",
+        command,
         args: ["exec", "lunatest-mcp", "--empty"],
         reason: "Expected a JSON-RPC response",
         stdout: result.stdout ?? "",
