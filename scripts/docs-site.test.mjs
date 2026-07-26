@@ -19,6 +19,14 @@ test("docs build script keeps VitePress root and builds the live demo sub-app", 
   assert.match(buildScript, /copyFileSync|copyFile/);
 });
 
+test("docs build rejects historical planning artifacts from the public site", async () => {
+  const buildScript = await readFile(new URL("./build-docs-site.mjs", import.meta.url), "utf8");
+
+  assert.match(buildScript, /PRD\.html/);
+  assert.match(buildScript, /path\.join\(DOCS_DIST, "plans"\)/);
+  assert.match(buildScript, /Historical planning artifact/);
+});
+
 test("docs navigation exposes the DeFi dashboard dogfood guide", async () => {
   const config = await readFile(new URL("../docs/.vitepress/config.mts", import.meta.url), "utf8");
   const index = await readFile(new URL("../docs/index.md", import.meta.url), "utf8");

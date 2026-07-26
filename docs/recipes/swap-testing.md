@@ -1,5 +1,19 @@
 # Recipe: Swap Testing
 
-1. 지갑 잔액과 풀 상태를 `given`에 선언합니다.
-2. `when.action = "swap"`를 실행합니다.
-3. `then_ui.success = true`를 검증합니다.
+Start with one deterministic happy path, then add independent scenarios for
+approval, warnings, and failures.
+
+```lua
+scenario {
+  name = "swap-happy-path",
+  given = {
+    wallet = { connected = true, ETH = "10" },
+    pool = { pair = "ETH/USDC" },
+  },
+  when = { action = "swap" },
+  then_ui = { success = true },
+}
+```
+
+Declare the user-visible result in `then_ui`; use `then_state` only where the
+application contract requires an internal state assertion.

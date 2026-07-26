@@ -21,7 +21,6 @@ Release channel: `latest`
 - `resolveEnabled(config, nodeEnv?)`
 - `normalizeRuntimeInterceptConfig(input)`
 - `LunaRuntimeInterceptConfig`
-- `NormalizedRuntimeInterceptConfig`
 - `RuntimeInterceptHandle`
 
 ## `LunaRuntimeInterceptConfig`
@@ -71,7 +70,8 @@ type LunaWalletSession = {
 
 - `wallet.session` materialized as a full `LunaWalletSession`
 - `intercept.mode` defaulted to `strict` when omitted
-- `intercept.routing` converted to arrays even when the input used legacy route lists
+- `intercept.routing` copied into normalized route arrays
+- legacy `intercept.routes` converted and appended to those normalized route arrays
 - `intercept.mockResponses` cloned into a plain record
 
 ## Activation priority
@@ -111,6 +111,7 @@ import {
   setRouteMocks,
   applyInterceptState,
 } from "@lunatest/runtime-intercept";
+import type { LunaWalletSession } from "@lunatest/runtime-intercept";
 
 const config = await loadLunaConfig("./lunatest.lua");
 const nodeEnv =

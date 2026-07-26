@@ -1,9 +1,21 @@
 # Recipe: Error Handling
 
-대표 에러 시나리오:
+Write a separate scenario for each user-visible failure rather than combining
+unrelated error paths.
 
-- 잔액 부족
-- 체인 불일치
-- 트랜잭션 실패
+- Insufficient balance
+- Wrong chain
+- Rejected or failed transaction
 
-각 케이스마다 사용자 메시지와 버튼 상태를 `then_ui`로 검증합니다.
+Use `then_ui` for the message, alert, and disabled-control contract. Add
+`not_present` when a success indicator must not be visible in the same state.
+
+```lua
+scenario {
+  name = "swap-insufficient-balance",
+  given = { wallet = { ETH = "0" } },
+  when = { action = "swap" },
+  then_ui = { insufficientBalance = true, actionDisabled = true },
+  not_present = { "swapSuccess" },
+}
+```

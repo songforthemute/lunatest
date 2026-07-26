@@ -1,24 +1,22 @@
 # Sepolia + Uniswap V3 Swap Demo
 
-`examples/swap-dapp`는 LunaTest의 `Real-first` 샘플입니다.
+`examples/swap-dapp` is LunaTest's real-first sample.
 
-- 기본 경로: 실지갑 + Sepolia 실 트랜잭션
-- 카오스 경로: 프리셋 버튼 + Lua 편집으로 런타임 상태 패치
-- CI 경로: 네트워크 비의존 테스트만 자동 실행
+- The default path uses a real wallet and real Sepolia transactions.
+- The chaos path patches runtime state through preset controls and Lua editing.
+- CI runs only tests that do not depend on a network.
 
-문서 SPA에서 바로 실행해보려면 [Live Demo](./live-demo.md)를 사용하세요. Live Demo는
-`VITE_LUNATEST_DEMO_MODE=deterministic`으로 빌드되며 실제 RPC/실지갑 없이 동작합니다.
-이 문서는 실제 Sepolia RPC와 지갑을 사용하는 real-first 흐름을 설명합니다.
+Use the [Live Demo](./live-demo.md) to run a deterministic version inside the
+documentation SPA. It is built with `VITE_LUNATEST_DEMO_MODE=deterministic`
+and does not require a real RPC endpoint or wallet. This guide covers the
+real-first path that uses a Sepolia RPC endpoint and wallet.
 
 ## What This Demo Covers
 
 1. Token pair, input amount, quote
 2. Slippage/gas/network/balance warnings
 3. `approve -> swap -> pending -> confirmed/failed` step machine
-4. Chaos presets:
-- `high_slippage_80`
-- `gas_spike_500_gwei`
-- `pending_10m`
+4. Chaos presets: `high_slippage_80`, `gas_spike_500_gwei`, and `pending_10m`
 
 ## Prerequisites
 
@@ -57,7 +55,7 @@ From the repo root:
 pnpm --filter @lunatest/example-swap-dapp dev
 ```
 
-Then in browser:
+Then verify the following in the browser:
 
 1. If you have a real wallet, click `Connect Wallet`
 2. If you do not have a wallet, open `LunaTest Devtools` and click `Enable Luna Wallet`
@@ -66,14 +64,14 @@ Then in browser:
 5. If needed, click `Approve`
 6. Click `Swap` and observe `Tx Stepper` progression
 
-## 3) Chaos QA Loop
+## 3) Deterministic Chaos QA Loop
 
 In the in-browser panel:
 
 1. Pick preset (`Slippage 80%`, `Gas 500 Gwei`, `Pending 10m`)
 2. Click `Apply Preset`
 3. Observe warning/button/stepper changes
-4. Toggle `Luna Wallet` on/off to hijack wallet RPC without a browser extension
+4. Toggle `Luna Wallet` on or off to exercise the deterministic wallet path without a browser extension
 5. Edit Lua text and click `Apply Lua`
 6. Check `State Diff` for exact runtime patch output
 

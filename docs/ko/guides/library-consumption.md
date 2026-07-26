@@ -33,8 +33,10 @@
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
 ```
+
+Vitest와 Playwright 패키지는 현재 `next` 채널로 배포됩니다. 두 패키지가 `latest`로 승격되기 전까지 설치 명령에 `@next`를 명시합니다.
 
 ## Core Provider 최소 예시
 

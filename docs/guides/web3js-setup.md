@@ -1,13 +1,17 @@
 # Web3.js Setup
 
-`createWeb3JsAdapter`를 사용하면 Web3.js 스타일 `request` 인터페이스로 바로 연결할 수 있습니다.
+`createWeb3JsAdapter` exposes an EIP-1193-style `request` method backed by a
+`LunaProvider`.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
 import { createWeb3JsAdapter } from "@lunatest/react";
 
-const luna = new LunaProvider({ chainId: "0x1" });
-const web3Provider = createWeb3JsAdapter(luna);
+const provider = new LunaProvider({ chainId: "0x1" });
+const web3Like = createWeb3JsAdapter(provider);
 
-await web3Provider.request({ method: "eth_chainId" });
+const chainId = await web3Like.request({ method: "eth_chainId" });
 ```
+
+Use this adapter where the Web3.js version in your application accepts an
+EIP-1193 provider. LunaTest does not instantiate or configure Web3.js itself.

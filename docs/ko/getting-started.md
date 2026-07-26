@@ -1,32 +1,37 @@
 # 빠른 시작
 
-## 1) 설치
+## 1) 저장소 설치
 
 ```bash
 pnpm install --frozen-lockfile
 ```
 
-## 2) 로컬 체크 실행
+## 2) 소비자 프로젝트에 라이브러리 설치
 
 ```bash
-pnpm lint:workspace-types
+pnpm add @lunatest/core @lunatest/react @lunatest/mcp
+pnpm add @lunatest/runtime-intercept
+pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
+```
+
+`@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`는 `latest` 채널로 배포됩니다. Vitest와 Playwright 연동 패키지는 `next` 채널로 배포되므로 `latest`로 승격되기 전까지 설치 명령에 `@next`를 명시해야 합니다.
+
+실행 가능한 라이브러리 예시는 [라이브러리 소비자 가이드](./guides/library-consumption.md)를 참고하세요. RPC endpoint나 지갑 없이 실행하는 예제는 [라이브 데모](./guides/live-demo.md)에서 확인할 수 있습니다. 완성된 앱 예제는 [DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)와 [Sepolia 스왑 데모 가이드](./guides/swap-demo-sepolia-uniswapv3.md)를 참고하세요.
+
+## 3) 로컬 체크 실행
+
+```bash
 pnpm -r lint
 pnpm -r build
 pnpm -r test
+pnpm test:e2e:smoke
 ```
 
-`pnpm lint:workspace-types`는 workspace 패키지 타입체크가 prebuilt `dist` 산출물에 의존하지 않는지 확인합니다.
-
-## 3) 릴리스 게이트 실행
-
-```bash
-pnpm lint:deadcode
-pnpm pack:check-integrity
-```
+위 명령은 로컬 개발용입니다. `pnpm test:e2e:smoke`는 빌드된 workspace package entry를 읽으므로 먼저 `pnpm -r build`를 실행해야 합니다. 확장 시나리오가 필요하면 `pnpm test:e2e:extended`를 로컬에서 실행합니다.
 
 ## 4) CLI 실행
 
-`gen --ai`를 사용할 계획이라면 `lunatest.config.json`에 `ai.command`를 정의해야 합니다.
+`gen --ai`를 사용하려면 `lunatest.config.json`에 `ai.command`를 정의해야 합니다.
 
 ```json
 {
@@ -43,74 +48,49 @@ node packages/cli/dist/index.js run
 node packages/cli/dist/index.js gen --ai
 ```
 
-`lunatest gen --ai`는 `lunatest.config.json`의 `ai.command`가 있어야 동작합니다. 이 설정이 없으면 시나리오를 생성하지 않고 바로 종료합니다.
+`lunatest gen --ai`는 외부 adapter에 scenario, coverage, preset catalog, prompt 데이터를 전달합니다. `ai.command`가 없으면 scenario를 생성하지 않고 종료합니다.
 
-## 5) E2E 게이트 실행
+## 5) 로컬 성능 체크 실행
 
-PR 스모크 게이트:
-
-```bash
-pnpm test:e2e:smoke
-```
-
-야간 확장 게이트:
+성능을 로컬에서 조사할 때는 workspace를 먼저 빌드한 뒤 runner를 직접 실행합니다.
 
 ```bash
-pnpm test:e2e:extended
-```
-
-## 6) 문서 확인
-
-```bash
-pnpm docs:dev
-```
-
-RPC/지갑 없이 바로 실행되는 문서용 데모는 [라이브 데모](./guides/live-demo.md)에서 확인할 수 있습니다.
-
-여러 built-in protocol preset을 한 번에 확인하는 deterministic 예제는
-[DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)를 참고하세요.
-
-정적 빌드 확인:
-
-```bash
-pnpm docs:build
-```
-
-## 7) 성능 게이트 실행
-
-회귀 기준 비교:
-
-```bash
+pnpm -r build
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
+node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
 ```
 
-절대 기준 검증:
+회귀 모드는 p95가 저장소 baseline의 110%를 초과하면 실패합니다. 절대 모드는 고정 기준을 사용합니다. p95는 `1ms` 미만이어야 하고, 1,000개 scenario는 `1000ms` 미만에 끝나야 합니다. runner는 실패 전에 한 번 재시도하며, 설정 가능한 `--threshold` 옵션은 지원하지 않습니다.
+
+## 6) Fresh-Checkout CI 재현
+
+`*:ci` script는 CI 계약입니다. workspace `dist` 산출물이 없는 fresh checkout에서 필요한 build를 중앙화합니다. 일반 로컬 반복에서는 사용하지 말고 CI job을 재현할 때만 실행합니다.
 
 ```bash
-node scripts/check-performance.mjs --mode=absolute --threshold=5 --output=scripts/perf-current-absolute.json
-```
-
-## 8) CI 전용 wrapper
-
-CI/야간 job에서는 E2E나 성능 체크를 직접 호출하지 않고 아래 wrapper를 사용합니다.
-
-```bash
+pnpm lint:workspace-types
 pnpm run build:workspace:ci
 pnpm run lint:workspace:ci
 pnpm run test:workspace:ci
+pnpm lint:deadcode
+pnpm pack:check-integrity
 pnpm run test:e2e:smoke:ci
-pnpm run test:e2e:extended:ci
 pnpm run perf:regression:ci
+```
+
+예약된 Benchmark workflow에서는 아래 명령도 실행합니다.
+
+```bash
+pnpm run test:e2e:extended:ci
 pnpm run perf:absolute:ci
 ```
 
-`test:e2e:*`는 workspace source integration 동작을 검증합니다. 패키지 public entrypoint를 tarball 또는 npm registry 기준으로 검증할 때는 `pnpm consumer-smoke:pack` 또는 `pnpm consumer-smoke:npm`을 사용합니다. `consumer-smoke:pack`은 stable/next 공개 tarball 전체를 설치하고 React 18/19 peer 호환성까지 확인합니다.
+`lint:workspace-types`는 lint 전에 package `dist` 디렉터리를 임시로 제거합니다. `consumer-smoke:pack`은 별도의 packed tarball 소비 검증이며, Linux, Windows, macOS의 각 CI job에서 `pnpm run build:workspace:ci` 다음에 실행됩니다. 배포 후 registry 소비를 검증할 때만 `pnpm consumer-smoke:npm` 또는 `pnpm consumer-smoke:npm:next`를 사용합니다.
 
-## 다음 단계
+전체 job 의존성, 플랫폼 조건, 릴리스 정책은 [CI 통합](./guides/ci-integration.md)을 참고하세요.
 
-- 라이브러리 소비자 관점 사용법: [라이브러리 소비자 가이드](./guides/library-consumption.md)
-- 여러 protocol dogfood 예제: [DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)
-- 실지갑 + 카오스 루프 샘플: [Sepolia 스왑 데모](./guides/swap-demo-sepolia-uniswapv3.md)
-- 팀 전용 preset 작성: [Local Preset 작성 가이드](./guides/local-preset-authoring.md)
-- 실제 테스트 패턴: [시나리오 예제 모음](./guides/scenario-examples.md)
-- 처음부터 끝까지 실행 흐름: [E2E 0→1 워크스루](./guides/e2e-0to1.md)
+## 7) 문서 사이트 빌드
+
+```bash
+pnpm docs:dev
+pnpm docs:build
+```

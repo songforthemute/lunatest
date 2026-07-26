@@ -134,7 +134,7 @@ type ComponentStatesResult = {
 
 `known`, `covered`, `missing`에는 component state 이름만 들어갑니다. component 자체가 coverage catalog나 scenario metadata에 포함됐는지는 `componentCoverage`로 확인합니다.
 
-`resource.get("lunatest://protocols")`는 protocol id 배열이 아니라 `id`, `label`, `source`, `kind`, `supportedChains`를 가진 metadata object 배열을 반환합니다.
+`resource.get("lunatest://protocols")`는 `{ uri: "lunatest://protocols", content }` shape의 resource wrapper를 반환합니다. `content`는 protocol metadata 배열이며 각 item은 `id`, `label`, `source`, `kind`, `supportedChains`를 가집니다.
 
 ## 임베디드 stdio 예시
 

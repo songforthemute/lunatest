@@ -9,6 +9,9 @@
 - `createPresetRegistry(options?)`
 - `loadProjectPresetSources(projectRoot)`
 - `loadLunaConfig(source)`
+- `loadLunaProjectConfig`
+- `loadLunaProjectScenarios`
+- `resolveLunaScenarioSources`
 - `listProtocolPresets(registry?)`
 - `getProtocolPreset(id, registry?)`
 - `materializeProtocolPreset(id, params?, registry?)`
@@ -21,7 +24,10 @@
 - `buildCoverageSnapshot(input)`
 - `resolveCoverageMetadata(input)`
 - `createScenarioRuntime(config)`
+- `applyInterceptState`
+- `setRouteMocks`
 - `LuaConfigSchema`
+- `createDeterministicScenarioAdapter`
 - `executeLuaScenario(input)`
 - `RouteMock`
 
@@ -131,6 +137,12 @@ type CoverageSnapshot = {
 
 `buildCoverageSnapshot({ items, coverageCatalog? })`는 명시 catalog와 items에서 발견한 covered targets를 합쳐 `known`, `coveredTargets`, `missing`, `total/covered/ratio`를 반환합니다.
 
+## 프로젝트 scenario source
+
+`loadLunaProjectConfig`는 working directory 또는 명시 path에서 optional `lunatest.config.json`을 해석합니다. `ResolvedLunaProjectConfig` 결과에는 normalize된 `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter 설정, `projectRoot`, resolved source path가 들어갑니다.
+
+`resolveLunaScenarioSources`는 요청 source, glob 또는 구성된 기본 source set을 정렬되고 중복 없는 Lua file path로 확장합니다. `loadLunaProjectScenarios`는 이를 parse하여 project-relative scenario id, name, source path, parsed config, resolved coverage metadata를 반환합니다. 호출 workflow에서 빈 source set이 유효할 때만 `allowEmpty`를 사용하세요.
+
 ## Lua config와 scenario 실행
 
 ```ts
@@ -165,3 +177,7 @@ type LuaConfig = {
 - `resolveElapsedMs`
 
 결과에는 `scenarioName`, `pass`, optional `error`, optional `result`, resolved `config`가 들어갑니다.
+
+`createDeterministicScenarioAdapter`는 browser 없이 결정적 scenario 실행을 위한 built-in adapter입니다. scenario의 route/state data를 적용한 뒤 결과 intercept state를 UI/state resolver에 노출합니다. transition 또는 elapsed-time assertion이 필요하면 custom adapter에서 `resolveTransitions`, `resolveElapsedMs`를 제공하세요.
+
+`applyInterceptState`, `setRouteMocks`는 `ScenarioRuntime` 변경용 convenience 함수입니다. 각 함수는 runtime instance에 위임하고 업데이트된 state 또는 route list를 반환합니다.

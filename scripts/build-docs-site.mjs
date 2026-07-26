@@ -13,6 +13,10 @@ const EXAMPLE_INDEX = path.join(EXAMPLE_OUT_DIR, "index.html");
 const EXAMPLE_LUA_LABEL = "examples/swap-dapp/lunatest.lua";
 const EXAMPLE_LUA_SOURCE = path.join(EXAMPLE_DIR, "lunatest.lua");
 const EXAMPLE_LUA_OUT = path.join(EXAMPLE_OUT_DIR, "lunatest.lua");
+const HISTORICAL_ARTIFACTS = [
+  path.join(DOCS_DIST, "PRD.html"),
+  path.join(DOCS_DIST, "plans"),
+];
 
 function normalizeDocsBase(value) {
   if (!value || value === "/") {
@@ -58,6 +62,13 @@ const buildSucceeded =
 if (!buildSucceeded) {
   process.exitCode = 1;
 } else {
+  const historicalArtifact = HISTORICAL_ARTIFACTS.find((artifact) => existsSync(artifact));
+
+  if (historicalArtifact) {
+    console.error(`[docs build] Historical planning artifact must not be public: ${historicalArtifact}`);
+    process.exitCode = 1;
+  }
+
   copyFileSync(EXAMPLE_LUA_SOURCE, EXAMPLE_LUA_OUT);
 
   if (!existsSync(EXAMPLE_INDEX)) {

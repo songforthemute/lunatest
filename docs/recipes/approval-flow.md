@@ -1,5 +1,18 @@
 # Recipe: Approval Flow
 
-1. 초기 상태를 allowance 부족으로 설정합니다.
-2. approve 단계가 끝나면 swap 단계로 넘어갑니다.
-3. 단계 전환 경로를 assertion으로 검증합니다.
+Model approval as a distinct user-visible state before the swap can proceed.
+
+1. Arrange an insufficient allowance in `given`.
+2. Trigger the action that requires approval.
+3. Assert the approval UI and the allowance state when they matter.
+4. Use `stages` only when the approval-to-swap transition itself is part of the contract.
+
+```lua
+scenario {
+  name = "approval-required",
+  given = { allowance = { USDC = "0" } },
+  when = { action = "swap" },
+  then_ui = { approvalRequired = true },
+  then_state = { allowance = { USDC = "0" } },
+}
+```
