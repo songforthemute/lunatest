@@ -1,6 +1,8 @@
 # Wagmi Setup
 
-`@lunatest/react`의 wagmi 어댑터를 사용하면 provider 주입 지점을 간단히 교체할 수 있습니다.
+Use `withLunaWagmiConfig` to install a Luna transport for the chains already
+listed in a wagmi-like configuration. It returns a new config and does not
+create or configure a wagmi client by itself.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -8,4 +10,9 @@ import { withLunaWagmiConfig } from "@lunatest/react";
 
 const provider = new LunaProvider({ chainId: "0x1" });
 const config = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+
+await config.transports?.[1]?.request({ method: "eth_chainId" });
 ```
+
+Supply the returned transport at the wagmi integration point in your app. The
+adapter forwards EIP-1193-style `{ method, params }` requests to the provider.

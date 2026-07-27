@@ -1,8 +1,9 @@
 # Wagmi Integration
 
-`@lunatest/react` provides a wagmi-style adapter API.
-
-## Example
+`@lunatest/react` adapts a `LunaProvider` to the small wagmi-style transport
+surface it exposes. The helper preserves the supplied config and replaces the
+transport for every configured chain with a transport that calls
+`LunaProvider.request`.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -16,6 +17,10 @@ const config = withLunaWagmiConfig(
   },
   provider,
 );
+
+await config.transports?.[1]?.request({ method: "eth_chainId" });
 ```
 
-`config.transports[1].request(...)` forwards to `LunaProvider.request(...)`.
+This returns a wagmi-like config rather than constructing a wagmi client. Pass
+the resulting transport through the integration point used by the wagmi version
+in your application.

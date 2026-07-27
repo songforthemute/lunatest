@@ -1,9 +1,29 @@
-# Multi-stage Flow
+# Multi-stage Flows
 
-Approve -> Swap처럼 단계가 이어지는 시나리오는 `stages`로 표현합니다.
+Use `stages` when one user flow moves through meaningful intermediate UI
+states, such as approval followed by swap confirmation. Name stages after the
+state a user can recognize, and keep each assertion limited to the values that
+matter for that state.
 
-권장 패턴:
+```lua
+scenario {
+  name = "approve-then-swap",
+  given = {
+    allowance = { USDC = "0" },
+  },
+  when = { action = "swap" },
+  then_ui = {
+    finalScreen = "success",
+  },
+  stages = {
+    { name = "approval_required" },
+    { name = "approval_submitted" },
+    { name = "quote_ready" },
+    { name = "swap_confirmed" },
+  },
+  timing_ms = 120,
+}
+```
 
-1. 단계 이름은 UI 상태를 바로 떠올릴 수 있게 짓기
-2. 단계별 assertion은 꼭 필요한 값만 선언하기
-3. 타이밍 검증은 `timing_ms`로 분리해 의도를 명확히 하기
+Use `timing_ms` only for an explicit timing requirement. It should not be a
+substitute for waiting on an observable UI or state transition.

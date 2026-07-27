@@ -9,11 +9,10 @@ Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경
 
 패키지 상태: `Published` (stable 패키지가 npm에 배포되어 있습니다.)
 
-## 빠른 시작
+## 로컬 빠른 시작
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm lint:workspace-types
 pnpm -r lint
 pnpm -r build
 pnpm -r test
@@ -27,54 +26,55 @@ pnpm lint:deadcode
 pnpm pack:check-integrity
 ```
 
-## 사용 가이드
+`pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 `pnpm -r build`를 실행해야 합니다.
 
-1. 기본 품질 및 릴리스 게이트 실행
+## CI 및 야간 명령
+
+fresh checkout CI job은 로컬 E2E/성능 명령 대신 아래 CI 계약 명령을 사용합니다.
 
 ```bash
 pnpm lint:workspace-types
-pnpm -r lint
-pnpm -r build
-pnpm -r test
+pnpm run build:workspace:ci
+pnpm run lint:workspace:ci
+pnpm run test:workspace:ci
 pnpm lint:deadcode
 pnpm pack:check-integrity
-pnpm test:e2e:smoke
+pnpm run test:e2e:smoke:ci
+pnpm run perf:regression:ci
 ```
 
-`pnpm lint:workspace-types`는 fresh checkout처럼 `dist` 산출물이 없는 상태에서도 workspace 타입체크가 통과하는지 확인하는 회귀 검증입니다.
+야간 Benchmark workflow에서는 아래 명령도 실행합니다.
 
-2. 문서 사이트 로컬 실행
+```bash
+pnpm run test:e2e:extended:ci
+pnpm run perf:absolute:ci
+```
+
+`lint:workspace-types`는 lint 전에 package `dist` 디렉터리를 임시로 제거합니다. `*:ci` wrapper는 fresh checkout에 package 산출물이 없을 때 필요한 prebuild를 중앙화합니다. 일반 로컬 반복에서는 위의 로컬 명령을 사용하고, CI 재현이 필요할 때만 wrapper를 사용합니다.
+
+## 사용 가이드
+
+1. 문서 사이트 로컬 실행
 
 ```bash
 pnpm docs:dev
 ```
 
-3. 채널별 배포
+2. 채널별 배포
 
 ```bash
 pnpm release:publish:stable
 pnpm release:publish:next
 ```
 
-4. 주요 문서 진입점
+3. 주요 문서 진입점
 - 시작 가이드: `docs/getting-started.md`
 - 아키텍처: `docs/concepts/architecture.md`
-- CI 게이트: `docs/guides/ci-integration.md`
+- CI 게이트: `docs/ko/guides/ci-integration.md`
 - 프로토콜/지갑 지원 범위: `docs/guides/protocol-support.md`
 - DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
 - Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - Local preset 작성: `docs/guides/local-preset-authoring.md`
-
-CI/야간 전용 wrapper:
-
-```bash
-pnpm run test:e2e:smoke:ci
-pnpm run test:e2e:extended:ci
-pnpm run perf:regression:ci
-pnpm run perf:absolute:ci
-```
-
-이 wrapper들은 fresh checkout CI job이 workspace package entry를 읽기 전에 필요한 prebuild 단계를 중앙화합니다. CI와 release 흐름에서는 `pnpm lint:deadcode`와 `pnpm pack:check-integrity`도 함께 실행합니다.
 
 ## 저장소 구조
 
@@ -101,8 +101,10 @@ pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin
+pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
 ```
+
+`@lunatest/vitest-plugin`과 `@lunatest/playwright-plugin`은 `next` 채널로 배포됩니다. `latest`로 승격되기 전까지 설치 명령에는 `@next`를 명시합니다.
 
 ### 1) Core provider
 

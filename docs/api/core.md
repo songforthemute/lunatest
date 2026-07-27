@@ -9,6 +9,9 @@ Release channel: `latest`
 - `createPresetRegistry(options?)`
 - `loadProjectPresetSources(projectRoot)`
 - `loadLunaConfig(source)`
+- `loadLunaProjectConfig`
+- `loadLunaProjectScenarios`
+- `resolveLunaScenarioSources`
 - `listProtocolPresets(registry?)`
 - `getProtocolPreset(id, registry?)`
 - `materializeProtocolPreset(id, params?, registry?)`
@@ -21,7 +24,10 @@ Release channel: `latest`
 - `buildCoverageSnapshot(input)`
 - `resolveCoverageMetadata(input)`
 - `createScenarioRuntime(config)`
+- `applyInterceptState`
+- `setRouteMocks`
 - `LuaConfigSchema`
+- `createDeterministicScenarioAdapter`
 - `executeLuaScenario(input)`
 - `RouteMock`
 
@@ -131,6 +137,12 @@ type CoverageSnapshot = {
 
 `buildCoverageSnapshot({ items, coverageCatalog? })` merges known coverage targets from the explicit catalog and the covered targets discovered from the items. It returns `known`, `coveredTargets`, `missing`, and aggregate `total/covered/ratio` values.
 
+## Project scenario sources
+
+`loadLunaProjectConfig` resolves an optional `lunatest.config.json` from a working directory or explicit path. Its `ResolvedLunaProjectConfig` result includes the normalized `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter configuration, `projectRoot`, and resolved source paths.
+
+`resolveLunaScenarioSources` expands a requested source, glob, or the configured default source set into sorted, unique Lua file paths. `loadLunaProjectScenarios` parses those files and returns project-relative scenario ids, names, source paths, parsed configs, and resolved coverage metadata. Use `allowEmpty` only when an empty source set is valid for the calling workflow.
+
 ## Lua config and scenario execution
 
 ```ts
@@ -165,3 +177,7 @@ type LuaConfig = {
 - `resolveElapsedMs`
 
 The result includes `scenarioName`, `pass`, optional `error`, optional `result`, and the resolved `config`.
+
+`createDeterministicScenarioAdapter` is the built-in adapter for deterministic scenario execution. It applies the scenario's route and state data without a browser, then exposes the resulting intercept state to the UI and state resolvers. Supply `resolveTransitions` or `resolveElapsedMs` in a custom adapter when the scenario needs those assertions.
+
+`applyInterceptState` and `setRouteMocks` are convenience functions for mutating a `ScenarioRuntime`; each delegates to the runtime instance and returns the updated state or route list.

@@ -1,8 +1,6 @@
-# 시나리오 예제
+# 시나리오 작성
 
-LunaTest 시나리오는 준비할 상태(`given`), 실행할 행동(`when`), 검증할 UI 또는 상태를 선언합니다. 하나의 시나리오는 가능한 한 하나의 사용자 흐름에 집중하세요.
-
-## 기본 성공 흐름
+Lua 시나리오는 준비할 상태, 실행할 사용자 행동, 검증할 UI 또는 상태를 선언합니다. 하나의 시나리오는 한 개의 사용자 흐름에 집중하는 것이 좋습니다.
 
 ```lua
 scenario {
@@ -22,7 +20,7 @@ scenario {
 }
 ```
 
-`then_state`, `not_present`, `stages`, `timing_ms`는 검증 의도를 더 명확하게 할 때만 추가합니다.
+`then_state`, `not_present`, `stages`, `timing_ms`는 검증을 더 정확하게 표현할 때만 추가하세요. 일반적인 흐름은 [시나리오 예제](./scenario-examples.md)에서 확인할 수 있습니다.
 
 ## Coverage metadata
 
@@ -52,4 +50,4 @@ scenario {
 - `then_ui`, `then_state`, `not_present`의 top-level key는 state target이 됩니다.
 - `then_ui`의 top-level key는 component target이 됩니다.
 
-명시한 차원은 해당 차원의 추론값을 대체합니다. 예를 들어 `coverage.states`만 선언하면 state는 명시값을 쓰고, `coverage.components`를 생략한 경우 component는 `then_ui` key에서 계속 추론합니다.
+명시한 차원은 해당 차원의 추론값을 대체합니다. 예를 들어 `coverage.states`만 선언하면 state는 명시값을 쓰고, `coverage.components`를 생략하면 component는 `then_ui` key에서 계속 추론합니다.

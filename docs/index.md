@@ -1,19 +1,36 @@
-# LunaTest Docs
+# LunaTest Documentation
 
-LunaTest는 Web3 프론트엔드를 빠르고 안정적으로 검증하기 위한 결정론 테스트 SDK입니다.
+LunaTest is a deterministic testing SDK for Web3 frontends. It lets a frontend
+team make wallet, route, and scenario state reproducible without presenting a
+test double as a full EVM simulation.
 
-## Quick Links
+## Start Here
 
-- [Getting Started](./getting-started.md)
-- [Live Demo](./guides/live-demo.md)
-- [Library Consumption Guide](./guides/library-consumption.md)
+- [Getting Started](./getting-started.md) sets up a LunaTest project.
+- [Writing Scenarios](./guides/writing-scenarios.md) explains Lua scenarios and coverage metadata.
+- [React Integration](./guides/react-integration.md) connects a React tree to a `LunaProvider`.
+- [Playwright Routing](./guides/playwright-routing.md) controls HTTP and JSON-RPC routes in browser tests.
+- [CLI Workflow](./guides/cli-workflow.md) covers validation, execution, coverage, generation, and diagnostics.
+
+## Product Guides
+
+- [Runtime Intercept 0-to-1](./guides/e2e-0to1.md)
+- [Scenario Examples](./guides/scenario-examples.md)
 - [Protocol and Wallet Support](./guides/protocol-support.md)
+- [Library Consumption](./guides/library-consumption.md)
+- [MCP stdio](./guides/mcp-stdio.md)
+- [Live Demo](./guides/live-demo.md)
 - [DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)
 - [Sepolia Swap Demo](./guides/swap-demo-sepolia-uniswapv3.md)
-- [한국어 문서 인덱스](./ko/index.md)
-- [한국어 시나리오 예제](./ko/guides/scenario-examples.md)
-- [한국어 E2E 0→1 워크스루](./ko/guides/e2e-0to1.md)
+- [Local Preset Authoring](./guides/local-preset-authoring.md)
+
+## Reference
+
 - [Architecture](./concepts/architecture.md)
-- [Scenario Writing](./guides/writing-scenarios.md)
-- [API: Core](./api/core.md)
-- [API: Runtime Intercept](./api/runtime-intercept.md)
+- [Core API](./api/core.md)
+- [Runtime Intercept API](./api/runtime-intercept.md)
+- [React API](./api/react.md)
+- [CLI API](./api/cli.md)
+- [MCP API](./api/mcp.md)
+
+Korean readers can use the [Korean documentation index](./ko/index.md).

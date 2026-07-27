@@ -23,11 +23,10 @@ scenario {
 }
 ```
 
-## Quick Start
+## Local Quick Start
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm lint:workspace-types
 pnpm -r lint
 pnpm -r build
 pnpm -r test
@@ -41,36 +40,48 @@ pnpm lint:deadcode
 pnpm pack:check-integrity
 ```
 
-## Usage Guide
+`pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm -r build`, which creates the workspace package entries it loads.
 
-1. Run workspace quality and release gates:
+## CI and Nightly Commands
+
+Fresh-checkout CI jobs use their own wrapper contracts instead of the local E2E and performance commands:
 
 ```bash
 pnpm lint:workspace-types
-pnpm -r lint
-pnpm -r build
-pnpm -r test
+pnpm run build:workspace:ci
+pnpm run lint:workspace:ci
+pnpm run test:workspace:ci
 pnpm lint:deadcode
 pnpm pack:check-integrity
-pnpm test:e2e:smoke
+pnpm run test:e2e:smoke:ci
+pnpm run perf:regression:ci
 ```
 
-`pnpm lint:workspace-types` verifies that workspace typechecking still passes in a fresh-checkout-like state where `dist` artifacts are absent.
+The nightly Benchmark workflow additionally runs:
 
-2. Run docs locally:
+```bash
+pnpm run test:e2e:extended:ci
+pnpm run perf:absolute:ci
+```
+
+`lint:workspace-types` temporarily removes package `dist` directories before linting. The `*:ci` wrappers centralize the prebuild required when a fresh checkout has no package artifacts. They are intended for CI or for reproducing CI locally; use the local commands above for normal iteration.
+
+## Usage Guide
+
+1. Run docs locally:
 
 ```bash
 pnpm docs:dev
 ```
 
-3. Publish by channel:
+2. Publish by channel:
 
 ```bash
 pnpm release:publish:stable
 pnpm release:publish:next
 ```
 
-4. Explore API and guides:
+3. Explore API and guides:
 - docs index: `docs/index.md`
 - getting started: `docs/getting-started.md`
 - CI and gates: `docs/guides/ci-integration.md`
@@ -78,17 +89,6 @@ pnpm release:publish:next
 - DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - local preset authoring: `docs/guides/local-preset-authoring.md`
-
-CI/nightly wrappers:
-
-```bash
-pnpm run test:e2e:smoke:ci
-pnpm run test:e2e:extended:ci
-pnpm run perf:regression:ci
-pnpm run perf:absolute:ci
-```
-
-These wrappers centralize the prebuild step that fresh-checkout CI jobs need before loading workspace package entries. The CI and release flows also run `pnpm lint:deadcode` and `pnpm pack:check-integrity` before publish.
 
 ## Repository Structure
 
@@ -114,9 +114,11 @@ Install only what you need:
 pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin
+pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
 pnpm add @lunatest/mcp
 ```
+
+`@lunatest/vitest-plugin` and `@lunatest/playwright-plugin` are published on the `next` channel; keep `@next` in installation commands until they are promoted to `latest`.
 
 ### 1) Core provider (EIP-1193 compatible)
 
@@ -342,7 +344,7 @@ expect({ pass: true }).toLunaPass();
 
 ## Performance Policy
 
-- PR: p95 regression gate (baseline 대비 10% 초과 시 실패)
+- PR: p95 regression gate (fails when p95 exceeds the baseline by more than 10%)
 - Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
 
 ## CI/CD

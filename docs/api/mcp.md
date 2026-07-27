@@ -134,7 +134,7 @@ type ComponentStatesResult = {
 
 `known`, `covered`, and `missing` contain component state names only. `componentCoverage` reports whether the component itself is present in the coverage catalog or covered by scenario metadata.
 
-`resource.get("lunatest://protocols")` returns protocol metadata objects with `id`, `label`, `source`, `kind`, and `supportedChains`.
+`resource.get("lunatest://protocols")` returns a resource wrapper shaped as `{ uri: "lunatest://protocols", content }`. Its `content` is the protocol metadata array; each item has `id`, `label`, `source`, `kind`, and `supportedChains`.
 
 ## Embedded stdio example
 

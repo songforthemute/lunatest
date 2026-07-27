@@ -21,7 +21,6 @@
 - `resolveEnabled(config, nodeEnv?)`
 - `normalizeRuntimeInterceptConfig(input)`
 - `LunaRuntimeInterceptConfig`
-- `NormalizedRuntimeInterceptConfig`
 - `RuntimeInterceptHandle`
 
 ## `LunaRuntimeInterceptConfig`
@@ -71,7 +70,8 @@ type LunaWalletSession = {
 
 - `wallet.session`을 full `LunaWalletSession`으로 materialize
 - `intercept.mode`는 생략 시 `strict`로 기본값 적용
-- `intercept.routing`은 legacy route list가 들어와도 배열로 정규화
+- `intercept.routing`은 normalized route array로 복제
+- legacy `intercept.routes`는 변환해 그 normalized route array에 추가
 - `intercept.mockResponses`는 plain record로 복제
 
 ## 활성화 우선순위
@@ -111,6 +111,7 @@ import {
   setRouteMocks,
   applyInterceptState,
 } from "@lunatest/runtime-intercept";
+import type { LunaWalletSession } from "@lunatest/runtime-intercept";
 
 const config = await loadLunaConfig("./lunatest.lua");
 const nodeEnv =
