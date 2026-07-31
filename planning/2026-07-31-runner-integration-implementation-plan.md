@@ -28,10 +28,10 @@
 **Step 1: Write failing lookup and execution tests**
 
 Test one project with `lunatest.config.json`, a root Lua source, and two scenario
-sources. Assert that listing returns stable project-relative IDs, a selected ID
-executes its parsed config through the supplied adapter, and `runAll` retains
-source order. Add failing cases for missing ID, ambiguous ID, and an adapter
-without `resolveUi`.
+sources. Assert that listing returns stable project-relative IDs, a selected exact
+ID executes its parsed config through the supplied adapter, and `runAll` retains
+source order. Add failing cases for a missing ID and an adapter without
+`resolveUi`.
 
 **Step 2: Verify the red state**
 
@@ -43,8 +43,8 @@ Expected: FAIL because the project runner does not exist.
 
 Build on `loadLunaProjectConfig`, `loadLunaProjectScenarios`, and
 `executeLuaScenario({ source: scenario.config, adapter })`. Preserve source and
-ID on each returned result. Resolve a source/ID exactly and throw named lookup
-errors that include the requested selector and matching sources when ambiguous.
+ID on each returned result. Resolve only exact project-relative scenario IDs and
+throw a named lookup error that includes the requested ID when it is missing.
 
 **Step 4: Verify the focused Core test**
 

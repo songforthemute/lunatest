@@ -35,6 +35,16 @@ export {
   type ResolveLunaScenarioSourcesInput,
 } from "./project/scenarios.node.js";
 export {
+  listLunaProjectScenarios,
+  runAllLunaProjectScenarios,
+  runLunaProjectScenario,
+  LunaProjectScenarioNotFoundError,
+  type LunaProjectRunnerOptions,
+  type LunaProjectScenarioExecution,
+  type RunAllLunaProjectScenariosOptions,
+  type RunLunaProjectScenarioOptions,
+} from "./project/runner.node.js";
+export {
   applyInterceptState,
   createScenarioRuntime,
   LuaConfigSchema,

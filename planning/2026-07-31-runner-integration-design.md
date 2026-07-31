@@ -56,9 +56,10 @@ Add a Node-only project runner that exposes:
 - `runAllLunaProjectScenarios(options)` for an ordered catalog and adapter
   factory.
 
-Scenario IDs are project-root-relative paths without the `.lua` suffix. An ID
-that resolves to zero or multiple sources returns a typed lookup error. A run
-never substitutes `{ pass: true }` for a missing source, adapter, or resolver.
+Scenario IDs are project-root-relative paths without the `.lua` suffix. The
+public runner accepts only exact IDs, so source selection cannot become
+ambiguous. A missing ID returns a typed lookup error. A run never substitutes
+`{ pass: true }` for a missing source, adapter, or resolver.
 
 The runner uses existing project loaders and passes parsed `LuaConfig` values to
 `executeLuaScenario`, avoiding a second Lua parse during `runAll`. It caches no
