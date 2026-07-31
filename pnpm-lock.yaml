@@ -229,7 +229,11 @@ importers:
         specifier: workspace:*
         version: link:../contracts
 
-  packages/vitest-plugin: {}
+  packages/vitest-plugin:
+    dependencies:
+      '@lunatest/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 
