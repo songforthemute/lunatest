@@ -46,6 +46,14 @@ test("package.json exposes CI wrapper scripts", async () => {
     "pnpm run build:workspace:ci && pnpm test:e2e:extended",
   );
   assert.equal(
+    pkg.scripts["test:browser"],
+    "pnpm --filter @lunatest/e2e-tests test:browser",
+  );
+  assert.equal(
+    pkg.scripts["test:browser:ci"],
+    "pnpm run build:workspace:ci && pnpm test:browser",
+  );
+  assert.equal(
     pkg.scripts["perf:absolute:ci"],
     "pnpm run build:workspace:ci && node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json",
   );
@@ -66,12 +74,29 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   assert.match(ciWorkflow, /pnpm run lint:workspace:ci/);
   assert.match(ciWorkflow, /pnpm run test:workspace:ci/);
   assert.match(ciWorkflow, /pnpm run test:e2e:smoke:ci/);
+  assert.match(ciWorkflow, /pnpm run test:browser:ci/);
   assert.match(ciWorkflow, /pnpm run perf:regression:ci/);
   assert.doesNotMatch(ciWorkflow, /pnpm -r --filter=!@lunatest\/e2e-tests build/);
   assert.doesNotMatch(ciWorkflow, /pnpm -r --filter=!@lunatest\/e2e-tests lint/);
   assert.doesNotMatch(ciWorkflow, /pnpm -r --filter=!@lunatest\/e2e-tests test/);
   assert.match(benchmarkWorkflow, /pnpm run perf:absolute:ci/);
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
+});
+
+test("CI runs the Chromium scenario integration on Linux only", async () => {
+  const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+  const browserJob = getWorkflowJob(ciWorkflow, "browser-scenario");
+
+  assert.match(
+    browserJob,
+    /^  browser-scenario:\n    runs-on: ubuntu-latest\n    needs: quality\n/m,
+  );
+  assert.match(browserJob, /pnpm install --frozen-lockfile/);
+  assert.match(
+    browserJob,
+    /pnpm --filter @lunatest\/e2e-tests exec playwright install --with-deps chromium/,
+  );
+  assert.match(browserJob, /pnpm run test:browser:ci/);
 });
 
 test("CI preserves pull request and main push triggers", async () => {

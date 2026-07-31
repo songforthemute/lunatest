@@ -55,7 +55,7 @@ export type PlaywrightRouteTarget = {
   route: (
     url: string | RegExp,
     handler: (route: PlaywrightLikeRoute) => Promise<void>,
-  ) => Promise<void> | void;
+  ) => Promise<unknown> | unknown;
 };
 
 export type InitScriptTarget = {

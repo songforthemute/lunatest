@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createLunaFixture } from "../packages/playwright-plugin/src/fixture";
+import { createLunaFixture } from "@lunatest/playwright-plugin";
 
 type MockRoute = {
   request: () => {
