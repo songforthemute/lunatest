@@ -110,18 +110,45 @@ describe("Vitest scenario runner", () => {
       }),
     ).toThrow("at least one harness test file");
   });
+
+  it("derives the plugin and watch directory from lunatest.config.json", async () => {
+    const root = await createProjectRoot("flows");
+
+    try {
+      const plugin = createLunaVitestPlugin({ cwd: root });
+      const watchApi = api as typeof api & {
+        createLunaVitestWatchTrigger?: (options: {
+          cwd: string;
+          scenarioDir?: string;
+          testFiles: string[];
+        }) => {
+          pattern: RegExp;
+        };
+      };
+      const trigger = watchApi.createLunaVitestWatchTrigger?.({
+        cwd: root,
+        testFiles: ["tests/luna.test.ts"],
+      });
+
+      expect(plugin.scenarioDir).toBe("flows");
+      expect(trigger?.pattern.test(join(root, "flows", "pass.lua"))).toBe(true);
+      expect(trigger?.pattern.test(join(root, "scenarios", "pass.lua"))).toBe(false);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
-async function createProjectRoot(): Promise<string> {
+async function createProjectRoot(scenarioDir = "scenarios"): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "lunatest-vitest-runner-"));
-  await mkdir(join(root, "scenarios"), { recursive: true });
+  await mkdir(join(root, scenarioDir), { recursive: true });
   await writeFile(
     join(root, "lunatest.config.json"),
-    JSON.stringify({ scenarioDir: "scenarios", luaConfigPath: "missing-root.lua" }),
+    JSON.stringify({ scenarioDir, luaConfigPath: "missing-root.lua" }),
     "utf8",
   );
   await writeFile(
-    join(root, "scenarios", "pass.lua"),
+    join(root, scenarioDir, "pass.lua"),
     `scenario {
       name = "pass",
       when = { action = "quote" },
@@ -130,7 +157,7 @@ async function createProjectRoot(): Promise<string> {
     "utf8",
   );
   await writeFile(
-    join(root, "scenarios", "fail.lua"),
+    join(root, scenarioDir, "fail.lua"),
     `scenario {
       name = "fail",
       when = { action = "quote" },

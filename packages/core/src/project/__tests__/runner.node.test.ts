@@ -148,6 +148,37 @@ describe("project scenario runner", () => {
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  it("runs catalog scenarios sequentially for adapters that share a host target", async () => {
+    const root = await createProjectRoot();
+    let activeRuns = 0;
+    let maxActiveRuns = 0;
+
+    try {
+      const results = await projectRunner().runAllLunaProjectScenarios({
+        cwd: root,
+        createAdapter(scenario) {
+          return {
+            async runWhen() {
+              activeRuns += 1;
+              maxActiveRuns = Math.max(maxActiveRuns, activeRuns);
+              await new Promise((resolveRun) => setTimeout(resolveRun, 0));
+              activeRuns -= 1;
+            },
+            resolveUi: () =>
+              scenario.id === "root"
+                ? { page: { ready: true } }
+                : { quote: { status: "ready" } },
+          };
+        },
+      });
+
+      expect(maxActiveRuns).toBe(1);
+      expect(results.map((result) => result.execution.pass)).toEqual([true, true]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 });
 
 async function createProjectRoot(): Promise<string> {

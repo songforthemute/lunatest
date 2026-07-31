@@ -1,8 +1,8 @@
 import { resolve } from "node:path";
 
-export type LunaVitestWatchTriggerOptions = {
-  cwd?: string;
-  scenarioDir?: string;
+import { loadLunaProjectConfigSync, type LunaProjectRunnerOptions } from "@lunatest/core";
+
+export type LunaVitestWatchTriggerOptions = LunaProjectRunnerOptions & {
   testFiles: string[];
 };
 
@@ -26,8 +26,9 @@ export function createLunaVitestWatchTrigger(
     throw new Error("LunaTest watch trigger requires at least one harness test file");
   }
 
+  const project = loadLunaProjectConfigSync(options);
   const scenarioDir = toPosixPath(
-    resolve(options.cwd ?? process.cwd(), options.scenarioDir ?? "scenarios"),
+    resolve(project.projectRoot, options.scenarioDir ?? project.scenarioDir),
   ).replace(/\/+$/u, "");
   const testFiles = [...options.testFiles];
 

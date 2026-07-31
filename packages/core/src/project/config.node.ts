@@ -1,4 +1,4 @@
-import { constants as fsConstants } from "node:fs";
+import { constants as fsConstants, existsSync, readFileSync } from "node:fs";
 import { access, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
@@ -107,36 +107,24 @@ async function canAccess(path: string): Promise<boolean> {
   }
 }
 
-export async function loadLunaProjectConfig(
-  options: LoadLunaProjectConfigOptions = {},
-): Promise<ResolvedLunaProjectConfig> {
+type LunaProjectConfigLocation = {
+  cwd: string;
+  selectedConfigPath: string;
+};
+
+function resolveConfigLocation(options: LoadLunaProjectConfigOptions): LunaProjectConfigLocation {
   const cwd = resolve(options.cwd ?? process.cwd());
   const selectedConfigPath = resolve(cwd, options.configPath ?? "lunatest.config.json");
-  const hasConfigFile = await canAccess(selectedConfigPath);
 
-  if (!hasConfigFile && options.configPath) {
-    throw new Error(`Selected LunaTest config not found: ${selectedConfigPath}`);
-  }
+  return { cwd, selectedConfigPath };
+}
 
-  if (!hasConfigFile && options.requireConfig) {
-    throw new Error(`Required LunaTest config not found: ${selectedConfigPath}`);
-  }
-
-  let config = { ...DEFAULT_CONFIG };
-  let configPath: string | null = null;
-  let projectRoot = cwd;
-
-  if (hasConfigFile) {
-    try {
-      config = normalizeConfig(JSON.parse(await readFile(selectedConfigPath, "utf8")));
-    } catch (cause) {
-      const reason = cause instanceof Error ? cause.message : String(cause);
-      throw new Error(`Unable to parse LunaTest config ${selectedConfigPath}: ${reason}`);
-    }
-
-    configPath = selectedConfigPath;
-    projectRoot = dirname(selectedConfigPath);
-  }
+function createResolvedConfig(
+  cwd: string,
+  configPath: string | null,
+  config: LunaProjectConfig,
+): ResolvedLunaProjectConfig {
+  const projectRoot = configPath ? dirname(configPath) : cwd;
 
   return {
     ...config,
@@ -147,4 +135,80 @@ export async function loadLunaProjectConfig(
     resolvedScenarioDir: resolve(projectRoot, config.scenarioDir),
     resolvedLuaConfigPath: resolve(projectRoot, config.luaConfigPath),
   };
+}
+
+function resolveMissingConfig(
+  options: LoadLunaProjectConfigOptions,
+  location: LunaProjectConfigLocation,
+): ResolvedLunaProjectConfig {
+  if (options.configPath) {
+    throw new Error(`Selected LunaTest config not found: ${location.selectedConfigPath}`);
+  }
+
+  if (options.requireConfig) {
+    throw new Error(`Required LunaTest config not found: ${location.selectedConfigPath}`);
+  }
+
+  return createResolvedConfig(location.cwd, null, { ...DEFAULT_CONFIG });
+}
+
+function resolveConfig(
+  location: LunaProjectConfigLocation,
+  rawConfig: string,
+): ResolvedLunaProjectConfig {
+  try {
+    return createResolvedConfig(
+      location.cwd,
+      location.selectedConfigPath,
+      normalizeConfig(JSON.parse(rawConfig)),
+    );
+  } catch (cause) {
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(
+      `Unable to parse LunaTest config ${location.selectedConfigPath}: ${reason}`,
+    );
+  }
+}
+
+export async function loadLunaProjectConfig(
+  options: LoadLunaProjectConfigOptions = {},
+): Promise<ResolvedLunaProjectConfig> {
+  const location = resolveConfigLocation(options);
+  const hasConfigFile = await canAccess(location.selectedConfigPath);
+
+  if (!hasConfigFile) {
+    return resolveMissingConfig(options, location);
+  }
+
+  try {
+    return resolveConfig(location, await readFile(location.selectedConfigPath, "utf8"));
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.startsWith("Unable to parse LunaTest config")) {
+      throw cause;
+    }
+
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Unable to parse LunaTest config ${location.selectedConfigPath}: ${reason}`);
+  }
+}
+
+export function loadLunaProjectConfigSync(
+  options: LoadLunaProjectConfigOptions = {},
+): ResolvedLunaProjectConfig {
+  const location = resolveConfigLocation(options);
+
+  if (!existsSync(location.selectedConfigPath)) {
+    return resolveMissingConfig(options, location);
+  }
+
+  try {
+    return resolveConfig(location, readFileSync(location.selectedConfigPath, "utf8"));
+  } catch (cause) {
+    if (cause instanceof Error && cause.message.startsWith("Unable to parse LunaTest config")) {
+      throw cause;
+    }
+
+    const reason = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`Unable to parse LunaTest config ${location.selectedConfigPath}: ${reason}`);
+  }
 }

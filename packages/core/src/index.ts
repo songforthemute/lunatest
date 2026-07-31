@@ -23,6 +23,7 @@ export type { PresetRegistry, PresetRegistryOptions, ProjectPresetSources } from
 export { loadProjectPresetSources } from "./presets/project-sources.node.js";
 export {
   loadLunaProjectConfig,
+  loadLunaProjectConfigSync,
   type LoadLunaProjectConfigOptions,
   type LunaProjectConfig,
   type ResolvedLunaProjectConfig,

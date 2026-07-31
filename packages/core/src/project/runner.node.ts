@@ -118,10 +118,11 @@ export async function runAllLunaProjectScenarios(
   options: RunAllLunaProjectScenariosOptions,
 ): Promise<LunaProjectScenarioExecution[]> {
   const scenarios = await listLunaProjectScenarios(options);
+  const executions: LunaProjectScenarioExecution[] = [];
 
-  return Promise.all(
-    scenarios.map((scenario) =>
-      executeProjectScenario(scenario, options.createAdapter(scenario)),
-    ),
-  );
+  for (const scenario of scenarios) {
+    executions.push(await executeProjectScenario(scenario, options.createAdapter(scenario)));
+  }
+
+  return executions;
 }
