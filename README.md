@@ -98,8 +98,8 @@ pnpm release:publish:next
 | `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen/devtools/doctor`) |
 | `packages/react` | React provider/hooks + adapters |
 | `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
-| `packages/vitest-plugin` | Vitest plugin/matchers |
-| `packages/playwright-plugin` | Playwright fixtures and routing helpers |
+| `packages/vitest-plugin` | Vitest project scenario runner and matchers |
+| `packages/playwright-plugin` | Playwright routing and page-bound scenario runner |
 | `packages/runtime-intercept` | Browser runtime intercept for local dev interaction tests |
 | `e2e-tests` | Smoke/extended end-to-end test suite |
 | `docs` | VitePress documentation site |
@@ -258,14 +258,37 @@ Built-in protocol presets (`builtin/uniswap_v2`, `builtin/uniswap_v3`, `builtin/
 
 For a runnable multi-protocol dogfood app that exercises those presets through public LunaTest APIs and `window.ethereum.request`, use `examples/defi-dashboard` or `docs/guides/defi-dashboard-dogfood.md`.
 
-### 6) Vitest matcher
+### 6) Vitest and Playwright scenario runners
 
 ```ts
-import { toLunaPass } from "@lunatest/vitest-plugin";
+import { createLunaVitestPlugin } from "@lunatest/vitest-plugin";
 
-expect.extend({ toLunaPass });
-expect({ pass: true }).toLunaPass();
+const luna = createLunaVitestPlugin({ cwd: process.cwd() });
+
+await luna.assertScenario("scenarios/quote-ready", {
+  runWhen: () => clickQuoteButton(),
+  resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+});
 ```
+
+For a real Playwright page, bind the same project scenario to explicit host actions and DOM reads:
+
+```ts
+import { createLunaCommands, createLunaPageAdapter } from "@lunatest/playwright-plugin";
+
+await createLunaCommands({ cwd: process.cwd() }).assertScenario(
+  "scenarios/quote-ready",
+  createLunaPageAdapter({
+    page,
+    runWhen: ({ page: target }) => target.getByTestId("load-quote").click(),
+    resolveUi: async ({ page: target }) => ({
+      quote: { status: await target.getByTestId("quote-status").textContent() },
+    }),
+  }),
+);
+```
+
+Scenario IDs are exact project-relative paths. The integrations do not infer selectors or actions from Lua. `createLunaFixture().injectProvider` is deprecated and is not a wallet emulator; bootstrap `@lunatest/runtime-intercept` for deterministic wallet behavior.
 
 ## Why
 

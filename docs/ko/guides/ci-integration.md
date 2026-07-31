@@ -12,6 +12,7 @@ pnpm -r build
 pnpm -r test
 pnpm test:e2e:smoke
 pnpm test:e2e:extended
+pnpm test:browser
 ```
 
 직접 E2E 명령은 workspace package entry를 읽으므로 먼저 build가 필요합니다. 로컬에서 성능을 조사할 때도 먼저 빌드한 뒤 runner를 직접 실행합니다.
@@ -34,6 +35,7 @@ pnpm run test:workspace:ci
 pnpm lint:deadcode
 pnpm pack:check-integrity
 pnpm run test:e2e:smoke:ci
+pnpm run test:browser:ci
 pnpm run perf:regression:ci
 ```
 
@@ -53,11 +55,14 @@ pnpm run perf:absolute:ci
 1. `quality`는 `lint:workspace-types`, CI build/lint/test wrapper, `lint:deadcode`, `pack:check-integrity`를 실행합니다.
 2. `consumer-smoke-pack`은 `quality` 후 Linux에서 실행됩니다. Windows와 macOS packed-consumer job은 pull request와 `main`에서 실행됩니다.
 3. `e2e-smoke`는 `quality` 후 `pnpm run test:e2e:smoke:ci`를 실행합니다.
-4. `performance-regression`은 pull request와 push에서 `quality`, Linux packed-consumer smoke, E2E smoke 이후 실행됩니다. 이 job은 `pnpm run perf:regression:ci`를 호출합니다.
+4. `browser-scenario`는 `quality` 후 Linux에서 실행되며 Playwright로 Chromium을 설치한 뒤 `pnpm run test:browser:ci`를 호출합니다.
+5. `performance-regression`은 pull request와 push에서 `quality`, Linux packed-consumer smoke, E2E smoke 이후 실행됩니다. 이 job은 `pnpm run perf:regression:ci`를 호출합니다.
 
 모든 job은 `pnpm install --frozen-lockfile`로 설치합니다. packed-consumer job은 `pnpm consumer-smoke:pack` 전에 반드시 `pnpm run build:workspace:ci`를 실행합니다.
 
 `test:e2e:*`는 workspace source integration을 검증합니다. `consumer-smoke:pack`은 stable/next 공개 패키지 전체의 local tarball을 React 18/19 peer 조합에 설치해 public package entrypoint를 검증합니다. 이는 npm registry 소비 검증을 대체하지 않습니다.
+
+`test:browser`는 Chromium scenario contract를 실행합니다. 로컬 실행 전에는 `pnpm --filter @lunatest/e2e-tests exec playwright install chromium`으로 같은 browser binary를 설치하세요. browser 설치는 의도적으로 Linux CI job에만 제한하며 Windows/macOS consumer job은 browser를 설치하지 않습니다.
 
 ## 야간 Benchmark Workflow
 

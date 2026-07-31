@@ -10,8 +10,13 @@ Release channel: `latest`
 - `loadProjectPresetSources(projectRoot)`
 - `loadLunaConfig(source)`
 - `loadLunaProjectConfig`
+- `loadLunaProjectConfigSync`
 - `loadLunaProjectScenarios`
 - `resolveLunaScenarioSources`
+- `listLunaProjectScenarios(options?)`
+- `runLunaProjectScenario(options)`
+- `runAllLunaProjectScenarios`
+- `LunaProjectScenarioNotFoundError`
 - `listProtocolPresets(registry?)`
 - `getProtocolPreset(id, registry?)`
 - `materializeProtocolPreset(id, params?, registry?)`
@@ -139,9 +144,47 @@ type CoverageSnapshot = {
 
 ## Project scenario sources
 
-`loadLunaProjectConfig` resolves an optional `lunatest.config.json` from a working directory or explicit path. Its `ResolvedLunaProjectConfig` result includes the normalized `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter configuration, `projectRoot`, and resolved source paths.
+`loadLunaProjectConfig` resolves an optional `lunatest.config.json` asynchronously from a working directory or explicit path. `loadLunaProjectConfigSync` returns the identical normalized result for synchronous host-configuration integration such as Vitest watch setup. Its `ResolvedLunaProjectConfig` result includes the normalized `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter configuration, `projectRoot`, and resolved source paths.
 
 `resolveLunaScenarioSources` expands a requested source, glob, or the configured default source set into sorted, unique Lua file paths. `loadLunaProjectScenarios` parses those files and returns project-relative scenario ids, names, source paths, parsed configs, and resolved coverage metadata. Use `allowEmpty` only when an empty source set is valid for the calling workflow.
+
+## Project scenario runner
+
+```ts
+type LunaProjectRunnerOptions = {
+  cwd?: string;
+  configPath?: string;
+  scenarioDir?: string;
+};
+
+type LunaProjectScenarioExecution = {
+  scenario: LunaProjectScenario;
+  execution: ExecuteLuaScenarioResult;
+};
+
+listLunaProjectScenarios(options?): Promise<LunaProjectScenario[]>;
+runLunaProjectScenario({ scenarioId, adapter, ...options }): Promise<LunaProjectScenarioExecution>;
+runAllLunaProjectScenarios({ createAdapter, ...options }): Promise<LunaProjectScenarioExecution[]>;
+```
+
+`listLunaProjectScenarios` loads the resolved project catalog. `runLunaProjectScenario` accepts only an exact project-relative id such as `scenarios/swap`; it does not fall back to a display name. An unknown id throws `LunaProjectScenarioNotFoundError`.
+
+The runner parses project sources once per operation and passes each parsed `LuaConfig` to `executeLuaScenario`. `runAllLunaProjectScenarios` preserves catalog order and executes scenarios sequentially, so an adapter may safely bind a shared browser page or host target. The host supplies an explicit `ExecuteLuaScenarioAdapter`: LunaTest does not infer UI selectors or browser actions.
+
+```ts
+import { runLunaProjectScenario } from "@lunatest/core";
+
+const result = await runLunaProjectScenario({
+  cwd: process.cwd(),
+  scenarioId: "scenarios/quote-ready",
+  adapter: {
+    runWhen: () => clickQuoteButton(),
+    resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+  },
+});
+
+if (!result.execution.pass) throw new Error(result.execution.error);
+```
 
 ## Lua config and scenario execution
 

@@ -2,44 +2,129 @@
 
 Release channel: `next`
 
-Install this package explicitly from its prerelease channel:
-
 ```bash
 pnpm add -D @lunatest/vitest-plugin@next
 ```
 
-## `createLunaVitestPlugin(options?)`
+`@lunatest/vitest-plugin` executes a configured LunaTest project through explicit
+adapters. It does not register global matchers, infer UI actions, or replace
+Vitest's own runner lifecycle.
+
+## `createLunaVitestRunner(options?)`
 
 ```ts
-type LunaVitestPluginOptions = {
+type LunaVitestRunnerOptions = {
+  cwd?: string;
+  configPath?: string;
   scenarioDir?: string;
 };
 
-type LunaVitestPlugin = {
+type LunaVitestRunner = {
+  listScenarios(): Promise<LunaProjectScenario[]>;
+  runScenario(id: string, adapter: ExecuteLuaScenarioAdapter): Promise<LunaProjectScenarioExecution>;
+  assertScenario(id: string, adapter: ExecuteLuaScenarioAdapter): Promise<LunaProjectScenarioExecution>;
+  runAll(createAdapter: (scenario: LunaProjectScenario) => ExecuteLuaScenarioAdapter): Promise<LunaProjectScenarioExecution[]>;
+};
+```
+
+`listScenarios()` loads `lunatest.config.json` and the project catalog. IDs are
+exact project-relative paths such as `scenarios/quote-ready`. `runScenario()`
+returns the executor result even when it fails. `assertScenario()` throws
+`LunaVitestScenarioAssertionError` on a failed result, including the scenario
+id, source, error, and diff when available.
+
+`runAll()` preserves catalog order and executes scenarios sequentially. An
+adapter may therefore reuse a browser page or another mutable host target.
+
+```ts
+import { expect, it } from "vitest";
+import { createLunaVitestRunner, toLunaPass } from "@lunatest/vitest-plugin";
+
+expect.extend({ toLunaPass });
+
+const luna = createLunaVitestRunner({ cwd: process.cwd() });
+
+it("loads a quote", async () => {
+  const execution = await luna.assertScenario("scenarios/quote-ready", {
+    runWhen: () => clickQuoteButton(),
+    resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+  });
+
+  expect(execution.execution).toLunaPass();
+});
+```
+
+The adapter contract comes from `@lunatest/core`. `resolveUi` is the host's
+source of truth for UI assertions; `resolveState`, `resolveTransitions`, and
+`resolveElapsedMs` are optional when the Lua scenario uses those assertions.
+
+## `createLunaVitestPlugin(options?)`
+
+`createLunaVitestPlugin` returns the same runner API plus stable integration
+metadata:
+
+```ts
+type LunaVitestPlugin = LunaVitestRunner & {
   name: "lunatest-vitest-plugin";
   scenarioDir: string;
 };
 ```
 
-`createLunaVitestPlugin()` returns metadata for a LunaTest-aware Vitest setup. `scenarioDir` defaults to `"scenarios"`.
+Use it when a harness needs both runner methods and the configured scenario
+directory. It reads `lunatest.config.json` synchronously when the facade is
+created, so `scenarioDir` reflects the configured directory; an explicit
+`scenarioDir` option takes precedence.
+
+## `createLunaVitestWatchTrigger(options)`
 
 ```ts
-import { createLunaVitestPlugin } from "@lunatest/vitest-plugin";
+type LunaVitestWatchTriggerOptions = {
+  cwd?: string;
+  configPath?: string;
+  scenarioDir?: string;
+  testFiles: string[];
+};
 
-const luna = createLunaVitestPlugin({ scenarioDir: "scenarios" });
+type LunaVitestWatchTrigger = {
+  pattern: RegExp;
+  testsToRun(id: string): string[];
+};
 ```
 
-The current release does not register Vitest hooks or execute Lua scenarios. Hosts must decide how to consume the returned metadata.
+Pass the result to Vitest's `watchTriggerPatterns` so edits to `.lua` files
+rerun an explicit harness test. The helper resolves `lunatest.config.json`
+synchronously, so it watches the configured directory unless an explicit
+`scenarioDir` override is supplied. At least one harness test file is required.
+
+```ts
+import { defineConfig } from "vitest/config";
+import { createLunaVitestWatchTrigger } from "@lunatest/vitest-plugin";
+
+const lunaScenarios = createLunaVitestWatchTrigger({
+  testFiles: ["tests/luna-scenarios.test.ts"],
+});
+
+export default defineConfig({
+  test: { watchTriggerPatterns: [lunaScenarios] },
+});
+```
 
 ## `toLunaPass(received)`
 
 ```ts
-type LunaMatcherResult = {
+type LunaMatcherInput = {
   pass: boolean;
-  message: () => string;
+  error?: string;
+  diff?: string;
+  result?: { diff?: string };
 };
 
-toLunaPass({ pass: boolean }): LunaMatcherResult;
+toLunaPass(received: LunaMatcherInput): {
+  pass: boolean;
+  message(): string;
+};
 ```
 
-The helper converts a Luna-style result into a Vitest-compatible custom-matcher result. Register it with your test framework if you want assertion syntax; the package does not register matchers globally.
+The helper converts a Luna execution result into a Vitest custom matcher
+result. Register it with `expect.extend`; the package never mutates Vitest
+global state itself.

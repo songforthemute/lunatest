@@ -22,8 +22,8 @@ If you want to add your own team-specific protocol or wallet presets, see:
 - `@lunatest/core`: EIP-1193-compatible provider/runtime base
 - `@lunatest/react`: React provider/hooks and adapter helpers
 - `@lunatest/mcp`: MCP server, tools/resources/prompts, stdio transport
-- `@lunatest/vitest-plugin`: Vitest matcher/plugin helpers
-- `@lunatest/playwright-plugin`: Playwright provider injection and routing
+- `@lunatest/vitest-plugin`: explicit project scenario runner and Vitest matcher helpers
+- `@lunatest/playwright-plugin`: Playwright routing and page-bound scenario runner
 - `@lunatest/runtime-intercept`: browser runtime intercept for local interactive testing
 
 ## Install
@@ -217,6 +217,42 @@ import { toLunaPass } from "@lunatest/vitest-plugin";
 expect.extend({ toLunaPass });
 expect({ pass: true }).toLunaPass();
 ```
+
+## Scenario Runner Examples
+
+Both integrations load `lunatest.config.json` and require exact project-relative scenario IDs. They do not infer UI selectors or actions from Lua.
+
+```ts
+import { createLunaVitestPlugin } from "@lunatest/vitest-plugin";
+
+const luna = createLunaVitestPlugin({ cwd: process.cwd() });
+
+const execution = await luna.assertScenario("scenarios/quote-ready", {
+  runWhen: () => clickQuoteButton(),
+  resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+});
+```
+
+For a real Playwright `Page`, bind host behavior with `createLunaPageAdapter`:
+
+```ts
+import { createLunaCommands, createLunaPageAdapter } from "@lunatest/playwright-plugin";
+
+const commands = createLunaCommands({ cwd: process.cwd() });
+
+await commands.assertScenario(
+  "scenarios/quote-ready",
+  createLunaPageAdapter({
+    page,
+    runWhen: ({ page: target }) => target.getByTestId("load-quote").click(),
+    resolveUi: async ({ page: target }) => ({
+      quote: { status: await target.getByTestId("quote-status").textContent() },
+    }),
+  }),
+);
+```
+
+Use `createLunaVitestWatchTrigger` with Vitest `watchTriggerPatterns` when a scenario file change should rerun an explicit harness test. It reads the configured `scenarioDir` from `lunatest.config.json`; only pass `scenarioDir` when intentionally overriding that project setting. `runAll()` is sequential, so a single browser page can be reused safely.
 
 ## Next References
 

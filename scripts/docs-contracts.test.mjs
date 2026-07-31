@@ -94,6 +94,9 @@ test("Core references document project and deterministic runner helpers", () => 
     "loadLunaProjectConfig",
     "loadLunaProjectScenarios",
     "resolveLunaScenarioSources",
+    "listLunaProjectScenarios",
+    "runLunaProjectScenario",
+    "runAllLunaProjectScenarios",
     "applyInterceptState",
     "setRouteMocks",
     "createDeterministicScenarioAdapter",
@@ -104,6 +107,49 @@ test("Core references document project and deterministic runner helpers", () => 
     for (const name of names) {
       assert.match(source, new RegExp(`\\\`${name}\\\``), `${document}: ${name}`);
     }
+  }
+});
+
+test("runner integration references document executable adapter contracts", () => {
+  for (const document of ["docs/api/vitest-plugin.md", "docs/ko/api/vitest-plugin.md"]) {
+    const source = read(document);
+
+    for (const name of [
+      "createLunaVitestRunner",
+      "assertScenario",
+      "createLunaVitestWatchTrigger",
+    ]) {
+      assert.match(source, new RegExp(`\\\`${name}`), `${document}: ${name}`);
+    }
+    assert.doesNotMatch(source, /does not register Vitest hooks or execute Lua scenarios|Lua scenario를 실행하지 않습니다/);
+  }
+
+  for (const document of ["docs/api/playwright-plugin.md", "docs/ko/api/playwright-plugin.md"]) {
+    const source = read(document);
+
+    for (const name of ["createLunaCommands", "createLunaPageAdapter", "assertScenario"]) {
+      assert.match(source, new RegExp(`\\\`${name}`), `${document}: ${name}`);
+    }
+    assert.doesNotMatch(source, /experimental deterministic placeholder|deterministic placeholder/);
+  }
+
+  for (const document of [
+    "README.md",
+    "README.ko.md",
+    "docs/guides/library-consumption.md",
+    "docs/ko/guides/library-consumption.md",
+    "docs/guides/playwright-routing.md",
+    "docs/ko/guides/playwright-routing.md",
+  ]) {
+    const source = read(document);
+    assert.match(source, /createLunaPageAdapter|createLunaVitestPlugin/, document);
+    assert.doesNotMatch(source, /returns \{ id, pass: true \}|\{ id, pass: true \}.*반환/, document);
+  }
+
+  for (const document of ["docs/guides/ci-integration.md", "docs/ko/guides/ci-integration.md"]) {
+    const source = read(document);
+    assert.match(source, /test:browser:ci/, document);
+    assert.match(source, /browser-scenario/, document);
   }
 });
 
