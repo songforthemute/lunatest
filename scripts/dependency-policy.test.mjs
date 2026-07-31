@@ -12,9 +12,12 @@ const requiredOverrides = new Map([
   ["picomatch@<2.3.2", "2.3.2"],
   ["picomatch@>=4.0.0 <4.0.4", "4.0.4"],
   ["smol-toml@<1.6.1", "1.6.1"],
-  ["postcss@<8.5.10", "8.5.10"],
-  ["ws@>=8.0.0 <8.20.1", "8.20.1"],
-  ["vite@<=6.4.1", "6.4.2"],
+  ["postcss@>=8.0.0 <8.5.18", "8.5.18"],
+  ["ws@>=8.0.0 <8.21.0", "8.21.0"],
+  ["@babel/core@>=7.0.0 <=7.29.0", "7.29.6"],
+  ["js-yaml@>=3.0.0 <3.15.0", "3.15.0"],
+  ["js-yaml@>=4.0.0 <4.3.0", "4.3.0"],
+  ["vite@>=5.0.0 <=6.4.2", "6.4.3"],
   ["vite@>=7.0.0 <=7.3.1", "7.3.3"],
 ]);
 
@@ -123,8 +126,8 @@ test("example apps use the patched Vite 6 line directly", async () => {
   const swapExamplePackage = await readRootJson("examples/swap-dapp/package.json");
   const defiDashboardPackage = await readRootJson("examples/defi-dashboard/package.json");
 
-  assert.equal(swapExamplePackage.devDependencies.vite, "6.4.2");
-  assert.equal(defiDashboardPackage.devDependencies.vite, "6.4.2");
+  assert.equal(swapExamplePackage.devDependencies.vite, "6.4.3");
+  assert.equal(defiDashboardPackage.devDependencies.vite, "6.4.3");
 });
 
 test("DeFi dashboard clean-checkout scripts prebuild workspace dependencies", async () => {
@@ -151,6 +154,15 @@ test("workspace test runners use the patched Vitest 4 line directly", async () =
   assert.equal(defiDashboardPackage.devDependencies.vitest, "4.1.6");
 });
 
+test("Chromium scenario tests pin a release that satisfies the registry age policy", async () => {
+  const e2ePackage = await readRootJson("e2e-tests/package.json");
+  const lockfile = await readRootFile("pnpm-lock.yaml");
+
+  assert.equal(e2ePackage.devDependencies["@playwright/test"], "1.61.1");
+  assert.match(lockfile, /'@playwright\/test@1\.61\.1':/);
+  assert.match(lockfile, /playwright@1\.61\.1:/);
+});
+
 test("Vitest browser advisory guard matches peer and package lockfile forms", () => {
   const vulnerableLockfileForms = [
     "      '@vitest/browser-playwright': 4.1.5",
@@ -173,16 +185,27 @@ test("Vitest browser advisory guard matches peer and package lockfile forms", ()
   }
 });
 
-test("lockfile excludes Vite, esbuild, and Vitest advisory ranges", async () => {
+test("lockfile excludes Vite, PostCSS, ws, Babel, js-yaml, esbuild, and Vitest advisory ranges", async () => {
   const lockfile = await readRootFile("pnpm-lock.yaml");
 
   assert.doesNotMatch(lockfile, /vite@5\.4\.21/);
   assert.doesNotMatch(lockfile, /vite@7\.3\.1/);
+  assert.doesNotMatch(lockfile, /vite@6\.4\.2/);
+  assert.doesNotMatch(lockfile, /postcss@8\.5\.(?:[0-9]|1[0-7])\b/);
+  assert.doesNotMatch(lockfile, /ws@8\.20\.1/);
+  assert.doesNotMatch(lockfile, /'@babel\/core@7\.29\.0'/);
+  assert.doesNotMatch(lockfile, /js-yaml@3\.14\.2/);
+  assert.doesNotMatch(lockfile, /js-yaml@4\.1\.1/);
   assert.doesNotMatch(lockfile, /esbuild@0\.21\.5/);
   assert.doesNotMatch(lockfile, /vitest@3\.2\.4/);
   assert.doesNotMatch(lockfile, /vitest@4\.1\.[0-5]\b/);
   assert.doesNotMatch(lockfile, vulnerableVitestBrowserAdvisoryRange);
-  assert.match(lockfile, /vite@6\.4\.2/);
+  assert.match(lockfile, /vite@6\.4\.3/);
+  assert.match(lockfile, /postcss@8\.5\.18/);
+  assert.match(lockfile, /ws@8\.21\.0/);
+  assert.match(lockfile, /'@babel\/core@7\.29\.6'/);
+  assert.match(lockfile, /js-yaml@3\.15\.0/);
+  assert.match(lockfile, /js-yaml@4\.3\.0/);
   assert.match(lockfile, /esbuild@0\.25\./);
   assert.match(lockfile, /vitest@4\.1\.6/);
 });
