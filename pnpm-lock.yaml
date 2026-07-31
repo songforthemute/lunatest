@@ -197,6 +197,9 @@ importers:
       '@lunatest/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@lunatest/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/react:
     dependencies:
