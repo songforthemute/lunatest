@@ -169,7 +169,7 @@ runAllLunaProjectScenarios({ createAdapter, ...options }): Promise<LunaProjectSc
 
 `listLunaProjectScenarios` loads the resolved project catalog. `runLunaProjectScenario` accepts only an exact project-relative id such as `scenarios/swap`; it does not fall back to a display name. An unknown id throws `LunaProjectScenarioNotFoundError`.
 
-The runner parses project sources once per operation and passes each parsed `LuaConfig` to `executeLuaScenario`. `runAllLunaProjectScenarios` preserves catalog order and executes scenarios sequentially, so an adapter may safely bind a shared browser page or host target. The host supplies an explicit `ExecuteLuaScenarioAdapter`: LunaTest does not infer UI selectors or browser actions.
+`runLunaProjectScenario` resolves the configured source list without parsing it, then parses only the selected exact ID. This keeps an isolated execution independent from a temporarily malformed sibling scenario. `listLunaProjectScenarios` and `runAllLunaProjectScenarios` intentionally parse the full catalog; `runAllLunaProjectScenarios` preserves catalog order and executes scenarios sequentially, so an adapter may safely bind a shared browser page or host target. The host supplies an explicit `ExecuteLuaScenarioAdapter`: LunaTest does not infer UI selectors or browser actions.
 
 ```ts
 import { runLunaProjectScenario } from "@lunatest/core";

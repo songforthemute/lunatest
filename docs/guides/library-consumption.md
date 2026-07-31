@@ -252,7 +252,7 @@ await commands.assertScenario(
 );
 ```
 
-Use `createLunaVitestWatchTrigger` with Vitest `watchTriggerPatterns` when a scenario file change should rerun an explicit harness test. It reads the configured `scenarioDir` from `lunatest.config.json`; only pass `scenarioDir` when intentionally overriding that project setting. `runAll()` is sequential, so a single browser page can be reused safely.
+Use `createLunaVitestWatchTrigger` with Vitest `watchTriggerPatterns` when a scenario file change should rerun an explicit harness test. It reads the configured `scenarioDir` from `lunatest.config.json`; only pass `scenarioDir` when intentionally overriding that project setting. If the Vitest `root` differs from the LunaTest config location, pass the same root to the helper; it accepts both root-relative IDs and the absolute POSIX IDs emitted by the Vitest 4 watcher. `runAll()` is sequential, so a single browser page can be reused safely.
 
 ## Next References
 

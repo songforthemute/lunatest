@@ -24,6 +24,11 @@ export type LoadLunaProjectScenariosInput = {
   allowEmpty?: boolean;
 };
 
+export type LoadLunaProjectScenarioByIdInput = {
+  config: ResolvedLunaProjectConfig;
+  scenarioId: string;
+};
+
 export type LunaProjectScenario = {
   id: string;
   name: string;
@@ -106,6 +111,36 @@ function cloneCoverage(coverage: CoverageMetadata): CoverageMetadata {
   };
 }
 
+async function loadLunaProjectScenarioSource(
+  config: ResolvedLunaProjectConfig,
+  source: string,
+): Promise<LunaProjectScenario> {
+  const [lua, parsedConfig] = await Promise.all([readFile(source, "utf8"), loadLunaConfig(source)]);
+
+  return {
+    id: toScenarioId(config.projectRoot, source),
+    name: parsedConfig.name ?? source,
+    source,
+    lua,
+    config: parsedConfig,
+    coverage: cloneCoverage(resolveCoverageMetadata(parsedConfig)),
+  };
+}
+
+export async function loadLunaProjectScenarioById(
+  input: LoadLunaProjectScenarioByIdInput,
+): Promise<LunaProjectScenario | undefined> {
+  const sources = await resolveLunaScenarioSources({
+    luaConfigPath: input.config.resolvedLuaConfigPath,
+    scenarioDir: input.config.resolvedScenarioDir,
+  });
+  const source = sources.find(
+    (candidate) => toScenarioId(input.config.projectRoot, candidate) === input.scenarioId,
+  );
+
+  return source ? loadLunaProjectScenarioSource(input.config, source) : undefined;
+}
+
 export async function loadLunaProjectScenarios(
   input: LoadLunaProjectScenariosInput,
 ): Promise<LunaProjectScenario[]> {
@@ -128,18 +163,5 @@ export async function loadLunaProjectScenarios(
     throw error;
   }
 
-  return Promise.all(
-    sources.map(async (source) => {
-      const [lua, config] = await Promise.all([readFile(source, "utf8"), loadLunaConfig(source)]);
-
-      return {
-        id: toScenarioId(input.config.projectRoot, source),
-        name: config.name ?? source,
-        source,
-        lua,
-        config,
-        coverage: cloneCoverage(resolveCoverageMetadata(config)),
-      };
-    }),
-  );
+  return Promise.all(sources.map((source) => loadLunaProjectScenarioSource(input.config, source)));
 }

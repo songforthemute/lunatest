@@ -237,7 +237,7 @@ await commands.assertScenario(
 );
 ```
 
-scenario file 변경에서 explicit harness test를 다시 실행하려면 Vitest `watchTriggerPatterns`와 `createLunaVitestWatchTrigger`를 함께 사용하세요. helper는 `lunatest.config.json`의 `scenarioDir`를 읽으며, 의도적으로 project 설정을 바꿀 때만 `scenarioDir`를 전달합니다. `runAll()`은 순차 실행이므로 하나의 browser page를 안전하게 재사용할 수 있습니다.
+scenario file 변경에서 explicit harness test를 다시 실행하려면 Vitest `watchTriggerPatterns`와 `createLunaVitestWatchTrigger`를 함께 사용하세요. helper는 `lunatest.config.json`의 `scenarioDir`를 읽으며, 의도적으로 project 설정을 바꿀 때만 `scenarioDir`를 전달합니다. Vitest `root`와 LunaTest config 위치가 다르면 같은 root를 helper에 전달하세요. helper는 root-relative ID와 Vitest 4 watcher가 전달하는 POSIX 절대 ID를 모두 받습니다. `runAll()`은 순차 실행이므로 하나의 browser page를 안전하게 재사용할 수 있습니다.
 
 ## 다음으로 보면 좋은 문서
 

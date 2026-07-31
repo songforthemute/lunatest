@@ -84,6 +84,7 @@ describe("Vitest scenario runner", () => {
       createLunaVitestWatchTrigger?: (options: {
         cwd: string;
         scenarioDir: string;
+        root?: string;
         testFiles: string[];
       }) => {
         pattern: RegExp;
@@ -98,10 +99,38 @@ describe("Vitest scenario runner", () => {
       testFiles: ["tests/luna.test.ts"],
     });
 
+    expect(trigger?.pattern.test("scenarios/swap.lua")).toBe(true);
     expect(trigger?.pattern.test("/project/scenarios/swap.lua")).toBe(true);
-    expect(trigger?.testsToRun("/project/scenarios/swap.lua")).toEqual([
+    expect(trigger?.testsToRun("scenarios/swap.lua")).toEqual([
       "tests/luna.test.ts",
     ]);
+    const nestedTrigger = watchApi.createLunaVitestWatchTrigger?.({
+      cwd: "/project/luna",
+      root: "/project",
+      scenarioDir: "scenarios",
+      testFiles: ["tests/luna.test.ts"],
+    });
+
+    expect(nestedTrigger?.pattern.test("luna/scenarios/swap.lua")).toBe(true);
+    const rootScenarioTrigger = watchApi.createLunaVitestWatchTrigger?.({
+      cwd: "/project",
+      scenarioDir: ".",
+      testFiles: ["tests/luna.test.ts"],
+    });
+
+    expect(rootScenarioTrigger?.pattern.test("root.lua")).toBe(true);
+    expect(rootScenarioTrigger?.pattern.test("./root.lua")).toBe(true);
+    expect(rootScenarioTrigger?.pattern.test("/project/root.lua")).toBe(true);
+    expect(rootScenarioTrigger?.pattern.test("/other/root.lua")).toBe(false);
+    expect(rootScenarioTrigger?.pattern.test("../outside.lua")).toBe(false);
+    expect(rootScenarioTrigger?.pattern.test("./../outside.lua")).toBe(false);
+    const filesystemRootTrigger = watchApi.createLunaVitestWatchTrigger?.({
+      cwd: "/project",
+      scenarioDir: "/",
+      testFiles: ["tests/luna.test.ts"],
+    });
+
+    expect(filesystemRootTrigger?.pattern.test("/root.lua")).toBe(true);
     expect(() =>
       watchApi.createLunaVitestWatchTrigger?.({
         cwd: "/project",
@@ -131,8 +160,8 @@ describe("Vitest scenario runner", () => {
       });
 
       expect(plugin.scenarioDir).toBe("flows");
+      expect(trigger?.pattern.test("flows/pass.lua")).toBe(true);
       expect(trigger?.pattern.test(join(root, "flows", "pass.lua"))).toBe(true);
-      expect(trigger?.pattern.test(join(root, "scenarios", "pass.lua"))).toBe(false);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

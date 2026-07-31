@@ -6,6 +6,7 @@ import {
   type ResolvedLunaProjectConfig,
 } from "./config.node.js";
 import {
+  loadLunaProjectScenarioById,
   loadLunaProjectScenarios,
   type LunaProjectScenario,
 } from "./scenarios.node.js";
@@ -84,8 +85,8 @@ async function resolveScenario(
   options: LunaProjectRunnerOptions,
   scenarioId: string,
 ): Promise<LunaProjectScenario> {
-  const scenarios = await listLunaProjectScenarios(options);
-  const scenario = scenarios.find((item) => item.id === scenarioId);
+  const config = await loadProject(options);
+  const scenario = await loadLunaProjectScenarioById({ config, scenarioId });
 
   if (!scenario) {
     throw new LunaProjectScenarioNotFoundError(scenarioId);

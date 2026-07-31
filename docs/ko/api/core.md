@@ -169,7 +169,7 @@ runAllLunaProjectScenarios({ createAdapter, ...options }): Promise<LunaProjectSc
 
 `listLunaProjectScenarios`는 resolved project catalog를 로드합니다. `runLunaProjectScenario`는 `scenarios/swap`처럼 정확한 project-relative id만 받으며 display name으로 대체하지 않습니다. 없는 id는 `LunaProjectScenarioNotFoundError`를 발생시킵니다.
 
-runner는 operation당 project source를 한 번 parse하고, parsed `LuaConfig`를 `executeLuaScenario`에 전달합니다. `runAllLunaProjectScenarios`는 catalog order를 보존하며 scenario를 순차 실행하므로 하나의 browser page나 host target을 adapter가 공유해도 안전합니다. host는 명시적인 `ExecuteLuaScenarioAdapter`를 제공해야 하며 LunaTest가 UI selector나 browser action을 추론하지 않습니다.
+`runLunaProjectScenario`는 구성된 source list를 parse 없이 해석한 뒤 선택한 정확한 ID만 parse합니다. 따라서 일시적으로 문법 오류인 sibling scenario가 있어도 isolated execution은 영향을 받지 않습니다. `listLunaProjectScenarios`와 `runAllLunaProjectScenarios`는 의도적으로 full catalog를 parse하며, `runAllLunaProjectScenarios`는 catalog order를 보존하고 scenario를 순차 실행하므로 하나의 browser page나 host target을 adapter가 공유해도 안전합니다. host는 명시적인 `ExecuteLuaScenarioAdapter`를 제공해야 하며 LunaTest가 UI selector나 browser action을 추론하지 않습니다.
 
 ```ts
 import { runLunaProjectScenario } from "@lunatest/core";

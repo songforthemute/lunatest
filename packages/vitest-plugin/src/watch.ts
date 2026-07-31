@@ -1,8 +1,9 @@
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 
 import { loadLunaProjectConfigSync, type LunaProjectRunnerOptions } from "@lunatest/core";
 
 export type LunaVitestWatchTriggerOptions = LunaProjectRunnerOptions & {
+  root?: string;
   testFiles: string[];
 };
 
@@ -19,6 +20,11 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function trimTrailingSlashes(value: string): string {
+  const trimmed = value.replace(/\/+$/u, "");
+  return trimmed.length === 0 && value.startsWith("/") ? "/" : trimmed;
+}
+
 export function createLunaVitestWatchTrigger(
   options: LunaVitestWatchTriggerOptions,
 ): LunaVitestWatchTrigger {
@@ -27,13 +33,25 @@ export function createLunaVitestWatchTrigger(
   }
 
   const project = loadLunaProjectConfigSync(options);
-  const scenarioDir = toPosixPath(
+  const root = resolve(options.root ?? options.cwd ?? process.cwd());
+  const scenarioDirPath = resolve(
     resolve(project.projectRoot, options.scenarioDir ?? project.scenarioDir),
-  ).replace(/\/+$/u, "");
+  );
+  const resolvedScenarioDir = trimTrailingSlashes(toPosixPath(scenarioDirPath));
+  const relativeScenarioDir = trimTrailingSlashes(toPosixPath(relative(root, scenarioDirPath)));
   const testFiles = [...options.testFiles];
+  const patternPrefixes = new Set(
+    [resolvedScenarioDir, relativeScenarioDir]
+      .filter((directory) => directory.length > 0)
+      .map((directory) => escapeRegExp(directory === "/" ? "/" : `${directory}/`)),
+  );
+
+  if (relativeScenarioDir.length === 0) {
+    patternPrefixes.add("(?!/|[A-Za-z]:/)(?!.*(?:^|/)\\.\\.(?:/|$))");
+  }
 
   return {
-    pattern: new RegExp(`^${escapeRegExp(scenarioDir)}/.*\\.lua$`),
+    pattern: new RegExp(`^(?:${Array.from(patternPrefixes).join("|")})[^/].*\\.lua$`),
     testsToRun: () => [...testFiles],
   };
 }

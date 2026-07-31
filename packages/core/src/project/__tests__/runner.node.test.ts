@@ -84,6 +84,29 @@ describe("project scenario runner", () => {
     }
   });
 
+  it("executes an exact scenario without parsing unrelated catalog sources", async () => {
+    const root = await createProjectRoot();
+
+    try {
+      await writeFile(join(root, "scenarios", "broken.lua"), "scenario {", "utf8");
+
+      await expect(
+        projectRunner().runLunaProjectScenario({
+          cwd: root,
+          scenarioId: "scenarios/swap",
+          adapter: {
+            resolveUi: () => ({ quote: { status: "ready" } }),
+          },
+        }),
+      ).resolves.toMatchObject({
+        scenario: { id: "scenarios/swap" },
+        execution: { pass: true },
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("keeps a missing UI adapter as an explicit scenario failure", async () => {
     const root = await createProjectRoot();
 

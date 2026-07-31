@@ -69,6 +69,7 @@ type LunaVitestWatchTriggerOptions = {
   cwd?: string;
   configPath?: string;
   scenarioDir?: string;
+  root?: string;
   testFiles: string[];
 };
 
@@ -78,7 +79,7 @@ type LunaVitestWatchTrigger = {
 };
 ```
 
-결과를 Vitest의 `watchTriggerPatterns`에 전달하면 `.lua` 수정 시 명시적인 harness test를 다시 실행합니다. helper는 `lunatest.config.json`을 동기로 해석하므로 명시적인 `scenarioDir` override가 없으면 구성된 directory를 감시합니다. harness test file은 최소 하나가 필요합니다.
+결과를 Vitest의 `watchTriggerPatterns`에 전달하면 `.lua` 수정 시 명시적인 harness test를 다시 실행합니다. helper는 `lunatest.config.json`을 동기로 해석하므로 명시적인 `scenarioDir` override가 없으면 구성된 directory를 감시합니다. `cwd`는 LunaTest project config 탐색 기준이고, `root`는 상대 watched-file ID를 만드는 Vitest root이며 기본값은 `cwd`입니다. pattern은 그 상대 ID와 Vitest 4 watcher가 전달하는 POSIX 절대 ID를 모두 받습니다. harness test file은 최소 하나가 필요합니다.
 
 ```ts
 import { defineConfig } from "vitest/config";

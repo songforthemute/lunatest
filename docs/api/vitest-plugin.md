@@ -82,6 +82,7 @@ type LunaVitestWatchTriggerOptions = {
   cwd?: string;
   configPath?: string;
   scenarioDir?: string;
+  root?: string;
   testFiles: string[];
 };
 
@@ -94,7 +95,10 @@ type LunaVitestWatchTrigger = {
 Pass the result to Vitest's `watchTriggerPatterns` so edits to `.lua` files
 rerun an explicit harness test. The helper resolves `lunatest.config.json`
 synchronously, so it watches the configured directory unless an explicit
-`scenarioDir` override is supplied. At least one harness test file is required.
+`scenarioDir` override is supplied. `cwd` selects the LunaTest project config;
+`root` selects the Vitest root used for relative watched-file IDs and defaults to
+`cwd`. The pattern accepts both those relative IDs and the absolute POSIX IDs
+emitted by the Vitest 4 watcher. At least one harness test file is required.
 
 ```ts
 import { defineConfig } from "vitest/config";
