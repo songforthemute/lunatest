@@ -1,5 +1,17 @@
 # @lunatest/e2e-tests
 
+## 0.1.5
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.2.0`: dependency range update
+- `@lunatest/vitest-plugin@0.2.0`: dependency range update
+- `@lunatest/playwright-plugin@0.2.0`: dependency range update
+- `@lunatest/cli@0.1.5`: dependency range update
+- `@lunatest/mcp@0.1.5`: dependency range update
+
 ## 0.1.4
 
 ### Patch Changes

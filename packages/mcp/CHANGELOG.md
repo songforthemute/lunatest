@@ -1,5 +1,13 @@
 # @lunatest/mcp
 
+## 0.1.5
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.2.0`: dependency range update
+
 ## 0.1.4
 
 ### Patch Changes
