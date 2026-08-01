@@ -1,5 +1,14 @@
 # @lunatest/example-swap-dapp
 
+## 0.1.5
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.2.0`: dependency range update
+- `@lunatest/react@0.1.5`: dependency range update
+
 ## 0.1.4
 
 ### Patch Changes

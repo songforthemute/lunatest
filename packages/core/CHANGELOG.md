@@ -1,5 +1,17 @@
 # @lunatest/core
 
+## 0.2.0
+
+### Minor Changes
+
+### Summary
+
+- [`d9420ee`](https://github.com/songforthemute/lunatest/commit/d9420ee8bb490cc2377019898d2c9cbd03efb74b) 프로젝트 시나리오 러너와 Vitest/Playwright 실행 어댑터를 추가합니다.
+
+### Breaking
+
+- None
+
 ## 0.1.4
 
 ### Patch Changes
