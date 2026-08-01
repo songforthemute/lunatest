@@ -12,6 +12,7 @@ pnpm -r build
 pnpm -r test
 pnpm test:e2e:smoke
 pnpm test:e2e:extended
+pnpm test:browser
 ```
 
 The direct E2E commands load workspace package entries and therefore require the preceding build. To investigate performance locally, build first and invoke the runner directly:
@@ -34,6 +35,7 @@ pnpm run test:workspace:ci
 pnpm lint:deadcode
 pnpm pack:check-integrity
 pnpm run test:e2e:smoke:ci
+pnpm run test:browser:ci
 pnpm run perf:regression:ci
 ```
 
@@ -53,11 +55,14 @@ pnpm run perf:absolute:ci
 1. `quality` runs `lint:workspace-types`, the CI build/lint/test wrappers, `lint:deadcode`, and `pack:check-integrity`.
 2. `consumer-smoke-pack` runs on Linux after `quality`; Windows and macOS packed-consumer jobs run for pull requests and `main`.
 3. `e2e-smoke` runs `pnpm run test:e2e:smoke:ci` after `quality`.
-4. `performance-regression` runs for pull requests and pushes after `quality`, Linux packed-consumer smoke, and E2E smoke. It invokes `pnpm run perf:regression:ci`.
+4. `browser-scenario` runs on Linux after `quality`, installs Chromium with Playwright, then invokes `pnpm run test:browser:ci`.
+5. `performance-regression` runs for pull requests and pushes after `quality`, Linux packed-consumer smoke, and E2E smoke. It invokes `pnpm run perf:regression:ci`.
 
 Every job installs with `pnpm install --frozen-lockfile`. Packed-consumer jobs explicitly run `pnpm run build:workspace:ci` before `pnpm consumer-smoke:pack`.
 
 `test:e2e:*` validates workspace-source integration. `consumer-smoke:pack` validates public package entrypoints by installing local tarballs for every stable and next public package across React 18 and React 19 peer combinations. It is not a replacement for registry consumption testing.
+
+`test:browser` runs the Chromium scenario contract. Before running it locally, install the matching browser binary with `pnpm --filter @lunatest/e2e-tests exec playwright install chromium`. Browser installation is intentionally restricted to the Linux CI job; the Windows and macOS consumer jobs stay browser-free.
 
 ## Nightly Benchmark Workflow
 

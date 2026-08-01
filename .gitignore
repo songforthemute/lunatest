@@ -5,5 +5,5 @@ dist/
 .turbo/
 scripts/perf-current.json
 scripts/perf-current-absolute.json
-scripts/perf-current.json
-scripts/perf-current-absolute.json
+.changeset-status.json
+e2e-tests/test-results/

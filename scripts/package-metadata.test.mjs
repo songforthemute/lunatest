@@ -110,6 +110,9 @@ test("consumer smoke script exercises stable, next, browser, bin, and React entr
   assert.match(script, /@lunatest\/vitest-plugin"/);
   assert.match(script, /@lunatest\/playwright-plugin"/);
   assert.match(script, /renderToString/);
+  assert.match(script, /mkdtemp/);
+  assert.match(script, /createLunaPageAdapter/);
+  assert.match(script, /assertScenario\("scenarios\/quote-ready"/);
 });
 
 test("pack integrity validates manifest entry targets", () => {

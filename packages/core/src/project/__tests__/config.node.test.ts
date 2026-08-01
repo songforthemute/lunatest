@@ -3,7 +3,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { loadLunaProjectConfig } from "../../index.js";
+import * as core from "../../index.js";
+
+const { loadLunaProjectConfig } = core;
+
+function loadLunaProjectConfigSync(options: { cwd: string }) {
+  const api = core as typeof core & {
+    loadLunaProjectConfigSync?: (input: { cwd: string }) => unknown;
+  };
+
+  expect(typeof api.loadLunaProjectConfigSync).toBe("function");
+  return api.loadLunaProjectConfigSync?.(options);
+}
 
 describe("loadLunaProjectConfig", () => {
   it("loads the default config from the current project root", async () => {
@@ -25,6 +36,27 @@ describe("loadLunaProjectConfig", () => {
       expect(project.projectRoot).toBe(root);
       expect(project.resolvedScenarioDir).toBe(join(root, "test-scenarios"));
       expect(project.resolvedLuaConfigPath).toBe(join(root, "config/base.lua"));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves the same project configuration synchronously for host initialization", async () => {
+    const root = await createProjectRoot();
+
+    try {
+      await writeFile(
+        join(root, "lunatest.config.json"),
+        JSON.stringify({
+          scenarioDir: "flows",
+          luaConfigPath: "config/base.lua",
+        }),
+        "utf8",
+      );
+
+      expect(loadLunaProjectConfigSync({ cwd: root })).toEqual(
+        await loadLunaProjectConfig({ cwd: root }),
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }

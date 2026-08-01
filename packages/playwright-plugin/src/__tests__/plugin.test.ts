@@ -60,10 +60,10 @@ describe("playwright plugin", () => {
 
   it("creates commands", async () => {
     const commands = createLunaCommands();
-    await expect(commands.runScenario("swap-1")).resolves.toEqual({
-      id: "swap-1",
-      pass: true,
-    });
+    expect(commands.listScenarios).toBeTypeOf("function");
+    expect(commands.runScenario).toBeTypeOf("function");
+    expect(commands.assertScenario).toBeTypeOf("function");
+    expect(commands.runAll).toBeTypeOf("function");
   });
 
   it("injects provider script into init target", async () => {

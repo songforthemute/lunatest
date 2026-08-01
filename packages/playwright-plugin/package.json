@@ -21,7 +21,8 @@
     "dist"
   ],
   "dependencies": {
-    "@lunatest/contracts": "workspace:*"
+    "@lunatest/contracts": "workspace:*",
+    "@lunatest/core": "workspace:*"
   },
   "scripts": {
     "build": "tsc -b tsconfig.json --force",

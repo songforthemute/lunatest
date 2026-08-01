@@ -7,14 +7,13 @@ import {
   type LunaProjectScenarioExecution,
 } from "@lunatest/core";
 
-export type LunaCommandOptions = LunaProjectRunnerOptions;
-export type LunaCommandScenarioAdapter = ExecuteLuaScenarioAdapter;
-export type LunaCommandScenarioExecution = LunaProjectScenarioExecution;
+export type LunaVitestScenarioAdapter = ExecuteLuaScenarioAdapter;
+export type LunaVitestScenarioExecution = LunaProjectScenarioExecution;
 
-export class LunaCommandAssertionError extends Error {
-  readonly execution: LunaCommandScenarioExecution;
+export class LunaVitestScenarioAssertionError extends Error {
+  readonly execution: LunaVitestScenarioExecution;
 
-  constructor(execution: LunaCommandScenarioExecution) {
+  constructor(execution: LunaVitestScenarioExecution) {
     const lines = [
       `LunaTest scenario failed: ${JSON.stringify(execution.scenario.id)}`,
       `source=${execution.scenario.source}`,
@@ -29,27 +28,29 @@ export class LunaCommandAssertionError extends Error {
     }
 
     super(lines.join("\n"));
-    this.name = "LunaCommandAssertionError";
+    this.name = "LunaVitestScenarioAssertionError";
     this.execution = execution;
   }
 }
 
-export type LunaCommandApi = {
-  listScenarios: () => ReturnType<typeof listLunaProjectScenarios>;
+export type LunaVitestRunnerOptions = LunaProjectRunnerOptions;
+
+export type LunaVitestRunner = {
+  listScenarios: () => ReturnType<typeof import("@lunatest/core").listLunaProjectScenarios>;
   runScenario: (
     scenarioId: string,
-    adapter: LunaCommandScenarioAdapter,
-  ) => Promise<LunaCommandScenarioExecution>;
+    adapter: LunaVitestScenarioAdapter,
+  ) => Promise<LunaVitestScenarioExecution>;
   assertScenario: (
     scenarioId: string,
-    adapter: LunaCommandScenarioAdapter,
-  ) => Promise<LunaCommandScenarioExecution>;
+    adapter: LunaVitestScenarioAdapter,
+  ) => Promise<LunaVitestScenarioExecution>;
   runAll: (
-    createAdapter: (scenario: LunaCommandScenarioExecution["scenario"]) => LunaCommandScenarioAdapter,
-  ) => Promise<LunaCommandScenarioExecution[]>;
+    createAdapter: (scenario: LunaVitestScenarioExecution["scenario"]) => LunaVitestScenarioAdapter,
+  ) => Promise<LunaVitestScenarioExecution[]>;
 };
 
-export function createLunaCommands(options: LunaCommandOptions = {}): LunaCommandApi {
+export function createLunaVitestRunner(options: LunaVitestRunnerOptions = {}): LunaVitestRunner {
   return {
     listScenarios() {
       return listLunaProjectScenarios(options);
@@ -69,7 +70,7 @@ export function createLunaCommands(options: LunaCommandOptions = {}): LunaComman
       });
 
       if (!execution.execution.pass) {
-        throw new LunaCommandAssertionError(execution);
+        throw new LunaVitestScenarioAssertionError(execution);
       }
 
       return execution;

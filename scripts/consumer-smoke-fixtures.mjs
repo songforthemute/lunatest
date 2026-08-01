@@ -6,8 +6,11 @@ export const reactPeerMatrix = [
 export function createConsumerSmokeScript({ includeNextPackages = false } = {}) {
   const nextImports = includeNextPackages
     ? `
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { toLunaPass, createLunaVitestPlugin } from "@lunatest/vitest-plugin";
-import { createLunaFixture } from "@lunatest/playwright-plugin";
+import { createLunaCommands, createLunaFixture, createLunaPageAdapter } from "@lunatest/playwright-plugin";
 `
     : "";
 
@@ -16,6 +19,60 @@ import { createLunaFixture } from "@lunatest/playwright-plugin";
 if (typeof toLunaPass !== "function") throw new Error("toLunaPass export missing");
 if (typeof createLunaVitestPlugin !== "function") throw new Error("createLunaVitestPlugin export missing");
 if (typeof createLunaFixture !== "function") throw new Error("createLunaFixture export missing");
+if (typeof createLunaCommands !== "function") throw new Error("createLunaCommands export missing");
+if (typeof createLunaPageAdapter !== "function") throw new Error("createLunaPageAdapter export missing");
+
+const runnerRoot = await mkdtemp(join(tmpdir(), "lunatest-packed-runner-"));
+try {
+  await mkdir(join(runnerRoot, "scenarios"), { recursive: true });
+  await writeFile(
+    join(runnerRoot, "lunatest.config.json"),
+    JSON.stringify({ scenarioDir: "scenarios", luaConfigPath: "missing-root.lua" }),
+    "utf8",
+  );
+  await writeFile(
+    join(runnerRoot, "scenarios", "quote-ready.lua"),
+    [
+      "scenario {",
+      '  name = "quote-ready",',
+      '  given = { quote = { status = "idle" } },',
+      '  when = { action = "loadQuote" },',
+      '  then_ui = { quote = { status = "ready" } }',
+      "}",
+    ].join("\\n"),
+    "utf8",
+  );
+
+  const vitestRunner = createLunaVitestPlugin({ cwd: runnerRoot });
+  const catalog = await vitestRunner.listScenarios();
+  if (catalog.length !== 1 || catalog[0].id !== "scenarios/quote-ready") {
+    throw new Error("packed Vitest runner did not load the scenario catalog");
+  }
+  const vitestExecution = await vitestRunner.assertScenario("scenarios/quote-ready", {
+    resolveUi: () => ({ quote: { status: "ready" } }),
+  });
+  if (!vitestExecution.execution.pass) {
+    throw new Error("packed Vitest runner did not execute the scenario");
+  }
+
+  const page = { actions: [], quoteStatus: "idle" };
+  const pageExecution = await createLunaCommands({ cwd: runnerRoot }).assertScenario(
+    "scenarios/quote-ready",
+    createLunaPageAdapter({
+      page,
+      runWhen: ({ page: target }) => {
+        target.actions.push("loadQuote");
+        target.quoteStatus = "ready";
+      },
+      resolveUi: ({ page: target }) => ({ quote: { status: target.quoteStatus } }),
+    }),
+  );
+  if (!pageExecution.execution.pass || page.actions.join(",") !== "loadQuote") {
+    throw new Error("packed page adapter did not execute the scenario action");
+  }
+} finally {
+  await rm(runnerRoot, { recursive: true, force: true });
+}
 `
     : "";
 

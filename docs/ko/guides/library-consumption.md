@@ -24,8 +24,8 @@
 - `@lunatest/core`: EIP-1193 provider를 직접 제어하고 싶을 때
 - `@lunatest/react`: React provider/hook, wagmi/ethers/web3.js 어댑터까지 같이 쓸 때
 - `@lunatest/mcp`: 에이전트 연동, stdio JSON-RPC 워크플로가 필요할 때
-- `@lunatest/vitest-plugin`: Vitest matcher를 바로 붙이고 싶을 때
-- `@lunatest/playwright-plugin`: Playwright에서 provider 주입 + 네트워크 라우팅 모킹을 할 때
+- `@lunatest/vitest-plugin`: explicit project scenario runner와 Vitest matcher를 함께 쓸 때
+- `@lunatest/playwright-plugin`: Playwright 네트워크 라우팅과 page-bound scenario runner가 필요할 때
 - `@lunatest/runtime-intercept`: 개발 서버를 띄운 브라우저에서 직접 인터랙션 테스트를 하고 싶을 때
 
 ## 설치 예시
@@ -202,6 +202,42 @@ await runStdioServer({
   server,
 });
 ```
+
+## Scenario Runner 예시
+
+두 integration 모두 `lunatest.config.json`을 로드하고 정확한 project-relative scenario ID를 요구합니다. Lua에서 UI selector나 action을 추론하지 않습니다.
+
+```ts
+import { createLunaVitestPlugin } from "@lunatest/vitest-plugin";
+
+const luna = createLunaVitestPlugin({ cwd: process.cwd() });
+
+const execution = await luna.assertScenario("scenarios/quote-ready", {
+  runWhen: () => clickQuoteButton(),
+  resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+});
+```
+
+실제 Playwright `Page`에는 `createLunaPageAdapter`로 host 동작을 명시적으로 연결합니다.
+
+```ts
+import { createLunaCommands, createLunaPageAdapter } from "@lunatest/playwright-plugin";
+
+const commands = createLunaCommands({ cwd: process.cwd() });
+
+await commands.assertScenario(
+  "scenarios/quote-ready",
+  createLunaPageAdapter({
+    page,
+    runWhen: ({ page: target }) => target.getByTestId("load-quote").click(),
+    resolveUi: async ({ page: target }) => ({
+      quote: { status: await target.getByTestId("quote-status").textContent() },
+    }),
+  }),
+);
+```
+
+scenario file 변경에서 explicit harness test를 다시 실행하려면 Vitest `watchTriggerPatterns`와 `createLunaVitestWatchTrigger`를 함께 사용하세요. helper는 `lunatest.config.json`의 `scenarioDir`를 읽으며, 의도적으로 project 설정을 바꿀 때만 `scenarioDir`를 전달합니다. Vitest `root`와 LunaTest config 위치가 다르면 같은 root를 helper에 전달하세요. helper는 root-relative ID와 Vitest 4 watcher가 전달하는 POSIX 절대 ID를 모두 받습니다. `runAll()`은 순차 실행이므로 하나의 browser page를 안전하게 재사용할 수 있습니다.
 
 ## 다음으로 보면 좋은 문서
 

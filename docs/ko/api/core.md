@@ -10,8 +10,13 @@
 - `loadProjectPresetSources(projectRoot)`
 - `loadLunaConfig(source)`
 - `loadLunaProjectConfig`
+- `loadLunaProjectConfigSync`
 - `loadLunaProjectScenarios`
 - `resolveLunaScenarioSources`
+- `listLunaProjectScenarios(options?)`
+- `runLunaProjectScenario(options)`
+- `runAllLunaProjectScenarios`
+- `LunaProjectScenarioNotFoundError`
 - `listProtocolPresets(registry?)`
 - `getProtocolPreset(id, registry?)`
 - `materializeProtocolPreset(id, params?, registry?)`
@@ -139,9 +144,47 @@ type CoverageSnapshot = {
 
 ## 프로젝트 scenario source
 
-`loadLunaProjectConfig`는 working directory 또는 명시 path에서 optional `lunatest.config.json`을 해석합니다. `ResolvedLunaProjectConfig` 결과에는 normalize된 `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter 설정, `projectRoot`, resolved source path가 들어갑니다.
+`loadLunaProjectConfig`는 working directory 또는 명시 path에서 optional `lunatest.config.json`을 비동기로 해석합니다. `loadLunaProjectConfigSync`는 Vitest watch setup처럼 동기 host configuration이 필요한 경우 같은 normalize 결과를 반환합니다. `ResolvedLunaProjectConfig` 결과에는 normalize된 `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter 설정, `projectRoot`, resolved source path가 들어갑니다.
 
 `resolveLunaScenarioSources`는 요청 source, glob 또는 구성된 기본 source set을 정렬되고 중복 없는 Lua file path로 확장합니다. `loadLunaProjectScenarios`는 이를 parse하여 project-relative scenario id, name, source path, parsed config, resolved coverage metadata를 반환합니다. 호출 workflow에서 빈 source set이 유효할 때만 `allowEmpty`를 사용하세요.
+
+## 프로젝트 scenario runner
+
+```ts
+type LunaProjectRunnerOptions = {
+  cwd?: string;
+  configPath?: string;
+  scenarioDir?: string;
+};
+
+type LunaProjectScenarioExecution = {
+  scenario: LunaProjectScenario;
+  execution: ExecuteLuaScenarioResult;
+};
+
+listLunaProjectScenarios(options?): Promise<LunaProjectScenario[]>;
+runLunaProjectScenario({ scenarioId, adapter, ...options }): Promise<LunaProjectScenarioExecution>;
+runAllLunaProjectScenarios({ createAdapter, ...options }): Promise<LunaProjectScenarioExecution[]>;
+```
+
+`listLunaProjectScenarios`는 resolved project catalog를 로드합니다. `runLunaProjectScenario`는 `scenarios/swap`처럼 정확한 project-relative id만 받으며 display name으로 대체하지 않습니다. 없는 id는 `LunaProjectScenarioNotFoundError`를 발생시킵니다.
+
+`runLunaProjectScenario`는 구성된 source list를 parse 없이 해석한 뒤 선택한 정확한 ID만 parse합니다. 따라서 일시적으로 문법 오류인 sibling scenario가 있어도 isolated execution은 영향을 받지 않습니다. `listLunaProjectScenarios`와 `runAllLunaProjectScenarios`는 의도적으로 full catalog를 parse하며, `runAllLunaProjectScenarios`는 catalog order를 보존하고 scenario를 순차 실행하므로 하나의 browser page나 host target을 adapter가 공유해도 안전합니다. host는 명시적인 `ExecuteLuaScenarioAdapter`를 제공해야 하며 LunaTest가 UI selector나 browser action을 추론하지 않습니다.
+
+```ts
+import { runLunaProjectScenario } from "@lunatest/core";
+
+const result = await runLunaProjectScenario({
+  cwd: process.cwd(),
+  scenarioId: "scenarios/quote-ready",
+  adapter: {
+    runWhen: () => clickQuoteButton(),
+    resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+  },
+});
+
+if (!result.execution.pass) throw new Error(result.execution.error);
+```
 
 ## Lua config와 scenario 실행
 

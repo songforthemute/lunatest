@@ -55,7 +55,7 @@ export type PlaywrightRouteTarget = {
   route: (
     url: string | RegExp,
     handler: (route: PlaywrightLikeRoute) => Promise<void>,
-  ) => Promise<void> | void;
+  ) => Promise<unknown> | unknown;
 };
 
 export type InitScriptTarget = {
@@ -63,6 +63,10 @@ export type InitScriptTarget = {
 };
 
 export type LunaFixture = {
+  /**
+   * @deprecated This installs only an unhandled EIP-1193-shaped test double.
+   * Bootstrap @lunatest/runtime-intercept in the application for wallet behavior.
+   */
   injectProvider: (target?: InitScriptTarget) => Promise<void>;
   installRouting: (target: PlaywrightRouteTarget) => Promise<void>;
 };

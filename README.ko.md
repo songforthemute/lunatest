@@ -84,8 +84,8 @@ pnpm release:publish:next
 | `packages/cli` | `lunatest` CLI (`run/watch/coverage/gen/devtools/doctor`) |
 | `packages/react` | React provider/hooks 및 adapter |
 | `packages/mcp` | MCP server, tools/resources/prompts, stdio transport |
-| `packages/vitest-plugin` | Vitest 플러그인/매처 |
-| `packages/playwright-plugin` | Playwright fixture 및 라우팅 헬퍼 |
+| `packages/vitest-plugin` | Vitest project scenario runner 및 매처 |
+| `packages/playwright-plugin` | Playwright 라우팅 및 page-bound scenario runner |
 | `packages/runtime-intercept` | 개발 서버 브라우저 런타임 인터셉트 |
 | `e2e-tests` | smoke/extended E2E 테스트 |
 | `docs` | VitePress 문서 사이트 |
@@ -233,6 +233,38 @@ production에서는 자동 활성화되지 않습니다. 개발 환경 외에서
 Built-in protocol preset(`builtin/uniswap_v2`, `builtin/uniswap_v3`, `builtin/curve`, `builtin/aave`)은 결정론적인 L3 frontend-flow 지원을 목표로 합니다. 정확한 EVM fork를 대체하지는 않습니다. protocol 및 wallet method 지원 범위는 `docs/guides/protocol-support.md`에서 확인할 수 있습니다.
 
 이 preset들을 public LunaTest API와 `window.ethereum.request` 경로로 검증하는 runnable multi-protocol dogfood 앱은 `examples/defi-dashboard` 또는 `docs/guides/defi-dashboard-dogfood.md`에서 확인할 수 있습니다.
+
+### 6) Vitest와 Playwright scenario runner
+
+```ts
+import { createLunaVitestPlugin } from "@lunatest/vitest-plugin";
+
+const luna = createLunaVitestPlugin({ cwd: process.cwd() });
+
+await luna.assertScenario("scenarios/quote-ready", {
+  runWhen: () => clickQuoteButton(),
+  resolveUi: () => ({ quote: { status: readQuoteStatus() } }),
+});
+```
+
+실제 Playwright page에는 같은 project scenario를 explicit host action과 DOM read에 연결합니다.
+
+```ts
+import { createLunaCommands, createLunaPageAdapter } from "@lunatest/playwright-plugin";
+
+await createLunaCommands({ cwd: process.cwd() }).assertScenario(
+  "scenarios/quote-ready",
+  createLunaPageAdapter({
+    page,
+    runWhen: ({ page: target }) => target.getByTestId("load-quote").click(),
+    resolveUi: async ({ page: target }) => ({
+      quote: { status: await target.getByTestId("quote-status").textContent() },
+    }),
+  }),
+);
+```
+
+scenario ID는 정확한 project-relative path입니다. integration이 Lua에서 selector나 action을 추론하지 않습니다. `createLunaFixture().injectProvider`는 deprecated이며 wallet emulator가 아닙니다. 결정론적인 wallet 동작에는 `@lunatest/runtime-intercept`를 bootstrap하세요.
 
 더 자세한 내용은 `docs/guides/library-consumption.md`를 참고하세요.
 
