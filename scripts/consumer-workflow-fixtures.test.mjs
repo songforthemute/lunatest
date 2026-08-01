@@ -168,6 +168,33 @@ test("command invocation resolver runs Windows pnpm through cmd.exe without a sh
   );
 });
 
+test("installed package version guard rejects a stale registry fallback", (t) => {
+  assert.equal(typeof smokeHelpers.assertInstalledPackageVersions, "function");
+
+  const consumerDir = mkdtempSync(join(tmpdir(), "lunatest-installed-version-"));
+  t.after(() => rmSync(consumerDir, { recursive: true, force: true }));
+  const expectedVersions = {
+    "@lunatest/core": "0.2.0",
+    "@lunatest/playwright-plugin": "0.2.0",
+  };
+
+  for (const [packageName, version] of Object.entries(expectedVersions)) {
+    const packageDir = join(consumerDir, "node_modules", ...packageName.split("/"));
+    mkdirSync(packageDir, { recursive: true });
+    writeFileSync(join(packageDir, "package.json"), JSON.stringify({ name: packageName, version }));
+  }
+
+  assert.doesNotThrow(() => smokeHelpers.assertInstalledPackageVersions(consumerDir, expectedVersions));
+  writeFileSync(
+    join(consumerDir, "node_modules", "@lunatest", "playwright-plugin", "package.json"),
+    JSON.stringify({ name: "@lunatest/playwright-plugin", version: "0.1.2" }),
+  );
+  assert.throws(
+    () => smokeHelpers.assertInstalledPackageVersions(consumerDir, expectedVersions),
+    /@lunatest\/playwright-plugin.*expected 0\.2\.0.*received 0\.1\.2/,
+  );
+});
+
 test("MCP smoke invocation and Windows Node CLI adapter tree cleanup use safe process invocations", (t) => {
   const fixture = createInstalledPackageFixture({
     packageName: "@lunatest/mcp",

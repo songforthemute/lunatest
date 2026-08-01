@@ -13,6 +13,7 @@ import {
 import {
   nextPackages,
   packageNames,
+  packagesForConsumerChannel,
   publicPackages,
   repositoryUrl,
   stablePackages,
@@ -86,6 +87,17 @@ test("release scripts publish package channels from the shared roster helper", a
     "@lunatest/vitest-plugin",
     "@lunatest/playwright-plugin",
   ]);
+});
+
+test("registry consumer smoke verifies packages installed by its selected channel", () => {
+  assert.deepEqual(
+    packageNames(packagesForConsumerChannel("stable")),
+    packageNames(stablePackages),
+  );
+  assert.deepEqual(
+    packageNames(packagesForConsumerChannel("next")),
+    packageNames(publicPackages),
+  );
 });
 
 test("consumer pack smoke covers all public tarballs and React peer matrix", async () => {

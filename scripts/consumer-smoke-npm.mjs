@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -6,8 +6,21 @@ import {
   createConsumerSmokeScript,
   reactPeerMatrix,
 } from "./consumer-smoke-fixtures.mjs";
-import { nextPackages, packageNames, stablePackages } from "./package-roster.mjs";
-import { run, startMcpSmoke } from "./smoke-helpers.mjs";
+import {
+  createRegistryConsumerWorkspaceConfig,
+} from "./pnpm-workspace-overrides.mjs";
+import {
+  nextPackages,
+  packageNames,
+  packagesForConsumerChannel,
+  publicPackages,
+  stablePackages,
+} from "./package-roster.mjs";
+import {
+  assertInstalledPackageVersions,
+  run,
+  startMcpSmoke,
+} from "./smoke-helpers.mjs";
 
 function readArg(name, defaultValue) {
   const prefix = `--${name}=`;
@@ -28,9 +41,19 @@ function buildInstallTargets(channel, stableTag, nextTag) {
   ];
 }
 
+function readWorkspacePackageVersions(packages) {
+  return Object.fromEntries(
+    packages.map(({ dir, name }) => {
+      const manifest = JSON.parse(readFileSync(join(process.cwd(), dir, "package.json"), "utf8"));
+      return [name, manifest.version];
+    }),
+  );
+}
+
 const channel = readArg("channel", "stable");
 const stableTag = readArg("stable-tag", readArg("tag", "latest"));
 const nextTag = readArg("next-tag", "next");
+const expectedPackageVersions = readWorkspacePackageVersions(packagesForConsumerChannel(channel));
 const tempRoot = mkdtempSync(join(tmpdir(), `lunatest-consumer-npm-${channel}-`));
 
 try {
@@ -51,6 +74,10 @@ try {
         2,
       ),
     );
+    writeFileSync(
+      join(consumerDir, "pnpm-workspace.yaml"),
+      createRegistryConsumerWorkspaceConfig(packageNames(publicPackages)),
+    );
 
     run(
       "pnpm",
@@ -64,6 +91,7 @@ try {
         stdio: "inherit",
       },
     );
+    assertInstalledPackageVersions(consumerDir, expectedPackageVersions);
 
     writeFileSync(
       join(consumerDir, "smoke.mjs"),
