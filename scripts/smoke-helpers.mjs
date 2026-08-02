@@ -123,6 +123,26 @@ export function resolveInstalledPackageBin(packageName, binName, cwd) {
   };
 }
 
+export function assertInstalledPackageVersions(cwd, expectedVersions) {
+  for (const [packageName, expectedVersion] of Object.entries(expectedVersions)) {
+    const manifestPath = resolve(cwd, "node_modules", ...packageName.split("/"), "package.json");
+    let manifest;
+
+    try {
+      manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Unable to read installed package manifest for ${packageName}: ${message}`);
+    }
+
+    if (manifest.version !== expectedVersion) {
+      throw new Error(
+        `Installed package ${packageName} version mismatch: expected ${expectedVersion}, received ${manifest.version ?? "missing"}`,
+      );
+    }
+  }
+}
+
 export function startCommand(command, args, cwd, options = {}) {
   const invocation = resolveCommandInvocation(command, args, { shell: options.shell ?? false });
   const child = spawn(invocation.command, invocation.args, {

@@ -28,3 +28,19 @@ export function formatWorkspaceOverrides(overrides) {
     .map(([name, target]) => `  ${JSON.stringify(name)}: ${JSON.stringify(target)}`)
     .join("\n");
 }
+
+export function createRegistryConsumerWorkspaceConfig(packageNames) {
+  const exclusions = [...new Set(packageNames)]
+    .map((packageName) => `  - ${JSON.stringify(packageName)}`)
+    .join("\n");
+
+  // 방금 publish한 LunaTest 패키지만 age gate를 우회하고 서드파티 정책은 유지한다.
+  return `packages:
+  - "."
+
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+${exclusions}
+blockExoticSubdeps: true
+`;
+}

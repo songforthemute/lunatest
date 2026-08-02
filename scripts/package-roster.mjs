@@ -19,3 +19,7 @@ export const publicPackages = [...stablePackages, ...nextPackages];
 export function packageNames(packages) {
   return packages.map((pkg) => pkg.name);
 }
+
+export function packagesForConsumerChannel(channel) {
+  return channel === "next" ? publicPackages : stablePackages;
+}

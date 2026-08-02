@@ -7,6 +7,8 @@ import {
   createTarballOverrides,
   formatWorkspaceOverrides,
 } from "./pnpm-workspace-overrides.mjs";
+import * as workspacePolicy from "./pnpm-workspace-overrides.mjs";
+import { packageNames, publicPackages } from "./package-roster.mjs";
 
 const requiredOverrides = new Map([
   ["picomatch@<2.3.2", "2.3.2"],
@@ -85,6 +87,30 @@ test("consumer pack smoke writes local tarball overrides to pnpm-workspace.yaml"
   assert.match(smokeScript, /blockExoticSubdeps/);
   assert.doesNotMatch(smokeScript, /pnpm:\s*{\s*overrides/s);
   assert.doesNotMatch(smokeScript, /file:\$\{pkg\.tarball\}/);
+});
+
+test("registry consumer smoke exempts only public LunaTest packages in its temporary workspace", async () => {
+  assert.equal(typeof workspacePolicy.createRegistryConsumerWorkspaceConfig, "function");
+
+  const config = workspacePolicy.createRegistryConsumerWorkspaceConfig(
+    packageNames(publicPackages),
+  );
+
+  assert.match(config, new RegExp(`^minimumReleaseAge: ${expectedMinimumReleaseAgeMinutes}$`, "m"));
+  assert.match(config, /^blockExoticSubdeps: true$/m);
+  assert.match(config, /^minimumReleaseAgeExclude:$/m);
+  assert.doesNotMatch(config, /@lunatest\/\*/);
+  for (const packageName of packageNames(publicPackages)) {
+    assert.match(config, new RegExp(`^  - ${JSON.stringify(packageName)}$`, "m"));
+  }
+});
+
+test("registry consumer smoke wires the temporary workspace policy from the public package roster", async () => {
+  const smokeScript = await readRootFile("scripts/consumer-smoke-npm.mjs");
+
+  assert.match(smokeScript, /publicPackages/);
+  assert.match(smokeScript, /createRegistryConsumerWorkspaceConfig/);
+  assert.match(smokeScript, /pnpm-workspace\.yaml/);
 });
 
 test("consumer pack smoke writes platform-safe workspace-relative tarball overrides", () => {
