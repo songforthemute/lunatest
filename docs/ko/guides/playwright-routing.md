@@ -12,6 +12,12 @@ LunaTest Playwright 플러그인은 아래 두 축을 함께 처리합니다.
 - `mode: "strict"`: 매핑되지 않은 요청 차단
 - `mode: "permissive"`: 매핑되지 않은 요청 통과
 
+## 설치
+
+```bash
+pnpm add -D @lunatest/playwright-plugin @playwright/test
+```
+
 ## 예시
 
 ```ts

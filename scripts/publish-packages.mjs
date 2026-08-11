@@ -18,6 +18,11 @@ if (channel !== "stable" && channel !== "next") {
   throw new Error(`Unsupported publish channel: ${channel}`);
 }
 
+if (selectedPackages.length === 0) {
+  process.stdout.write(`[publish-packages] No packages configured for ${channel}; skipping.\n`);
+  process.exit(0);
+}
+
 const args = [
   ...packageNames(selectedPackages).flatMap((name) => ["--filter", name]),
   "publish",

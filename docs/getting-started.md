@@ -11,10 +11,10 @@ pnpm install --frozen-lockfile
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
-`@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, and `@lunatest/mcp` publish on `latest`. The Vitest and Playwright integrations publish on `next`, so their installation commands must keep the explicit `@next` tag until they are promoted to `latest`.
+All public LunaTest packages, including the Vitest and Playwright integrations, publish on `latest`.
 
 For runnable library examples, see the [Library Consumption Guide](./guides/library-consumption.md). The [Live Demo](./guides/live-demo.md) runs without an RPC endpoint or wallet. For complete applications, see [DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md) and the [Sepolia Swap Demo Guide](./guides/swap-demo-sepolia-uniswapv3.md).
 
@@ -84,7 +84,7 @@ pnpm run test:e2e:extended:ci
 pnpm run perf:absolute:ci
 ```
 
-`lint:workspace-types` temporarily removes package `dist` directories before linting. `consumer-smoke:pack` is a separate packed-tarball consumer check and is preceded by `pnpm run build:workspace:ci` in each Linux, Windows, and macOS CI job. Use `pnpm consumer-smoke:npm` or `pnpm consumer-smoke:npm:next` only to verify registry consumption after publication.
+`lint:workspace-types` temporarily removes package `dist` directories before linting. `consumer-smoke:pack` is a separate packed-tarball consumer check and is preceded by `pnpm run build:workspace:ci` in each Linux, Windows, and macOS CI job. Use `pnpm consumer-smoke:npm` only to verify registry consumption after publication.
 
 For the complete job graph, platform conditions, and release policy, see [CI Integration](./guides/ci-integration.md).
 

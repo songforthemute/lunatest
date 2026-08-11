@@ -33,7 +33,7 @@ test("root package declares the GitHub repository used by trusted publishing", a
 });
 
 test("public packages declare repository metadata matching npm provenance", async () => {
-  for (const { dir: packageDir } of publicPackages) {
+  for (const { dir: packageDir, tag } of publicPackages) {
     const pkg = await readJson(`${packageDir}/package.json`);
 
     assert.deepEqual(
@@ -44,6 +44,11 @@ test("public packages declare repository metadata matching npm provenance", asyn
         directory: packageDir,
       },
       `${pkg.name} repository metadata must match the GitHub Actions provenance source`,
+    );
+    assert.equal(
+      pkg.publishConfig.tag,
+      tag,
+      `${pkg.name} publishConfig tag must match the shared package roster`,
     );
   }
 });
@@ -68,12 +73,13 @@ test("release scripts publish package channels from the shared roster helper", a
     "node scripts/publish-packages.mjs --channel=stable --tag=latest",
   );
   assert.equal(
-    pkg.scripts["release:publish:next"],
-    "node scripts/publish-packages.mjs --channel=next --tag=next",
+    pkg.scripts["release:publish"],
+    "pnpm run release:publish:stable",
   );
+  assert.equal(pkg.scripts["release:publish:next"], undefined);
   assert.equal(
     pkg.scripts["release:publish:dry-run"],
-    "node scripts/publish-packages.mjs --channel=stable --tag=latest --dry-run && node scripts/publish-packages.mjs --channel=next --tag=next --dry-run",
+    "node scripts/publish-packages.mjs --channel=stable --tag=latest --dry-run",
   );
   assert.deepEqual(packageNames(stablePackages), [
     "@lunatest/contracts",
@@ -82,11 +88,10 @@ test("release scripts publish package channels from the shared roster helper", a
     "@lunatest/cli",
     "@lunatest/react",
     "@lunatest/mcp",
-  ]);
-  assert.deepEqual(packageNames(nextPackages), [
     "@lunatest/vitest-plugin",
     "@lunatest/playwright-plugin",
   ]);
+  assert.deepEqual(packageNames(nextPackages), []);
 });
 
 test("registry consumer smoke verifies packages installed by its selected channel", () => {
@@ -112,8 +117,8 @@ test("consumer pack smoke covers all public tarballs and React peer matrix", asy
   ]);
 });
 
-test("consumer smoke script exercises stable, next, browser, bin, and React entrypoints", () => {
-  const script = createConsumerSmokeScript({ includeNextPackages: true });
+test("consumer smoke script exercises stable runner, browser, bin, and React entrypoints", () => {
+  const script = createConsumerSmokeScript({ includeRunnerPackages: true });
 
   assert.match(script, /@lunatest\/core"/);
   assert.match(script, /@lunatest\/core\/browser"/);

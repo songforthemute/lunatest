@@ -11,10 +11,10 @@ pnpm install --frozen-lockfile
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
-`@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`는 `latest` 채널로 배포됩니다. Vitest와 Playwright 연동 패키지는 `next` 채널로 배포되므로 `latest`로 승격되기 전까지 설치 명령에 `@next`를 명시해야 합니다.
+Vitest와 Playwright 연동을 포함한 모든 공개 LunaTest 패키지는 `latest` 채널로 배포됩니다.
 
 실행 가능한 라이브러리 예시는 [라이브러리 소비자 가이드](./guides/library-consumption.md)를 참고하세요. RPC endpoint나 지갑 없이 실행하는 예제는 [라이브 데모](./guides/live-demo.md)에서 확인할 수 있습니다. 완성된 앱 예제는 [DeFi Dashboard Dogfood](./guides/defi-dashboard-dogfood.md)와 [Sepolia 스왑 데모 가이드](./guides/swap-demo-sepolia-uniswapv3.md)를 참고하세요.
 
@@ -84,7 +84,7 @@ pnpm run test:e2e:extended:ci
 pnpm run perf:absolute:ci
 ```
 
-`lint:workspace-types`는 lint 전에 package `dist` 디렉터리를 임시로 제거합니다. `consumer-smoke:pack`은 별도의 packed tarball 소비 검증이며, Linux, Windows, macOS의 각 CI job에서 `pnpm run build:workspace:ci` 다음에 실행됩니다. 배포 후 registry 소비를 검증할 때만 `pnpm consumer-smoke:npm` 또는 `pnpm consumer-smoke:npm:next`를 사용합니다.
+`lint:workspace-types`는 lint 전에 package `dist` 디렉터리를 임시로 제거합니다. `consumer-smoke:pack`은 별도의 packed tarball 소비 검증이며, Linux, Windows, macOS의 각 CI job에서 `pnpm run build:workspace:ci` 다음에 실행됩니다. 배포 후 registry 소비를 검증할 때만 `pnpm consumer-smoke:npm`을 사용합니다.
 
 전체 job 의존성, 플랫폼 조건, 릴리스 정책은 [CI 통합](./guides/ci-integration.md)을 참고하세요.
 

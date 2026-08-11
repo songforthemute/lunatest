@@ -1,11 +1,11 @@
 # API: @lunatest/playwright-plugin
 
-배포 채널: `next`
+배포 채널: `latest`
 
-이 패키지는 prerelease 채널이므로 설치 시 태그를 명시합니다.
+Playwright 연동 패키지를 개발 의존성으로 설치합니다.
 
 ```bash
-pnpm add -D @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/playwright-plugin
 ```
 
 ## `createLunaFixture(options?)`

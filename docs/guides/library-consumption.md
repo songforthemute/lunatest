@@ -31,10 +31,10 @@ If you want to add your own team-specific protocol or wallet presets, see:
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
-The Vitest and Playwright packages currently publish on the `next` channel. Keep the explicit `@next` tag until those packages are promoted to `latest`.
+All public LunaTest packages, including the Vitest and Playwright integrations, publish on `latest`.
 
 ## Core Provider Example
 

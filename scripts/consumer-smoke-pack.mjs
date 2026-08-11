@@ -253,7 +253,7 @@ ${workspaceOverrides}
 
     writeFileSync(
       join(matrixConsumerDir, "smoke.mjs"),
-      createConsumerSmokeScript({ includeNextPackages: true }),
+      createConsumerSmokeScript({ includeRunnerPackages: true }),
     );
 
     const cliBin = resolveInstalledPackageBin("@lunatest/cli", "lunatest", matrixConsumerDir);

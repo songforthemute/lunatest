@@ -13,7 +13,6 @@
     "pack:check-integrity": "node scripts/check-pack-integrity.mjs",
     "consumer-smoke:pack": "node scripts/consumer-smoke-pack.mjs",
     "consumer-smoke:npm": "node scripts/consumer-smoke-npm.mjs",
-    "consumer-smoke:npm:next": "node scripts/consumer-smoke-npm.mjs --channel=next --stable-tag=latest --next-tag=next",
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "node scripts/build-docs-site.mjs",
     "docs:preview": "vitepress preview docs",
@@ -31,9 +30,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release:publish:stable": "node scripts/publish-packages.mjs --channel=stable --tag=latest",
-    "release:publish:next": "node scripts/publish-packages.mjs --channel=next --tag=next",
-    "release:publish": "pnpm run release:publish:stable && pnpm run release:publish:next",
-    "release:publish:dry-run": "node scripts/publish-packages.mjs --channel=stable --tag=latest --dry-run && node scripts/publish-packages.mjs --channel=next --tag=next --dry-run"
+    "release:publish": "pnpm run release:publish:stable",
+    "release:publish:dry-run": "node scripts/publish-packages.mjs --channel=stable --tag=latest --dry-run"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",

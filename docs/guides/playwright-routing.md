@@ -11,7 +11,7 @@ operations:
 ## Install
 
 ```bash
-pnpm add -D @lunatest/playwright-plugin@next @playwright/test
+pnpm add -D @lunatest/playwright-plugin @playwright/test
 ```
 
 ## Route HTTP and JSON-RPC Requests

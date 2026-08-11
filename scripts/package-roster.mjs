@@ -7,12 +7,11 @@ export const stablePackages = [
   { name: "@lunatest/cli", dir: "packages/cli", tag: "latest" },
   { name: "@lunatest/react", dir: "packages/react", tag: "latest" },
   { name: "@lunatest/mcp", dir: "packages/mcp", tag: "latest" },
+  { name: "@lunatest/vitest-plugin", dir: "packages/vitest-plugin", tag: "latest" },
+  { name: "@lunatest/playwright-plugin", dir: "packages/playwright-plugin", tag: "latest" },
 ];
 
-export const nextPackages = [
-  { name: "@lunatest/vitest-plugin", dir: "packages/vitest-plugin", tag: "next" },
-  { name: "@lunatest/playwright-plugin", dir: "packages/playwright-plugin", tag: "next" },
-];
+export const nextPackages = [];
 
 export const publicPackages = [...stablePackages, ...nextPackages];
 

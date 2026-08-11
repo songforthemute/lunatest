@@ -95,7 +95,7 @@ try {
 
     writeFileSync(
       join(consumerDir, "smoke.mjs"),
-      createConsumerSmokeScript({ includeNextPackages: channel === "next" }),
+      createConsumerSmokeScript({ includeRunnerPackages: true }),
     );
 
     run("node", ["./smoke.mjs"], consumerDir, { stdio: "inherit" });
