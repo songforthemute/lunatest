@@ -1,5 +1,17 @@
 # @lunatest/playwright-plugin
 
+## 0.2.1
+
+### Patch Changes
+
+### Summary
+
+- [`a79db20`](https://github.com/songforthemute/lunatest/commit/a79db2060e64c17447a9cf7230b9f43331f78dba) Promote the Vitest and Playwright integrations to the stable `latest` release channel after packed-consumer scenario execution and repeated post-merge Linux browser E2E runs.
+
+### Breaking
+
+- None
+
 ## 0.2.0
 
 ### Minor Changes
