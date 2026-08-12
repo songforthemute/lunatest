@@ -188,7 +188,7 @@ test("Release workflow runs npm smoke after publish action success", async () =>
   assert.match(releaseWorkflow, /pnpm run lint:workspace:ci/);
   assert.match(releaseWorkflow, /pnpm run test:workspace:ci/);
   assert.match(releaseWorkflow, /pnpm consumer-smoke:npm -- --tag=latest/);
-  assert.match(releaseWorkflow, /pnpm consumer-smoke:npm:next/);
+  assert.doesNotMatch(releaseWorkflow, /pnpm consumer-smoke:npm:next/);
   assert.doesNotMatch(releaseWorkflow, /pnpm -r lint/);
   assert.doesNotMatch(releaseWorkflow, /pnpm -r build/);
   assert.doesNotMatch(releaseWorkflow, /pnpm -r test/);

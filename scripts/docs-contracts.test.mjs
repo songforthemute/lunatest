@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { nextPackages, publicPackages } from "./package-roster.mjs";
+import { publicPackages } from "./package-roster.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -28,7 +28,7 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-test("consumer installation snippets pin next-channel packages to @next", () => {
+test("consumer installation snippets do not pin stable packages to a prerelease channel", () => {
   const documents = [
     "README.md",
     "README.ko.md",
@@ -40,13 +40,13 @@ test("consumer installation snippets pin next-channel packages to @next", () => 
 
   for (const document of documents) {
     for (const block of bashBlocks(read(document))) {
-      for (const pkg of nextPackages) {
+      for (const pkg of publicPackages) {
         const specifiers = block.match(
           new RegExp(`${escapeRegExp(pkg.name)}(?:@[^\\s]+)?`, "g"),
         ) ?? [];
 
         for (const specifier of specifiers) {
-          assert.equal(specifier, `${pkg.name}@next`, `${document}: ${specifier}`);
+          assert.doesNotMatch(specifier, /@next$/, `${document}: ${specifier}`);
         }
       }
     }

@@ -60,7 +60,7 @@ pnpm run perf:absolute:ci
 
 모든 job은 `pnpm install --frozen-lockfile`로 설치합니다. packed-consumer job은 `pnpm consumer-smoke:pack` 전에 반드시 `pnpm run build:workspace:ci`를 실행합니다.
 
-`test:e2e:*`는 workspace source integration을 검증합니다. `consumer-smoke:pack`은 stable/next 공개 패키지 전체의 local tarball을 React 18/19 peer 조합에 설치해 public package entrypoint를 검증합니다. 이는 npm registry 소비 검증을 대체하지 않습니다.
+`test:e2e:*`는 workspace source integration을 검증합니다. `consumer-smoke:pack`은 stable 공개 패키지 전체의 local tarball을 React 18/19 peer 조합에 설치해 public package entrypoint를 검증합니다. 이는 npm registry 소비 검증을 대체하지 않습니다.
 
 `test:browser`는 Chromium scenario contract를 실행합니다. 로컬 실행 전에는 `pnpm --filter @lunatest/e2e-tests exec playwright install chromium`으로 같은 browser binary를 설치하세요. browser 설치는 의도적으로 Linux CI job에만 제한하며 Windows/macOS consumer job은 browser를 설치하지 않습니다.
 
@@ -91,10 +91,9 @@ pnpm consumer-smoke:pack
 
 # 배포 후 npm registry package를 검증합니다.
 pnpm consumer-smoke:npm -- --tag=latest
-pnpm consumer-smoke:npm:next
 ```
 
-Release workflow는 같은 fresh-checkout 품질 계약을 실행한 뒤 packed-consumer smoke를 실행합니다. Changesets publish action이 publish 경로에서 완료되면 `latest`와 `next` npm smoke를 실행합니다.
+Release workflow는 같은 fresh-checkout 품질 계약을 실행한 뒤 packed-consumer smoke를 실행합니다. Changesets publish action이 publish 경로에서 완료되면 `latest` npm smoke를 실행합니다.
 
 ## 공급망 설치 정책
 

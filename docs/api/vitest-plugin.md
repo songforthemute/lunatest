@@ -1,9 +1,9 @@
 # API: @lunatest/vitest-plugin
 
-Release channel: `next`
+Release channel: `latest`
 
 ```bash
-pnpm add -D @lunatest/vitest-plugin@next
+pnpm add -D @lunatest/vitest-plugin
 ```
 
 `@lunatest/vitest-plugin` executes a configured LunaTest project through explicit

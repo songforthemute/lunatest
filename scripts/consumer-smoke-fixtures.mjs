@@ -3,8 +3,8 @@ export const reactPeerMatrix = [
   { label: "react19", dependencies: ["react@19.2.6", "react-dom@19.2.6"] },
 ];
 
-export function createConsumerSmokeScript({ includeNextPackages = false } = {}) {
-  const nextImports = includeNextPackages
+export function createConsumerSmokeScript({ includeRunnerPackages = false } = {}) {
+  const runnerImports = includeRunnerPackages
     ? `
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -14,7 +14,7 @@ import { createLunaCommands, createLunaFixture, createLunaPageAdapter } from "@l
 `
     : "";
 
-  const nextChecks = includeNextPackages
+  const runnerChecks = includeRunnerPackages
     ? `
 if (typeof toLunaPass !== "function") throw new Error("toLunaPass export missing");
 if (typeof createLunaVitestPlugin !== "function") throw new Error("createLunaVitestPlugin export missing");
@@ -85,7 +85,7 @@ import { bootstrapLunaRuntime, LunaTestProvider } from "@lunatest/react";
 import { bootstrapLunaRuntime as bootstrapLunaRuntimeBrowser } from "@lunatest/react/browser";
 import { setRouteMocks } from "@lunatest/runtime-intercept";
 import { createMcpServer } from "@lunatest/mcp";
-${nextImports}
+${runnerImports}
 
 if (typeof React.createElement !== "function") throw new Error("react createElement export missing");
 if (typeof renderToString !== "function") throw new Error("react-dom/server renderToString export missing");
@@ -98,6 +98,6 @@ if (typeof LunaTestProvider !== "function") throw new Error("LunaTestProvider ex
 if (typeof setRouteMocks !== "function") throw new Error("setRouteMocks export missing");
 if (typeof createMcpServer !== "function") throw new Error("createMcpServer export missing");
 renderToString(React.createElement(LunaTestProvider, { options: {} }, React.createElement("div", null, "ok")));
-${nextChecks}
+${runnerChecks}
 `;
 }

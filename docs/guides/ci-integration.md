@@ -60,7 +60,7 @@ pnpm run perf:absolute:ci
 
 Every job installs with `pnpm install --frozen-lockfile`. Packed-consumer jobs explicitly run `pnpm run build:workspace:ci` before `pnpm consumer-smoke:pack`.
 
-`test:e2e:*` validates workspace-source integration. `consumer-smoke:pack` validates public package entrypoints by installing local tarballs for every stable and next public package across React 18 and React 19 peer combinations. It is not a replacement for registry consumption testing.
+`test:e2e:*` validates workspace-source integration. `consumer-smoke:pack` validates public package entrypoints by installing local tarballs for every stable public package across React 18 and React 19 peer combinations. It is not a replacement for registry consumption testing.
 
 `test:browser` runs the Chromium scenario contract. Before running it locally, install the matching browser binary with `pnpm --filter @lunatest/e2e-tests exec playwright install chromium`. Browser installation is intentionally restricted to the Linux CI job; the Windows and macOS consumer jobs stay browser-free.
 
@@ -91,10 +91,9 @@ pnpm consumer-smoke:pack
 
 # Published registry packages after a release.
 pnpm consumer-smoke:npm -- --tag=latest
-pnpm consumer-smoke:npm:next
 ```
 
-The release workflow runs the same fresh-checkout quality contracts, then packed-consumer smoke. After the Changesets publish action completes on a publish path, it runs the npm smoke checks for `latest` and `next`.
+The release workflow runs the same fresh-checkout quality contracts, then packed-consumer smoke. After the Changesets publish action completes on a publish path, it runs the npm smoke check for `latest`.
 
 ## Supply-Chain Install Policy
 

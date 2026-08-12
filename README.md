@@ -74,11 +74,10 @@ pnpm run perf:absolute:ci
 pnpm docs:dev
 ```
 
-2. Publish by channel:
+2. Publish stable packages:
 
 ```bash
 pnpm release:publish:stable
-pnpm release:publish:next
 ```
 
 3. Explore API and guides:
@@ -114,11 +113,11 @@ Install only what you need:
 pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 pnpm add @lunatest/mcp
 ```
 
-`@lunatest/vitest-plugin` and `@lunatest/playwright-plugin` are published on the `next` channel; keep `@next` in installation commands until they are promoted to `latest`.
+All public LunaTest packages, including the Vitest and Playwright integrations, are published on the `latest` channel.
 
 ### 1) Core provider (EIP-1193 compatible)
 
@@ -339,8 +338,7 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
 
 ### Release Channels
 
-- `latest`: `@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
-- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
+- `latest`: `@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`, `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
 ## Documentation
 
@@ -361,7 +359,7 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
 - Workspace-source E2E smoke (PR): `pnpm run test:e2e:smoke:ci`
 - Workspace-source E2E extended (nightly): `pnpm run test:e2e:extended:ci`
 - Package entry smoke: `pnpm consumer-smoke:pack`, `pnpm consumer-smoke:npm`
-- Packed tarball smoke covers every public stable/next package plus React 18/19 peer compatibility.
+- Packed tarball smoke covers every public stable package plus React 18/19 peer compatibility.
 - Performance regression: `pnpm run perf:regression:ci`
 - Performance absolute: `pnpm run perf:absolute:ci`
 
@@ -381,13 +379,12 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
   - `pnpm changeset`
   - `pnpm version-packages`
   - `pnpm release:publish:stable`
-  - `pnpm release:publish:next`
   - `pnpm release:publish`
   - `pnpm release:publish:dry-run`
 
 ## Status
 
-Active development. Runtime/CLI/MCP/docs/CI gates are integrated, and stable packages are published on npm.
+Active development. Runtime/CLI/MCP/runner integrations/docs/CI gates are integrated, and all public packages are published on npm through `latest`.
 
 ## License
 

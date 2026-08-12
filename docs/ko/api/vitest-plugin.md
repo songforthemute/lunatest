@@ -1,9 +1,9 @@
 # API: @lunatest/vitest-plugin
 
-배포 채널: `next`
+배포 채널: `latest`
 
 ```bash
-pnpm add -D @lunatest/vitest-plugin@next
+pnpm add -D @lunatest/vitest-plugin
 ```
 
 `@lunatest/vitest-plugin`은 명시적인 adapter를 통해 구성된 LunaTest 프로젝트를 실행합니다. 전역 matcher를 등록하지 않고, UI action을 추론하지 않으며, Vitest 자체 runner lifecycle을 대체하지 않습니다.

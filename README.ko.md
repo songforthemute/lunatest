@@ -60,11 +60,10 @@ pnpm run perf:absolute:ci
 pnpm docs:dev
 ```
 
-2. 채널별 배포
+2. stable 패키지 배포
 
 ```bash
 pnpm release:publish:stable
-pnpm release:publish:next
 ```
 
 3. 주요 문서 진입점
@@ -101,10 +100,10 @@ pnpm add @lunatest/core
 pnpm add @lunatest/react
 pnpm add @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin@next @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
-`@lunatest/vitest-plugin`과 `@lunatest/playwright-plugin`은 `next` 채널로 배포됩니다. `latest`로 승격되기 전까지 설치 명령에는 `@next`를 명시합니다.
+Vitest와 Playwright 연동을 포함한 모든 공개 LunaTest 패키지는 `latest` 채널로 배포됩니다.
 
 ### 1) Core provider
 
@@ -274,8 +273,7 @@ scenario ID는 정확한 project-relative path입니다. integration이 Lua에�
 
 ## 릴리스 채널
 
-- `latest`: `@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`
-- `next`: `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
+- `latest`: `@lunatest/contracts`, `@lunatest/core`, `@lunatest/runtime-intercept`, `@lunatest/cli`, `@lunatest/react`, `@lunatest/mcp`, `@lunatest/vitest-plugin`, `@lunatest/playwright-plugin`
 
 ## CI / 게이트
 
@@ -287,7 +285,7 @@ scenario ID는 정확한 project-relative path입니다. integration이 Lua에�
 - CI workspace 품질 명령: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
 - Dead-code 게이트: 빠른 unused-file 점검은 `pnpm lint:deadcode`, 더 넓은 감사는 `pnpm lint:deadcode:strict`
 - `test:e2e:*`는 workspace source integration을 검증하고, 패키지 entrypoint 소비 검증은 `pnpm consumer-smoke:pack`과 `pnpm consumer-smoke:npm`이 담당합니다.
-- 패키징된 tarball smoke는 stable/next 공개 패키지 전체와 React 18/19 peer 호환성을 함께 검증합니다.
+- 패키징된 tarball smoke는 stable 공개 패키지 전체와 React 18/19 peer 호환성을 함께 검증합니다.
 
 ## 라이선스
 

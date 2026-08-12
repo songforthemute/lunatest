@@ -1,11 +1,11 @@
 # API: @lunatest/playwright-plugin
 
-Release channel: `next`
+Release channel: `latest`
 
-Install this package explicitly from its prerelease channel:
+Install the Playwright integration as a development dependency:
 
 ```bash
-pnpm add -D @lunatest/playwright-plugin@next
+pnpm add -D @lunatest/playwright-plugin
 ```
 
 ## `createLunaFixture(options?)`
