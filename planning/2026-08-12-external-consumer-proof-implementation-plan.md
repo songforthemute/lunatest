@@ -22,6 +22,8 @@
 
 ### Task 1 — Establish a supported wagmi/viem bridge
 
+**Status:** Implemented; pending release.
+
 **Intent:** Replace the unproven structural wrapper with a contract that compiles
 and executes through pinned real wagmi/viem packages.
 
@@ -30,7 +32,6 @@ and executes through pinned real wagmi/viem packages.
 - `packages/react/src/__tests__/wagmi-real-contract.test.ts`
 - `packages/react/src/adapters/wagmi.ts`
 - `packages/react/package.json`
-- `packages/react/CHANGELOG.md`
 - `pnpm-lock.yaml`
 - one changeset when public behavior changes
 
@@ -48,6 +49,19 @@ and executes through pinned real wagmi/viem packages.
 **Checks:** React package test/lint/build, workspace type lint, packed consumer smoke.
 
 **Commit:** `feat(react): add supported wagmi viem bridge`
+
+### Task 1b — Add a real wagmi connector contract
+
+**Intent:** Complete the connection-state boundary that a transport alone does
+not provide before building the reference app's connect step.
+
+Use wagmi's public connector factory with the Luna provider. Contract-test real
+wagmi `connect`, account/chain state, transaction submission, receipt lookup,
+chain switching, and disconnect actions. The connector must translate provider
+events into wagmi state without a test-only fake or structural cast. Keep wagmi
+as an optional peer isolated to `@lunatest/react/wagmi`.
+
+**Commit:** `feat(react): add supported wagmi connector`
 
 ### Task 2 — Preserve full Lua scenario semantics
 

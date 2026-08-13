@@ -103,9 +103,17 @@ npm registry without tarballs or overrides.
 
 ### Real-library compatibility gate
 
-The existing `withLunaWagmiConfig()` and `createEthersAdapter()` APIs are structural wrappers (`WagmiLikeConfig` and `EthersLikeProvider`). They are not yet evidence of compatibility with real wagmi, viem, or ethers runtimes.
+The legacy `withLunaWagmiConfig()` and current `createEthersAdapter()` APIs are
+structural wrappers (`WagmiLikeConfig` and `EthersLikeProvider`), so they are not
+evidence of compatibility with real runtimes. The first bridge implementation
+now contracts a real viem transport through pinned `@wagmi/core` and `viem`
+versions. It proves public-client and direct wallet-client request routing, but
+not wagmi connector state.
 
-Before building the reference journey, a contract test must compile and execute against pinned real library versions. If the current adapter cannot be passed through the real library's supported extension point, the first product implementation is to fix or replace that adapter. The proof must not bypass this gap by calling a Luna provider directly while continuing to claim wagmi support.
+Before building the reference journey, the remaining connector contract must
+compile and execute through wagmi's public connector extension point. The proof
+must not bypass this gap by calling a Luna provider directly while continuing to
+claim wagmi connect-state support.
 
 ### Scenario-fidelity gate
 

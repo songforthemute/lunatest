@@ -1,6 +1,22 @@
 export const reactPeerMatrix = [
-  { label: "react18", dependencies: ["react@18.3.1", "react-dom@18.3.1"] },
-  { label: "react19", dependencies: ["react@19.2.6", "react-dom@19.2.6"] },
+  {
+    label: "react18",
+    dependencies: [
+      "react@18.3.1",
+      "react-dom@18.3.1",
+      "@wagmi/core@3.6.4",
+      "viem@2.55.11",
+    ],
+  },
+  {
+    label: "react19",
+    dependencies: [
+      "react@19.2.6",
+      "react-dom@19.2.6",
+      "@wagmi/core@3.6.4",
+      "viem@2.55.11",
+    ],
+  },
 ];
 
 export function createConsumerSmokeScript({ includeRunnerPackages = false } = {}) {
@@ -79,12 +95,15 @@ try {
   return `
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { loadLunaConfig as loadLunaConfigNode, executeLuaScenario } from "@lunatest/core";
+import { createConfig, getBalance } from "@wagmi/core";
+import { LunaProvider, loadLunaConfig as loadLunaConfigNode, executeLuaScenario } from "@lunatest/core";
 import { loadLunaConfig as loadLunaConfigBrowser } from "@lunatest/core/browser";
 import { bootstrapLunaRuntime, LunaTestProvider } from "@lunatest/react";
 import { bootstrapLunaRuntime as bootstrapLunaRuntimeBrowser } from "@lunatest/react/browser";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
 import { setRouteMocks } from "@lunatest/runtime-intercept";
 import { createMcpServer } from "@lunatest/mcp";
+import { mainnet } from "viem/chains";
 ${runnerImports}
 
 if (typeof React.createElement !== "function") throw new Error("react createElement export missing");
@@ -98,6 +117,26 @@ if (typeof LunaTestProvider !== "function") throw new Error("LunaTestProvider ex
 if (typeof setRouteMocks !== "function") throw new Error("setRouteMocks export missing");
 if (typeof createMcpServer !== "function") throw new Error("createMcpServer export missing");
 renderToString(React.createElement(LunaTestProvider, { options: {} }, React.createElement("div", null, "ok")));
+
+const wagmiAccount = "0x1111111111111111111111111111111111111111";
+const wagmiProvider = new LunaProvider({
+  chainId: "0x1",
+  accounts: [wagmiAccount],
+  balances: { [wagmiAccount]: "0xde0b6b3a7640000" },
+});
+const wagmiConfig = createConfig({
+  batch: { multicall: false },
+  chains: [mainnet],
+  multiInjectedProviderDiscovery: false,
+  transports: { [mainnet.id]: createLunaWagmiTransport(wagmiProvider) },
+});
+const wagmiBalance = await getBalance(wagmiConfig, {
+  address: wagmiAccount,
+  chainId: mainnet.id,
+});
+if (wagmiBalance.value !== 1_000_000_000_000_000_000n) {
+  throw new Error("packed wagmi transport did not reach LunaProvider");
+}
 ${runnerChecks}
 `;
 }
