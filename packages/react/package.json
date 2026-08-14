@@ -21,6 +21,11 @@
       "import": "./dist/wagmi.js",
       "default": "./dist/wagmi.js"
     },
+    "./wagmi/connector": {
+      "types": "./dist/wagmi-connector.d.ts",
+      "import": "./dist/wagmi-connector.js",
+      "default": "./dist/wagmi-connector.js"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -36,11 +41,15 @@
     "@lunatest/runtime-intercept": "workspace:*"
   },
   "peerDependencies": {
+    "@wagmi/core": ">=3.6.4 <4",
     "react": "^18.3.1 || ^19.0.0",
     "react-dom": "^18.3.1 || ^19.0.0",
     "viem": ">=2.55.11 <3"
   },
   "peerDependenciesMeta": {
+    "@wagmi/core": {
+      "optional": true
+    },
     "viem": {
       "optional": true
     }

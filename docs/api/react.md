@@ -22,10 +22,12 @@ Release channel: `latest`
 
 - `createLunaWagmiTransport(provider)` returns a real viem `Transport` for
   wagmi `createConfig`.
+- `@lunatest/react/wagmi/connector` exports
+  `createLunaWagmiConnector(provider)` for wagmi connection state and wallet
+  actions.
 - Contracted versions: `@wagmi/core@3.6.4` and `viem@2.55.11`.
-- `viem` is an optional peer and is required only when importing this subpath.
-- The bridge covers wagmi public-client requests and direct viem wallet clients;
-  it does not yet include a wagmi connector.
+- `viem` and `@wagmi/core` are optional peers. The transport subpath requires
+  only viem; the connector subpath additionally requires `@wagmi/core`.
 
 The root `withLunaWagmiConfig` export remains for compatibility and is
 deprecated because it returns only a structural wagmi-like object.

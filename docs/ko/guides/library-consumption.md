@@ -172,6 +172,7 @@ import {
   createWeb3JsAdapter,
 } from "@lunatest/react";
 import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
 import { mainnet } from "viem/chains";
 
 const provider = new LunaProvider({ chainId: "0x1" });
@@ -179,6 +180,7 @@ const provider = new LunaProvider({ chainId: "0x1" });
 const wagmiConfig = createConfig({
   batch: { multicall: false },
   chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
   transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
 });
 const ethersLike = createEthersAdapter(provider);

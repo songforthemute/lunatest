@@ -52,6 +52,8 @@ and executes through pinned real wagmi/viem packages.
 
 ### Task 1b — Add a real wagmi connector contract
 
+**Status:** Implemented; pending release.
+
 **Intent:** Complete the connection-state boundary that a transport alone does
 not provide before building the reference app's connect step.
 

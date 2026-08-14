@@ -38,6 +38,7 @@ export function AccountButton() {
 ```ts
 import { LunaProvider } from "@lunatest/core";
 import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
 import { createConfig } from "@wagmi/core";
 import { mainnet } from "viem/chains";
 
@@ -45,6 +46,7 @@ const provider = new LunaProvider({ chainId: "0x1" });
 const wagmiConfig = createConfig({
   batch: { multicall: false },
   chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
   transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
 });
 ```

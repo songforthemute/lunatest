@@ -253,7 +253,10 @@ ${workspaceOverrides}
 
     writeFileSync(
       join(matrixConsumerDir, "smoke.mjs"),
-      createConsumerSmokeScript({ includeRunnerPackages: true }),
+      createConsumerSmokeScript({
+        includeRunnerPackages: true,
+        includeWagmiConnector: reactPeer.label === "react19",
+      }),
     );
 
     const cliBin = resolveInstalledPackageBin("@lunatest/cli", "lunatest", matrixConsumerDir);

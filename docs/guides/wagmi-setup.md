@@ -7,6 +7,7 @@ extension point. The bridge is contract-tested with `@wagmi/core@3.6.4` and
 ```ts
 import { LunaProvider } from "@lunatest/core";
 import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
 import { createConfig, getBalance } from "@wagmi/core";
 import { mainnet } from "viem/chains";
 
@@ -19,6 +20,7 @@ const provider = new LunaProvider({
 const config = createConfig({
   batch: { multicall: false },
   chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
   multiInjectedProviderDiscovery: false,
   transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
 });
@@ -31,10 +33,10 @@ multicall batching to `false` when using the minimal `LunaProvider`; otherwise
 wagmi may route native balance reads through Multicall3 `eth_call` instead of
 `eth_getBalance`.
 
-This contract covers wagmi public-client requests and viem wallet-client
-requests. It does not yet provide a wagmi connector or claim `connect()` /
-`useConnect` state integration; that boundary is validated separately by the
-reference consumer.
+The connector is contract-tested through wagmi `connect`, connection state,
+chain switching, transaction submission, receipt lookup, external provider
+events, and disconnect. The transport remains a separate viem-only subpath, so
+direct viem consumers do not need to install `@wagmi/core`.
 
 `withLunaWagmiConfig` remains temporarily available for compatibility but is
 deprecated. It returns only a structural wagmi-like object and is not the

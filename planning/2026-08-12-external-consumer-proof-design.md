@@ -108,12 +108,12 @@ structural wrappers (`WagmiLikeConfig` and `EthersLikeProvider`), so they are no
 evidence of compatibility with real runtimes. The first bridge implementation
 now contracts a real viem transport through pinned `@wagmi/core` and `viem`
 versions. It proves public-client and direct wallet-client request routing, but
-not wagmi connector state.
+not wagmi connector state. The follow-up connector implementation now contracts
+that state through wagmi's public connector factory.
 
-Before building the reference journey, the remaining connector contract must
-compile and execute through wagmi's public connector extension point. The proof
-must not bypass this gap by calling a Luna provider directly while continuing to
-claim wagmi connect-state support.
+The reference journey must use this connector rather than calling a Luna
+provider directly, preserving the same connection boundary an application uses
+with wagmi.
 
 ### Scenario-fidelity gate
 
