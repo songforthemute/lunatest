@@ -67,6 +67,8 @@ as an optional peer isolated to `@lunatest/react/wagmi`.
 
 ### Task 2 — Preserve full Lua scenario semantics
 
+**Status:** Implemented; pending release.
+
 **Expected files:**
 
 - `packages/core/src/runner/execute-scenario.ts`

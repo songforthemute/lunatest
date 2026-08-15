@@ -1,4 +1,4 @@
-import type { RunScenarioResult } from "./runner.js";
+import type { RunScenarioInput, RunScenarioResult } from "./runner.js";
 import { runScenario } from "./runner.js";
 import { loadLunaConfig } from "../config/lua-config.js";
 import {
@@ -54,16 +54,7 @@ async function resolveConfig(source: LuaScenarioSource): Promise<LuaConfig> {
   return LuaConfigSchema.parse(source);
 }
 
-function normalizeScenario(config: LuaConfig): {
-  name: string;
-  given?: Record<string, unknown>;
-  when: {
-    action: string;
-    [key: string]: unknown;
-  };
-  then_ui: Record<string, unknown>;
-  then_state?: Record<string, unknown>;
-} {
+function normalizeScenario(config: LuaConfig): RunScenarioInput["scenario"] {
   const whenAction =
     config.when && typeof config.when.action === "string" ? config.when.action : "run";
 
@@ -76,6 +67,9 @@ function normalizeScenario(config: LuaConfig): {
     },
     then_ui: config.then_ui ?? {},
     then_state: config.then_state,
+    stages: config.stages,
+    not_present: config.not_present,
+    timing_ms: config.timing_ms,
   };
 }
 

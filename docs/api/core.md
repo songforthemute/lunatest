@@ -198,7 +198,9 @@ type LuaConfig = {
   when?: Record<string, unknown>;
   then_ui?: Record<string, unknown>;
   then_state?: Record<string, unknown>;
+  stages?: Array<{ name: string; on?: string }>;
   not_present?: string[];
+  timing_ms?: number;
   coverage?: CoverageMetadata;
   intercept?: {
     routes?: RouteMock[];
