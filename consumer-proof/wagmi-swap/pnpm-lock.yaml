@@ -12,11 +12,11 @@ importers:
         specifier: 0.1.1
         version: 0.1.1
       '@lunatest/core':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.2.1
+        version: 0.2.1
       '@lunatest/react':
-        specifier: 0.1.5
-        version: 0.1.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: 0.2.0
+        version: 0.2.0(@wagmi/core@3.6.4(@types/react@19.2.18)(react@19.2.8)(typescript@6.0.2)(viem@2.55.11(typescript@6.0.2)(zod@4.4.3)))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(viem@2.55.11(typescript@6.0.2)(zod@4.4.3))
       '@lunatest/runtime-intercept':
         specifier: 0.1.1
         version: 0.1.1
@@ -34,17 +34,17 @@ importers:
         version: 2.55.11(typescript@6.0.2)(zod@4.4.3)
     devDependencies:
       '@lunatest/cli':
-        specifier: 0.1.5
-        version: 0.1.5
+        specifier: 0.1.6
+        version: 0.1.6
       '@lunatest/mcp':
-        specifier: 0.1.5
-        version: 0.1.5
+        specifier: 0.1.6
+        version: 0.1.6
       '@lunatest/playwright-plugin':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.2.2
+        version: 0.2.2
       '@lunatest/vitest-plugin':
-        specifier: 0.2.1
-        version: 0.2.1
+        specifier: 0.2.2
+        version: 0.2.2
       '@playwright/test':
         specifier: 1.61.1
         version: 1.61.1
@@ -81,34 +81,41 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@lunatest/cli@0.1.5':
-    resolution: {integrity: sha512-QU1TDsmTcEs4klnZLiGugq3XQE0ZtlEjmo1TZhFM1ybtxxOX3yV1b3q4d7wCMhKDmoSVXveyj8VdCWe60Np2Zg==}
+  '@lunatest/cli@0.1.6':
+    resolution: {integrity: sha512-v+YUDFmrt+qvMuUBVSnYeYtIvEWAyiUpONAHqaEbYNvzEmZOmPJZVzZHS+UHpYuWWUJklbh5VQ0GUrRUZfvnxw==}
     hasBin: true
 
   '@lunatest/contracts@0.1.1':
     resolution: {integrity: sha512-BSuW6K1qqHKug05GFUMcpWLJa6DQVbGjyErIXZaPUvT4CiI7Og9ncVfZMcdV8ePZ9pc0Efjnz/T5rWVZyqRObg==}
 
-  '@lunatest/core@0.2.0':
-    resolution: {integrity: sha512-UQgTlUrg5y/MUAykN3F3T8PXuunQz3bpAU0sR/0qI6ClR/mC7izk4gJh2DR2fZtyfCjZQ3M+j3CIUwHaF36yJQ==}
+  '@lunatest/core@0.2.1':
+    resolution: {integrity: sha512-YR8kQDAFbsJsJFYu2D159zPYlO6FK5vIyWloIpPnXvAwGMSPnBTzJCkWnhz0KaTZ1xSZPyOk0qEi94uEVWcRqg==}
 
-  '@lunatest/mcp@0.1.5':
-    resolution: {integrity: sha512-ef5eGnDeuNc07ACi7aWG3ChahMMotpSPYgYo/si+bRqolAqJb4+/wucJDQUmAc/u0wydoOmketatzQSuelgRkA==}
+  '@lunatest/mcp@0.1.6':
+    resolution: {integrity: sha512-A4vupu5vIwQPoV0g7NRFsKOej/5fZOjS8dum31ilTEwcsWofPCYn05q8/v2//DE44DIb9zED2vHtU6TShvmoog==}
     hasBin: true
 
-  '@lunatest/playwright-plugin@0.2.1':
-    resolution: {integrity: sha512-A1GZknXEmf2mcy+89Wimj1i2KdRoamKVjtGn+IkErYBhNr00cGlTqQAdySmdClwex0P7uxEB9zXFLkr7Mb+xJg==}
+  '@lunatest/playwright-plugin@0.2.2':
+    resolution: {integrity: sha512-ywyEX/+JSvi3hOAp7OyjBmIIC2TSLbfuLuUKCej1bWrL0j4qD4hiBz3sWCJKgrTIPG3zluPBDZmDh132eUvb5g==}
 
-  '@lunatest/react@0.1.5':
-    resolution: {integrity: sha512-WqBJkDkJoJH55AyxJzNqWHfa98ijak9bQFwpghYhW5gOFQHfqTo5j3auFIsYRE4fafv7Apwcra+X4dk2sZAzrA==}
+  '@lunatest/react@0.2.0':
+    resolution: {integrity: sha512-krJfjjpVxjo7VfedMDYKrZd3lgLc2Fan/fBjz/8tU8DPi8NYMtG5hzoFuy/pPXvhjReptEXQDADR2AHv00HzDw==}
     peerDependencies:
+      '@wagmi/core': '>=3.6.4 <4'
       react: ^18.3.1 || ^19.0.0
       react-dom: ^18.3.1 || ^19.0.0
+      viem: '>=2.55.11 <3'
+    peerDependenciesMeta:
+      '@wagmi/core':
+        optional: true
+      viem:
+        optional: true
 
   '@lunatest/runtime-intercept@0.1.1':
     resolution: {integrity: sha512-aeKH48ELtSFy3g57hxTMkBbR8R6gAi/yq6DHnkAtgFfumt/HINttZXrF7n42NZ5Yho34uYFVvRmBSQxbwIENTA==}
 
-  '@lunatest/vitest-plugin@0.2.1':
-    resolution: {integrity: sha512-EXd/XsWH8aAOMwZ49kUu5I7u1GkXUn8XPz3p/6WvywMLbrAfq938R9iXwjaT2+Nq/OXVZcp30SOBigw+HD0AZw==}
+  '@lunatest/vitest-plugin@0.2.2':
+    resolution: {integrity: sha512-ge7D+fCJLmYTg+lfBk0QMgRIDgqPhZ+fBBItAQriU8JSVxilGwtUdsNZDOQdrI8HgYX9zEDYuLAGZQC/RS7KOA==}
 
   '@noble/ciphers@1.3.0':
     resolution: {integrity: sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw==}
@@ -839,48 +846,51 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@lunatest/cli@0.1.5':
+  '@lunatest/cli@0.1.6':
     dependencies:
       '@lunatest/contracts': 0.1.1
-      '@lunatest/core': 0.2.0
-      '@lunatest/mcp': 0.1.5
+      '@lunatest/core': 0.2.1
+      '@lunatest/mcp': 0.1.6
       '@lunatest/runtime-intercept': 0.1.1
       commander: 14.0.3
 
   '@lunatest/contracts@0.1.1': {}
 
-  '@lunatest/core@0.2.0':
+  '@lunatest/core@0.2.1':
     dependencies:
       '@lunatest/contracts': 0.1.1
       tinyglobby: 0.2.17
       wasmoon: 1.16.0
       zod: 4.4.3
 
-  '@lunatest/mcp@0.1.5':
+  '@lunatest/mcp@0.1.6':
     dependencies:
       '@lunatest/contracts': 0.1.1
-      '@lunatest/core': 0.2.0
+      '@lunatest/core': 0.2.1
 
-  '@lunatest/playwright-plugin@0.2.1':
+  '@lunatest/playwright-plugin@0.2.2':
     dependencies:
       '@lunatest/contracts': 0.1.1
-      '@lunatest/core': 0.2.0
+      '@lunatest/core': 0.2.1
 
-  '@lunatest/react@0.1.5(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@lunatest/react@0.2.0(@wagmi/core@3.6.4(@types/react@19.2.18)(react@19.2.8)(typescript@6.0.2)(viem@2.55.11(typescript@6.0.2)(zod@4.4.3)))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(viem@2.55.11(typescript@6.0.2)(zod@4.4.3))':
     dependencies:
       '@lunatest/contracts': 0.1.1
-      '@lunatest/core': 0.2.0
+      '@lunatest/core': 0.2.1
       '@lunatest/runtime-intercept': 0.1.1
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
+    optionalDependencies:
+      '@wagmi/core': 3.6.4(@types/react@19.2.18)(react@19.2.8)(typescript@6.0.2)(viem@2.55.11(typescript@6.0.2)(zod@4.4.3))
+      viem: 2.55.11(typescript@6.0.2)(zod@4.4.3)
 
   '@lunatest/runtime-intercept@0.1.1':
     dependencies:
       '@lunatest/contracts': 0.1.1
 
-  '@lunatest/vitest-plugin@0.2.1':
+  '@lunatest/vitest-plugin@0.2.2':
     dependencies:
-      '@lunatest/core': 0.2.0
+      '@lunatest/core': 0.2.1
 
   '@noble/ciphers@1.3.0': {}
 

@@ -18,11 +18,11 @@ pnpm consumer-proof:registry
 ```
 
 It is certifying only when all eight exact LunaTest versions equal npm `latest`,
-their lock entries have registry integrity, and every proof gate passes. Release
-automation may inject the versioned workspace package set into a temporary copy;
-it never changes this committed fixture. Until the pending release is published,
-use the packed lane for pre-release evidence.
+their lock entries have registry integrity, and every proof gate passes. The
+committed manifest and lockfile now record the package set certified by Release
+run `31935453165` on 2026-08-16. Release automation may inject a future versioned
+workspace package set into a temporary copy; it never changes this committed
+fixture.
 
 A passing packed lane is pre-release evidence only. It does not certify E2;
-that requires the later registry certification task after the proof versions
-are published.
+only a passing registry lane with `certificationEligible: true` does.

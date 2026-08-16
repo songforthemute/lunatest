@@ -6,14 +6,17 @@ assert the same Lua scenario through Vitest and Playwright.
 
 ## Evidence status
 
-The current result is a **packed-artifact proof**, not registry-certified E2
-evidence. The runner installs freshly packed public packages in a clean
-temporary consumer outside the workspace. Its report therefore has
-`certificationEligible: false`.
+The representative journey is now **registry-certified E2 evidence**. Release
+run [`31935453165`](https://github.com/songforthemute/lunatest/actions/runs/31935453165)
+installed the exact npm `latest` package set with registry integrity, ran the
+unchanged Vitest and Playwright proof, and produced
+`certificationEligible: true`. Its machine report is attached as the
+[`external-consumer-proof-registry`](https://github.com/songforthemute/lunatest/actions/runs/31935453165/artifacts/9260530901)
+workflow artifact (SHA-256
+`1b5b20cd374ff1fc3fd10051dbd6d7dd8145e7b90800683ed47ee43a7ea34764`).
 
-Do not replace the packed lane with npm `latest` and call it certified. Task 9
-will run this unchanged proof with registry-only resolution after the required
-package releases are published.
+The packed-artifact lane remains the pre-release gate and therefore reports
+`certificationEligible: false`; it must not be presented as registry evidence.
 
 This is also not independent user validation. The repository authors built the
 reference consumer. The later E3 sessions will measure whether target
@@ -41,6 +44,19 @@ The public peer ranges are broader than this one measured combination:
 React/React DOM `^18.3.1 || ^19.0.0`, `@wagmi/core >=3.6.4 <4`, and
 `viem >=2.55.11 <3`. The full journey on this page is validated only with the
 exact versions in the table.
+
+The certified LunaTest package set is:
+
+| Package | Certified npm `latest` |
+| --- | --- |
+| `@lunatest/contracts` | 0.1.1 |
+| `@lunatest/core` | 0.2.1 |
+| `@lunatest/runtime-intercept` | 0.1.1 |
+| `@lunatest/cli` | 0.1.6 |
+| `@lunatest/react` | 0.2.0 |
+| `@lunatest/mcp` | 0.1.6 |
+| `@lunatest/playwright-plugin` | 0.2.2 |
+| `@lunatest/vitest-plugin` | 0.2.2 |
 
 The pack lane records the exact LunaTest package names, versions, and
 `packed-tarball` sources in its report. Those manifest versions identify the
@@ -113,6 +129,15 @@ Open the JSON report and confirm:
 - every gate is green, including `failureQuality` and the enforced 10-second
   Playwright p95 budget.
 
+To replay the certified package set from the committed frozen lockfile, run:
+
+```bash
+pnpm consumer-proof:registry -- --enforce-ci-budget
+```
+
+That lane rejects workspace links, local tarballs, overrides, missing integrity,
+or any exact fixture version that no longer equals npm `latest`.
+
 ## What the application adds
 
 The reference application keeps LunaTest at the composition and test
@@ -160,6 +185,17 @@ Both runners produced fingerprint
 `sha256:143b046c151669494867a2ad534f96abc69e4310be10fca884c291db76bd6a93`
 and attempted zero outbound HTTP or WebSocket requests, including the excluded
 warm-up.
+
+The authoritative registry certification on the same date recorded:
+
+| Runner | Measured passes | Median | p95 |
+| --- | ---: | ---: | ---: |
+| Vitest | 30/30 | 6.953 ms | 12.911 ms |
+| Playwright | 30/30 | 199.325 ms | 214.317 ms |
+
+It produced the same fingerprint, attempted zero outbound requests, verified
+all eight packages as npm `latest`, and passed the enforced 10-second browser
+budget.
 
 Setup is reported separately: package build/pack, clean install, static checks,
 and runner command time are not included in scenario runtime. Browser download

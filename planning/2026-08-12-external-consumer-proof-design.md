@@ -1,6 +1,6 @@
 # External Consumer Proof Design
 
-**Status:** Approved for implementation
+**Status:** E2 complete; E3 user research is next
 
 ## Product Decision
 
@@ -34,11 +34,11 @@ The repository already proves several engineering contracts:
 - wallet, HTTP, RPC, and WebSocket behavior can be intercepted deterministically;
 - the same package surface works across Linux, Windows, macOS, React 18, and React 19.
 
-These are necessary reliability claims, but they are controlled self-tests. The packed runner fixture creates a temporary synthetic project and resolves a hard-coded `quote.status`. The browser runner test uses `page.setContent()` with one button. Neither proves adoption in a representative Web3 application or measures user effort.
-
-Two known product-contract gaps also block the next proof: the wagmi helper has not
-been exercised through real wagmi/viem APIs, and the public Lua execution path drops
-documented multi-stage assertions before they reach the core runner.
+Those original reliability claims were necessary but remained controlled
+self-tests. The E2 initiative has now added an isolated published-package
+consumer that completes the representative journey through real wagmi/viem APIs
+and preserves the documented multi-stage Lua assertions. It does not yet measure
+independent user effort; that is the E3 gate.
 
 ## Evidence Ladder
 
@@ -47,7 +47,7 @@ The product will advance through four evidence levels. A higher level cannot be 
 | Level | Evidence | Current state |
 | --- | --- | --- |
 | E1 | Package and runtime contracts work in repository-controlled tests | Complete |
-| E2 | A representative out-of-workspace wagmi/viem consumer installs published packages and completes the full journey | Next |
+| E2 | A representative out-of-workspace wagmi/viem consumer installs published packages and completes the full journey | Complete |
 | E3 | Target developers complete adoption and failure diagnosis from documentation without author guidance | Not started |
 | E4 | Independent teams keep LunaTest in a real repository because it replaces meaningful mock/testnet work | Not started |
 
@@ -118,9 +118,8 @@ with wagmi.
 ### Scenario-fidelity gate
 
 The public multi-stage guide promises `stages`, `not_present`, and `timing_ms`, and
-the core runner can evaluate them. The Lua execution boundary currently normalizes
-only the single-stage fields, so those assertions are lost before the runner sees
-them.
+the Lua execution boundary now preserves all three through normalization for the
+core runner to evaluate.
 
 The representative journey must not work around this by collapsing the scenario
 to a final-state assertion. Before the full swap proof starts, a contract test must

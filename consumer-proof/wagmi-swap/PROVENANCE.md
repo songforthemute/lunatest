@@ -45,5 +45,6 @@ This fixture is derived from the official Vite React TypeScript template.
   network guards, deterministic fingerprints, and deliberate-failure evidence.
 
 The application now proves deterministic connect, quote, approve, swap, and
-confirmation through one scenario in Vitest and Chromium. Registry-only E2
-certification remains a separate release task.
+confirmation through one scenario in Vitest and Chromium. The exact committed
+LunaTest versions and registry integrity entries were certified by Release run
+`31935453165` on 2026-08-16.

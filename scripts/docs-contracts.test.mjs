@@ -224,11 +224,12 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
   }
 });
 
-test("validated wagmi quickstart stays aligned with packed proof evidence", () => {
+test("validated wagmi quickstart stays aligned with packed and registry evidence", () => {
   const documents = [
     "docs/guides/wagmi-swap-quickstart.md",
     "docs/ko/guides/wagmi-swap-quickstart.md",
   ];
+  const fixtureManifest = JSON.parse(read("consumer-proof/wagmi-swap/package.json"));
 
   for (const document of documents) {
     const source = read(document);
@@ -246,6 +247,7 @@ test("validated wagmi quickstart stays aligned with packed proof evidence", () =
       "pnpm install --frozen-lockfile",
       "pnpm --filter @lunatest/e2e-tests exec playwright install --with-deps chromium",
       "pnpm quickstart:wagmi:validate -- --enforce-ci-budget",
+      "pnpm consumer-proof:registry -- --enforce-ci-budget",
     ]) {
       assert.match(source, new RegExp(escapeRegExp(command)), `${document}: ${command}`);
     }
@@ -253,14 +255,26 @@ test("validated wagmi quickstart stays aligned with packed proof evidence", () =
       "certificationEligible",
       "30/30",
       "120.793 ms",
+      "214.317 ms",
       "65",
       "then_ui.output_balance",
       "packed-artifact",
       "create-vite@9.1.2",
       "@wagmi/core >=3.6.4 <4",
       "viem >=2.55.11 <3",
+      "31935453165",
+      "9260530901",
+      "1b5b20cd374ff1fc3fd10051dbd6d7dd8145e7b90800683ed47ee43a7ea34764",
     ]) {
       assert.match(source, new RegExp(escapeRegExp(evidence)), `${document}: ${evidence}`);
+    }
+
+    for (const { name } of publicPackages) {
+      const version =
+        fixtureManifest.dependencies?.[name] ?? fixtureManifest.devDependencies?.[name];
+      assert.equal(typeof version, "string", `${name}: missing fixture pin`);
+      const tableRow = `| \`${name}\` | ${version} |`;
+      assert.match(source, new RegExp(escapeRegExp(tableRow)), `${document}: ${tableRow}`);
     }
     assert.doesNotMatch(source, /under 10 minutes|within 10 minutes|10분 (안에|이내)/i);
   }
