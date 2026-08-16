@@ -19,6 +19,10 @@ export type WagmiLikeConfig = {
   transports?: Record<number, WagmiLikeTransport>;
 };
 
+/**
+ * @deprecated Use `createLunaWagmiTransport` from `@lunatest/react/wagmi`
+ * with wagmi's real `createConfig` transport map.
+ */
 export function withLunaWagmiConfig(
   config: WagmiLikeConfig,
   provider: LunaProvider,

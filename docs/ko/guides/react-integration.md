@@ -37,10 +37,18 @@ export function AccountButton() {
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
-import { withLunaWagmiConfig } from "@lunatest/react";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
+import { createConfig } from "@wagmi/core";
+import { mainnet } from "viem/chains";
 
 const provider = new LunaProvider({ chainId: "0x1" });
-const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const wagmiConfig = createConfig({
+  batch: { multicall: false },
+  chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
+  transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
+});
 ```
 
 ## 4) ethers 연결

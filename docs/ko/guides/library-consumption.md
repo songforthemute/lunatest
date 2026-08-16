@@ -166,21 +166,29 @@ export function App() {
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
+import { createConfig } from "@wagmi/core";
 import {
-  withLunaWagmiConfig,
   createEthersAdapter,
   createWeb3JsAdapter,
 } from "@lunatest/react";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
+import { mainnet } from "viem/chains";
 
 const provider = new LunaProvider({ chainId: "0x1" });
 
-const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const wagmiConfig = createConfig({
+  batch: { multicall: false },
+  chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
+  transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
+});
 const ethersLike = createEthersAdapter(provider);
 const web3Like = createWeb3JsAdapter(provider);
 
 await ethersLike.send("eth_chainId");
 await web3Like.request({ method: "eth_chainId" });
-await wagmiConfig.transports?.[1]?.request({ method: "eth_chainId" });
+await wagmiConfig.getClient({ chainId: mainnet.id }).request({ method: "eth_chainId" });
 ```
 
 ## MCP stdio 서버 예시

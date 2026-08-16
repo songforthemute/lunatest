@@ -1,9 +1,27 @@
 export const reactPeerMatrix = [
-  { label: "react18", dependencies: ["react@18.3.1", "react-dom@18.3.1"] },
-  { label: "react19", dependencies: ["react@19.2.6", "react-dom@19.2.6"] },
+  {
+    label: "react18",
+    dependencies: [
+      "react@18.3.1",
+      "react-dom@18.3.1",
+      "viem@2.55.11",
+    ],
+  },
+  {
+    label: "react19",
+    dependencies: [
+      "react@19.2.6",
+      "react-dom@19.2.6",
+      "@wagmi/core@3.6.4",
+      "viem@2.55.11",
+    ],
+  },
 ];
 
-export function createConsumerSmokeScript({ includeRunnerPackages = false } = {}) {
+export function createConsumerSmokeScript({
+  includeRunnerPackages = false,
+  includeWagmiConnector = false,
+} = {}) {
   const runnerImports = includeRunnerPackages
     ? `
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -11,6 +29,39 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { toLunaPass, createLunaVitestPlugin } from "@lunatest/vitest-plugin";
 import { createLunaCommands, createLunaFixture, createLunaPageAdapter } from "@lunatest/playwright-plugin";
+`
+    : "";
+
+  const connectorImports = includeWagmiConnector
+    ? `
+import { connect, createConfig, disconnect, getConnection } from "@wagmi/core";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
+`
+    : "";
+
+  const connectorChecks = includeWagmiConnector
+    ? `
+const connectorProvider = new LunaProvider({
+  chainId: "0x1",
+  wallet: { accounts: [wagmiAccount], connected: false },
+});
+const connectorTransport = createLunaWagmiTransport(connectorProvider);
+const connectorConfig = createConfig({
+  chains: [mainnet],
+  connectors: [createLunaWagmiConnector(connectorProvider)],
+  multiInjectedProviderDiscovery: false,
+  storage: null,
+  transports: { [mainnet.id]: connectorTransport },
+});
+const connector = connectorConfig.connectors[0];
+await connect(connectorConfig, { connector });
+if (!getConnection(connectorConfig).isConnected) {
+  throw new Error("packed wagmi connector did not establish connection state");
+}
+await disconnect(connectorConfig);
+if (!getConnection(connectorConfig).isDisconnected) {
+  throw new Error("packed wagmi connector did not clear connection state");
+}
 `
     : "";
 
@@ -79,12 +130,16 @@ try {
   return `
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { loadLunaConfig as loadLunaConfigNode, executeLuaScenario } from "@lunatest/core";
+import { LunaProvider, loadLunaConfig as loadLunaConfigNode, executeLuaScenario } from "@lunatest/core";
 import { loadLunaConfig as loadLunaConfigBrowser } from "@lunatest/core/browser";
 import { bootstrapLunaRuntime, LunaTestProvider } from "@lunatest/react";
 import { bootstrapLunaRuntime as bootstrapLunaRuntimeBrowser } from "@lunatest/react/browser";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
 import { setRouteMocks } from "@lunatest/runtime-intercept";
 import { createMcpServer } from "@lunatest/mcp";
+import { createPublicClient } from "viem";
+import { mainnet } from "viem/chains";
+${connectorImports}
 ${runnerImports}
 
 if (typeof React.createElement !== "function") throw new Error("react createElement export missing");
@@ -98,6 +153,25 @@ if (typeof LunaTestProvider !== "function") throw new Error("LunaTestProvider ex
 if (typeof setRouteMocks !== "function") throw new Error("setRouteMocks export missing");
 if (typeof createMcpServer !== "function") throw new Error("createMcpServer export missing");
 renderToString(React.createElement(LunaTestProvider, { options: {} }, React.createElement("div", null, "ok")));
+
+const wagmiAccount = "0x1111111111111111111111111111111111111111";
+const wagmiProvider = new LunaProvider({
+  chainId: "0x1",
+  accounts: [wagmiAccount],
+  balances: { [wagmiAccount]: "0xde0b6b3a7640000" },
+});
+const wagmiClient = createPublicClient({
+  batch: { multicall: false },
+  chain: mainnet,
+  transport: createLunaWagmiTransport(wagmiProvider),
+});
+const wagmiBalance = await wagmiClient.getBalance({
+  address: wagmiAccount,
+});
+if (wagmiBalance !== 1_000_000_000_000_000_000n) {
+  throw new Error("packed wagmi transport did not reach LunaProvider");
+}
+${connectorChecks}
 ${runnerChecks}
 `;
 }

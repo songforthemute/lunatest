@@ -109,6 +109,20 @@ export async function bootstrapLunaRuntime(
     createPresetRegistry({
       projectSources: options.projectPresetSources,
     });
+  const protocolPreset = options.protocolPresetId
+    ? await materializeProtocolPreset(
+        options.protocolPresetId,
+        options.protocolPresetParams,
+        presetRegistry,
+      )
+    : undefined;
+  const walletPreset = options.walletPresetId
+    ? await materializeWalletPreset(
+        options.walletPresetId,
+        options.walletPresetParams,
+        presetRegistry,
+      )
+    : undefined;
   const runtimeConfig = toRuntimeConfig(
     config,
     options.enable ?? options.configOverride?.enable,
@@ -136,24 +150,14 @@ export async function bootstrapLunaRuntime(
       applyInterceptState(config.intercept.state);
     }
 
-    if (options.protocolPresetId) {
-      const materialized = await materializeProtocolPreset(
-        options.protocolPresetId,
-        options.protocolPresetParams,
-        presetRegistry,
-      );
-      setRouteMocks(materialized.routeMocks);
-      applyInterceptState(materialized.interceptState);
-      setWalletSession(materialized.walletSession);
+    if (protocolPreset) {
+      setRouteMocks(protocolPreset.routeMocks);
+      applyInterceptState(protocolPreset.interceptState);
+      setWalletSession(protocolPreset.walletSession);
     }
 
-    if (options.walletPresetId) {
-      const materialized = await materializeWalletPreset(
-        options.walletPresetId,
-        options.walletPresetParams,
-        presetRegistry,
-      );
-      setWalletSession(materialized.walletSession);
+    if (walletPreset) {
+      setWalletSession(walletPreset.walletSession);
     }
 
     if (options.walletPreset) {

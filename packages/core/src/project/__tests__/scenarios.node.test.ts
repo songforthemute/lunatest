@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -56,6 +57,11 @@ describe("project scenario loading", () => {
       });
       expect(items.map((item) => item.id).join("\n")).not.toContain(root);
       expect(items[1]?.lua).toContain('name = "swap"');
+      expect(items[1]?.sourceDigest).toBe(
+        `sha256:${createHash("sha256").update(items[1]!.lua, "utf8").digest("hex")}`,
+      );
+      expect(items[1]?.sourceDigest).toMatch(/^sha256:[0-9a-f]{64}$/);
+      expect(items[1]?.sourceDigest).not.toBe(items[0]?.sourceDigest);
       expect(items[1]?.config.when?.action).toBe("swap");
     } finally {
       await rm(root, { recursive: true, force: true });

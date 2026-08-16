@@ -9,6 +9,10 @@ Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경
 
 패키지 상태: `Published` (stable 패키지가 npm에 배포되어 있습니다.)
 
+대표 wagmi swap proof는 현재 freshly packed artifact로만 검증되었습니다. npm
+registry E2 인증은 아직 남아 있습니다. 자세한 내용은
+[검증된 빠른 시작](./docs/ko/guides/wagmi-swap-quickstart.md)을 참고하세요.
+
 ## 로컬 빠른 시작
 
 ```bash
@@ -74,6 +78,7 @@ pnpm release:publish:stable
 - DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
 - Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - Local preset 작성: `docs/guides/local-preset-authoring.md`
+- 검증된 wagmi 스왑 빠른 시작: `docs/ko/guides/wagmi-swap-quickstart.md`
 
 ## 저장소 구조
 

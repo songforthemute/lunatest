@@ -146,7 +146,7 @@ type CoverageSnapshot = {
 
 `loadLunaProjectConfig`는 working directory 또는 명시 path에서 optional `lunatest.config.json`을 비동기로 해석합니다. `loadLunaProjectConfigSync`는 Vitest watch setup처럼 동기 host configuration이 필요한 경우 같은 normalize 결과를 반환합니다. `ResolvedLunaProjectConfig` 결과에는 normalize된 `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter 설정, `projectRoot`, resolved source path가 들어갑니다.
 
-`resolveLunaScenarioSources`는 요청 source, glob 또는 구성된 기본 source set을 정렬되고 중복 없는 Lua file path로 확장합니다. `loadLunaProjectScenarios`는 이를 parse하여 project-relative scenario id, name, source path, parsed config, resolved coverage metadata를 반환합니다. 호출 workflow에서 빈 source set이 유효할 때만 `allowEmpty`를 사용하세요.
+`resolveLunaScenarioSources`는 요청 source, glob 또는 구성된 기본 source set을 정렬되고 중복 없는 Lua file path로 확장합니다. `loadLunaProjectScenarios`는 이를 parse하여 project-relative scenario id, name, source path, 정확한 UTF-8 Lua source의 `sha256:` prefix `sourceDigest`, parsed config, resolved coverage metadata를 반환합니다. 호출 workflow에서 빈 source set이 유효할 때만 `allowEmpty`를 사용하세요.
 
 ## 프로젝트 scenario runner
 
@@ -155,6 +155,16 @@ type LunaProjectRunnerOptions = {
   cwd?: string;
   configPath?: string;
   scenarioDir?: string;
+};
+
+type LunaProjectScenario = {
+  id: string;
+  name: string;
+  source: string;
+  sourceDigest: `sha256:${string}`;
+  lua: string;
+  config: LuaConfig;
+  coverage: CoverageMetadata;
 };
 
 type LunaProjectScenarioExecution = {
@@ -198,7 +208,9 @@ type LuaConfig = {
   when?: Record<string, unknown>;
   then_ui?: Record<string, unknown>;
   then_state?: Record<string, unknown>;
+  stages?: Array<{ name: string; on?: string }>;
   not_present?: string[];
+  timing_ms?: number;
   coverage?: CoverageMetadata;
   intercept?: {
     routes?: RouteMock[];
@@ -219,7 +231,7 @@ type LuaConfig = {
 - `resolveTransitions`
 - `resolveElapsedMs`
 
-결과에는 `scenarioName`, `pass`, optional `error`, optional `result`, resolved `config`가 들어갑니다.
+결과에는 `scenarioName`, `pass`, optional `error`, optional `result`, resolved `config`가 들어갑니다. UI, state, transition 값이 불일치하면 첫 실패 path와 leaf 단위 `expected`, `actual` 값을 담은 구조화된 `mismatch`가 포함되며, 사람이 읽는 diff에도 같은 정보가 표시됩니다.
 
 `createDeterministicScenarioAdapter`는 browser 없이 결정적 scenario 실행을 위한 built-in adapter입니다. scenario의 route/state data를 적용한 뒤 결과 intercept state를 UI/state resolver에 노출합니다. transition 또는 elapsed-time assertion이 필요하면 custom adapter에서 `resolveTransitions`, `resolveElapsedMs`를 제공하세요.
 

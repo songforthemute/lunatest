@@ -4,6 +4,10 @@ import { deepClone, deepMerge, type RouteMock } from "@lunatest/contracts";
 export type { RouteMock } from "@lunatest/contracts";
 
 const StringRecordSchema = z.record(z.string(), z.unknown());
+const ScenarioStageSchema = z.object({
+  name: z.string().min(1),
+  on: z.string().min(1).optional(),
+});
 const CoverageMetadataSchema = z
   .object({
     features: z.array(z.string().min(1)).optional(),
@@ -96,7 +100,9 @@ export const LuaConfigSchema = z
     when: StringRecordSchema.optional(),
     then_ui: StringRecordSchema.optional(),
     then_state: StringRecordSchema.optional(),
+    stages: z.array(ScenarioStageSchema).optional(),
     not_present: z.array(z.string().min(1)).optional(),
+    timing_ms: z.number().int().nonnegative().optional(),
     coverage: CoverageMetadataSchema.optional(),
     intercept: z
       .object({

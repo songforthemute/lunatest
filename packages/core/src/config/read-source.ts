@@ -21,7 +21,11 @@ function getBuiltinModule<T>(specifier: string): T | null {
 
 export async function readLuaSource(source: LuaSource): Promise<string> {
   if (source instanceof URL) {
-    if (source.protocol === "http:" || source.protocol === "https:") {
+    if (
+      source.protocol === "http:" ||
+      source.protocol === "https:" ||
+      source.protocol === "data:"
+    ) {
       if (typeof fetch !== "function") {
         throw new Error(`Fetch API is unavailable for URL source: ${source.toString()}`);
       }

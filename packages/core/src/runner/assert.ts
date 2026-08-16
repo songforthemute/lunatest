@@ -3,53 +3,121 @@ export type AssertionResult = {
   diff: string;
   expected: unknown;
   actual: unknown;
+  mismatch?: {
+    path: string;
+    expected: unknown;
+    actual: unknown;
+    expectedPresent?: boolean;
+    actualPresent?: boolean;
+  };
 };
 
+type AssertionMismatch = NonNullable<AssertionResult["mismatch"]>;
+
 function format(value: unknown): string {
-  return JSON.stringify(value, null, 2);
+  return value === undefined ? "undefined" : JSON.stringify(value, null, 2);
 }
 
-function deepEqual(left: unknown, right: unknown): boolean {
-  if (Object.is(left, right)) {
-    return true;
+function propertyPath(parent: string, key: string): string {
+  return /^[A-Za-z_$][\w$]*$/u.test(key)
+    ? `${parent}.${key}`
+    : `${parent}[${JSON.stringify(key)}]`;
+}
+
+function findFirstMismatch(
+  expected: unknown,
+  actual: unknown,
+  path: string,
+): AssertionMismatch | undefined {
+  if (Object.is(expected, actual)) {
+    return undefined;
   }
 
-  if (Array.isArray(left) || Array.isArray(right)) {
-    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
-      return false;
+  if (Array.isArray(expected) || Array.isArray(actual)) {
+    if (!Array.isArray(expected) || !Array.isArray(actual)) {
+      return { path, expected, actual };
     }
 
-    return left.every((item, index) => deepEqual(item, right[index]));
+    const length = Math.max(expected.length, actual.length);
+    for (let index = 0; index < length; index += 1) {
+      if (index >= expected.length || index >= actual.length) {
+        return {
+          path: `${path}[${index}]`,
+          expected: expected[index],
+          actual: actual[index],
+          expectedPresent: index < expected.length,
+          actualPresent: index < actual.length,
+        };
+      }
+      const mismatch = findFirstMismatch(expected[index], actual[index], `${path}[${index}]`);
+      if (mismatch) return mismatch;
+    }
+    return undefined;
   }
 
   if (
-    typeof left === "object" &&
-    left !== null &&
-    typeof right === "object" &&
-    right !== null
+    typeof expected === "object" &&
+    expected !== null &&
+    typeof actual === "object" &&
+    actual !== null
   ) {
-    const leftRecord = left as Record<string, unknown>;
-    const rightRecord = right as Record<string, unknown>;
-    const leftKeys = Object.keys(leftRecord).sort();
-    const rightKeys = Object.keys(rightRecord).sort();
+    const expectedRecord = expected as Record<string, unknown>;
+    const actualRecord = actual as Record<string, unknown>;
+    const keys = Array.from(
+      new Set([...Object.keys(expectedRecord), ...Object.keys(actualRecord)]),
+    ).sort();
 
-    if (!deepEqual(leftKeys, rightKeys)) {
-      return false;
+    for (const key of keys) {
+      const expectedHasKey = Object.hasOwn(expectedRecord, key);
+      const actualHasKey = Object.hasOwn(actualRecord, key);
+      if (expectedHasKey !== actualHasKey) {
+        return {
+          path: propertyPath(path, key),
+          expected: expectedRecord[key],
+          actual: actualRecord[key],
+          expectedPresent: expectedHasKey,
+          actualPresent: actualHasKey,
+        };
+      }
+      const mismatch = findFirstMismatch(
+        expectedRecord[key],
+        actualRecord[key],
+        propertyPath(path, key),
+      );
+      if (mismatch) return mismatch;
     }
-
-    return leftKeys.every((key) => deepEqual(leftRecord[key], rightRecord[key]));
+    return undefined;
   }
 
-  return false;
+  return { path, expected, actual };
 }
 
-function buildResult(expected: unknown, actual: unknown): AssertionResult {
-  const pass = deepEqual(expected, actual);
+function formatMismatch(mismatch: AssertionMismatch): string {
+  if (
+    mismatch.expectedPresent !== undefined ||
+    mismatch.actualPresent !== undefined
+  ) {
+    const expected = mismatch.expectedPresent
+      ? `present with value ${format(mismatch.expected)}`
+      : "absent";
+    const actual = mismatch.actualPresent
+      ? `present with value ${format(mismatch.actual)}`
+      : "absent";
+    return `expected ${mismatch.path} to be ${expected} but got ${actual}`;
+  }
+
+  return `expected ${mismatch.path} to equal ${format(mismatch.expected)} but got ${format(mismatch.actual)}`;
+}
+
+function buildResult(expected: unknown, actual: unknown, rootPath: string): AssertionResult {
+  const mismatch = findFirstMismatch(expected, actual, rootPath);
+  const pass = mismatch === undefined;
   return {
     pass,
-    diff: pass ? "" : `expected ${format(expected)} but got ${format(actual)}`,
+    diff: pass ? "" : formatMismatch(mismatch),
     expected,
     actual,
+    ...(mismatch ? { mismatch } : {}),
   };
 }
 
@@ -68,18 +136,18 @@ function hasPath(input: Record<string, unknown>, path: string): boolean {
 }
 
 export function assertUI(expected: unknown, actual: unknown): AssertionResult {
-  return buildResult(expected, actual);
+  return buildResult(expected, actual, "then_ui");
 }
 
 export function assertState(expected: unknown, actual: unknown): AssertionResult {
-  return buildResult(expected, actual);
+  return buildResult(expected, actual, "then_state");
 }
 
 export function assertTransition(
   expectedPath: string[],
   actualPath: string[],
 ): AssertionResult {
-  return buildResult(expectedPath, actualPath);
+  return buildResult(expectedPath, actualPath, "stages");
 }
 
 export function assertNot(

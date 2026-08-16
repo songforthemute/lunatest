@@ -271,6 +271,16 @@ describe("bootstrapLunaRuntime", () => {
       undefined,
       { tag: "registry" },
     );
+    expect(
+      mocks.materializeProtocolPresetMock.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      mocks.enableLunaRuntimeInterceptMock.mock.invocationCallOrder[0]!,
+    );
+    expect(
+      mocks.materializeWalletPresetMock.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      mocks.enableLunaRuntimeInterceptMock.mock.invocationCallOrder[0]!,
+    );
     expect(mocks.setWalletSessionMock).toHaveBeenCalledTimes(3);
     expect(mocks.setRouteMocksMock).toHaveBeenNthCalledWith(1, configRoutes);
     expect(mocks.applyInterceptStateMock).toHaveBeenNthCalledWith(1, config.given);
@@ -358,7 +368,7 @@ describe("bootstrapLunaRuntime", () => {
     });
   });
 
-  it("disables intercept when bootstrap fails after enable", async () => {
+  it("does not enable intercept when preset materialization fails", async () => {
     const config = createConfig();
 
     mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
@@ -373,6 +383,24 @@ describe("bootstrapLunaRuntime", () => {
         protocolPresetId: "bad-preset",
       }),
     ).rejects.toThrow("preset failed");
+
+    expect(mocks.enableLunaRuntimeInterceptMock).not.toHaveBeenCalled();
+    expect(mocks.disableLunaRuntimeInterceptMock).not.toHaveBeenCalled();
+  });
+
+  it("disables intercept when applying runtime state fails after enable", async () => {
+    const config = createConfig({ given: { wallet: { connected: true } } });
+    mocks.loadLunaConfigMock.mockResolvedValueOnce(config);
+    mocks.createPresetRegistryMock.mockReturnValueOnce({ tag: "registry" });
+    mocks.resolveEnabledMock.mockReturnValueOnce(true);
+    mocks.enableLunaRuntimeInterceptMock.mockReturnValueOnce(true);
+    mocks.applyInterceptStateMock.mockImplementationOnce(() => {
+      throw new Error("state apply failed");
+    });
+
+    await expect(
+      bootstrapLunaRuntime({ nodeEnv: "development" }),
+    ).rejects.toThrow("state apply failed");
 
     expect(mocks.disableLunaRuntimeInterceptMock).toHaveBeenCalledTimes(1);
   });

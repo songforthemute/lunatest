@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "baselineRevision": "17149b93af81cc31458a828a19facc6f625b3773",
+  "measuredRevision": "24a8a0ad2b16979f00463d5bd65790dde90ff3f7",
+  "sourceDigest": "sha256:7d7a650a4a8dae85b8531efb765fea6ab7387dd076536cb658fecf043e7eae37",
+  "sourceFiles": [
+    "src/App.tsx",
+    "src/index.css",
+    "src/journey.ts",
+    "src/main.tsx",
+    "src/swap.ts",
+    "src/vite-env.d.ts",
+    "src/wagmi.ts"
+  ],
+  "applicationFiles": [
+    "src/App.tsx",
+    "src/journey.ts",
+    "src/main.tsx",
+    "src/swap.ts",
+    "src/wagmi.ts"
+  ],
+  "applicationNonTestLoc": {
+    "added": 415,
+    "deleted": 31,
+    "net": 384
+  },
+  "lunaIntegrationFiles": [
+    "src/main.tsx",
+    "src/wagmi.ts"
+  ],
+  "lunaIntegrationNonTestLoc": {
+    "added": 73,
+    "deleted": 8,
+    "net": 65
+  }
+}

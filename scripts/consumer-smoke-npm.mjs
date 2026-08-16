@@ -95,7 +95,10 @@ try {
 
     writeFileSync(
       join(consumerDir, "smoke.mjs"),
-      createConsumerSmokeScript({ includeRunnerPackages: true }),
+      createConsumerSmokeScript({
+        includeRunnerPackages: true,
+        includeWagmiConnector: reactPeer.label === "react19",
+      }),
     );
 
     run("node", ["./smoke.mjs"], consumerDir, { stdio: "inherit" });

@@ -63,7 +63,9 @@ describe("Vitest scenario runner", () => {
         runner.assertScenario("scenarios/fail", {
           resolveUi: () => ({ quote: { status: "loading" } }),
         }),
-      ).rejects.toThrow(/scenarios\/fail[\s\S]*scenarios[\\/]fail\.lua[\s\S]*quote/);
+      ).rejects.toThrow(
+        /scenarios\/fail[\s\S]*scenarios[\\/]fail\.lua[\s\S]*then_ui\.quote\.status[\s\S]*"ready"[\s\S]*"loading"/,
+      );
     } finally {
       await rm(root, { recursive: true, force: true });
     }

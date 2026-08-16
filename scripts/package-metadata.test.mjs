@@ -112,24 +112,54 @@ test("consumer pack smoke covers all public tarballs and React peer matrix", asy
   assert.match(script, /reactPeerMatrix/);
   assert.doesNotMatch(script, /packageNames\(stablePackages\)/);
   assert.deepEqual(reactPeerMatrix, [
-    { label: "react18", dependencies: ["react@18.3.1", "react-dom@18.3.1"] },
-    { label: "react19", dependencies: ["react@19.2.6", "react-dom@19.2.6"] },
+    {
+      label: "react18",
+      dependencies: [
+        "react@18.3.1",
+        "react-dom@18.3.1",
+        "viem@2.55.11",
+      ],
+    },
+    {
+      label: "react19",
+      dependencies: [
+        "react@19.2.6",
+        "react-dom@19.2.6",
+        "@wagmi/core@3.6.4",
+        "viem@2.55.11",
+      ],
+    },
   ]);
 });
 
 test("consumer smoke script exercises stable runner, browser, bin, and React entrypoints", () => {
-  const script = createConsumerSmokeScript({ includeRunnerPackages: true });
+  const script = createConsumerSmokeScript({
+    includeRunnerPackages: true,
+    includeWagmiConnector: true,
+  });
 
   assert.match(script, /@lunatest\/core"/);
   assert.match(script, /@lunatest\/core\/browser"/);
   assert.match(script, /@lunatest\/react"/);
   assert.match(script, /@lunatest\/react\/browser"/);
+  assert.match(script, /@lunatest\/react\/wagmi"/);
+  assert.match(script, /@lunatest\/react\/wagmi\/connector"/);
+  assert.match(script, /@wagmi\/core"/);
+  assert.match(script, /viem\/chains"/);
   assert.match(script, /@lunatest\/vitest-plugin"/);
   assert.match(script, /@lunatest\/playwright-plugin"/);
   assert.match(script, /renderToString/);
   assert.match(script, /mkdtemp/);
   assert.match(script, /createLunaPageAdapter/);
   assert.match(script, /assertScenario\("scenarios\/quote-ready"/);
+});
+
+test("viem-only consumer smoke keeps the wagmi connector peer optional", () => {
+  const script = createConsumerSmokeScript();
+
+  assert.match(script, /@lunatest\/react\/wagmi"/);
+  assert.doesNotMatch(script, /@lunatest\/react\/wagmi\/connector"/);
+  assert.doesNotMatch(script, /@wagmi\/core"/);
 });
 
 test("pack integrity validates manifest entry targets", () => {

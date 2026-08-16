@@ -99,6 +99,24 @@ test("CI runs the Chromium scenario integration on Linux only", async () => {
   assert.match(browserJob, /pnpm run test:browser:ci/);
 });
 
+test("CI enforces and uploads the packed external consumer proof", async () => {
+  const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
+  const proofJob = getWorkflowJob(ciWorkflow, "external-consumer-proof-pack");
+
+  assert.match(
+    proofJob,
+    /^  external-consumer-proof-pack:\n    runs-on: ubuntu-latest\n    needs: quality\n/m,
+  );
+  assert.match(
+    proofJob,
+    /pnpm --filter @lunatest\/e2e-tests exec playwright install --with-deps chromium/,
+  );
+  assert.match(proofJob, /pnpm quickstart:wagmi:validate -- --enforce-ci-budget/);
+  assert.match(proofJob, /if: always\(\)[\s\S]*actions\/upload-artifact@v7\.0\.1/);
+  assert.match(proofJob, /path: artifacts\/external-consumer-proof\/pack\.json/);
+  assert.match(proofJob, /if-no-files-found: error/);
+});
+
 test("CI preserves pull request and main push triggers", async () => {
   const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 
@@ -188,6 +206,19 @@ test("Release workflow runs npm smoke after publish action success", async () =>
   assert.match(releaseWorkflow, /pnpm run lint:workspace:ci/);
   assert.match(releaseWorkflow, /pnpm run test:workspace:ci/);
   assert.match(releaseWorkflow, /pnpm consumer-smoke:npm -- --tag=latest/);
+  assert.match(
+    releaseWorkflow,
+    /pnpm --filter @lunatest\/e2e-tests exec playwright install --with-deps chromium/,
+  );
+  assert.match(
+    releaseWorkflow,
+    /pnpm consumer-proof:registry -- --release-package-set --enforce-ci-budget/,
+  );
+  assert.match(
+    releaseWorkflow,
+    /if: always\(\) && steps\.registry-proof\.outcome != 'skipped'[\s\S]*actions\/upload-artifact@v7\.0\.1/,
+  );
+  assert.match(releaseWorkflow, /path: artifacts\/external-consumer-proof\/registry\.json/);
   assert.doesNotMatch(releaseWorkflow, /pnpm consumer-smoke:npm:next/);
   assert.doesNotMatch(releaseWorkflow, /pnpm -r lint/);
   assert.doesNotMatch(releaseWorkflow, /pnpm -r build/);

@@ -7,6 +7,7 @@ LunaTest는 Web3 프론트엔드의 지갑, 네트워크 라우트, 시나리오
 - [빠른 시작](./getting-started.md)에서 LunaTest 프로젝트를 준비합니다.
 - [시나리오 작성](./guides/writing-scenarios.md)에서 Lua 시나리오와 coverage metadata를 확인합니다.
 - [React 통합](./guides/react-integration.md)에서 React 트리를 `LunaProvider`에 연결합니다.
+- [검증된 wagmi 스왑 빠른 시작](./guides/wagmi-swap-quickstart.md)에서 측정된 packed-artifact consumer proof를 재현합니다.
 - [Playwright 라우팅](./guides/playwright-routing.md)에서 브라우저 테스트의 HTTP/JSON-RPC route를 제어합니다.
 - [CLI 워크플로](./guides/cli-workflow.md)에서 validate, 실행, coverage, 생성, 진단 명령을 확인합니다.
 

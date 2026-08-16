@@ -146,7 +146,7 @@ type CoverageSnapshot = {
 
 `loadLunaProjectConfig` resolves an optional `lunatest.config.json` asynchronously from a working directory or explicit path. `loadLunaProjectConfigSync` returns the identical normalized result for synchronous host-configuration integration such as Vitest watch setup. Its `ResolvedLunaProjectConfig` result includes the normalized `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter configuration, `projectRoot`, and resolved source paths.
 
-`resolveLunaScenarioSources` expands a requested source, glob, or the configured default source set into sorted, unique Lua file paths. `loadLunaProjectScenarios` parses those files and returns project-relative scenario ids, names, source paths, parsed configs, and resolved coverage metadata. Use `allowEmpty` only when an empty source set is valid for the calling workflow.
+`resolveLunaScenarioSources` expands a requested source, glob, or the configured default source set into sorted, unique Lua file paths. `loadLunaProjectScenarios` parses those files and returns project-relative scenario ids, names, source paths, a `sha256:`-prefixed `sourceDigest` of the exact UTF-8 Lua source, parsed configs, and resolved coverage metadata. Use `allowEmpty` only when an empty source set is valid for the calling workflow.
 
 ## Project scenario runner
 
@@ -155,6 +155,16 @@ type LunaProjectRunnerOptions = {
   cwd?: string;
   configPath?: string;
   scenarioDir?: string;
+};
+
+type LunaProjectScenario = {
+  id: string;
+  name: string;
+  source: string;
+  sourceDigest: `sha256:${string}`;
+  lua: string;
+  config: LuaConfig;
+  coverage: CoverageMetadata;
 };
 
 type LunaProjectScenarioExecution = {
@@ -198,7 +208,9 @@ type LuaConfig = {
   when?: Record<string, unknown>;
   then_ui?: Record<string, unknown>;
   then_state?: Record<string, unknown>;
+  stages?: Array<{ name: string; on?: string }>;
   not_present?: string[];
+  timing_ms?: number;
   coverage?: CoverageMetadata;
   intercept?: {
     routes?: RouteMock[];
@@ -219,7 +231,7 @@ type LuaConfig = {
 - `resolveTransitions`
 - `resolveElapsedMs`
 
-The result includes `scenarioName`, `pass`, optional `error`, optional `result`, and the resolved `config`.
+The result includes `scenarioName`, `pass`, optional `error`, optional `result`, and the resolved `config`. A UI, state, or transition value mismatch includes a structured `mismatch` with the first failing path and its leaf-level `expected` and `actual` values; the human-readable diff carries the same detail.
 
 `createDeterministicScenarioAdapter` is the built-in adapter for deterministic scenario execution. It applies the scenario's route and state data without a browser, then exposes the resulting intercept state to the UI and state resolvers. Supply `resolveTransitions` or `resolveElapsedMs` in a custom adapter when the scenario needs those assertions.
 

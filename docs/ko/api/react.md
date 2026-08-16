@@ -18,6 +18,16 @@
 
 브라우저 전용 bootstrap/devtools 경로에서는 `@lunatest/react/browser`를 권장합니다.
 
+## `@lunatest/react/wagmi`
+
+- `createLunaWagmiTransport(provider)`는 wagmi `createConfig`에 사용하는 실제 viem `Transport`를 반환합니다.
+- `LunaWagmiProvider`는 `LunaProvider`와 `bootstrapLunaRuntime`이 설치한 provider가 모두 구현하는 구조적 `request`/`on`/`removeListener` 경계입니다.
+- `@lunatest/react/wagmi/connector`는 wagmi 연결 상태와 wallet action을 위한 `createLunaWagmiConnector(provider)`를 export합니다.
+- 계약 테스트 버전: `@wagmi/core@3.6.4`, `viem@2.55.11`.
+- `viem`과 `@wagmi/core`는 optional peer입니다. transport subpath는 viem만 필요하고 connector subpath는 `@wagmi/core`도 필요합니다.
+
+root의 `withLunaWagmiConfig` export는 호환성을 위해 유지하지만 구조적인 wagmi-like 객체만 반환하므로 deprecated입니다.
+
 ## `bootstrapLunaRuntime(options?)`
 
 ```ts

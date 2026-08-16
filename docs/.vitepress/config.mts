@@ -32,6 +32,7 @@ export default defineConfig({
           { text: "한국어 문서", link: "/ko/" },
           { text: "Library Consumption", link: "/guides/library-consumption" },
           { text: "Wagmi Integration", link: "/wagmi-integration" },
+          { text: "Validated wagmi Swap", link: "/guides/wagmi-swap-quickstart" },
         ],
       },
       {
@@ -41,6 +42,7 @@ export default defineConfig({
           { text: "빠른 시작", link: "/ko/getting-started" },
           { text: "라이브 데모", link: "/ko/guides/live-demo" },
           { text: "라이브러리 소비자 가이드", link: "/ko/guides/library-consumption" },
+          { text: "검증된 wagmi 스왑", link: "/ko/guides/wagmi-swap-quickstart" },
           { text: "프로토콜/지갑 지원", link: "/ko/guides/protocol-support" },
           { text: "DeFi Dashboard Dogfood", link: "/ko/guides/defi-dashboard-dogfood" },
           { text: "시나리오 예제", link: "/ko/guides/scenario-examples" },
@@ -88,6 +90,7 @@ export default defineConfig({
           { text: "Writing Scenarios", link: "/guides/writing-scenarios" },
           { text: "Multi-stage", link: "/guides/multi-stage" },
           { text: "Wagmi Setup", link: "/guides/wagmi-setup" },
+          { text: "Validated wagmi Swap", link: "/guides/wagmi-swap-quickstart" },
           { text: "Ethers Setup", link: "/guides/ethers-setup" },
           { text: "Web3.js Setup", link: "/guides/web3js-setup" },
           { text: "CI Integration", link: "/guides/ci-integration" },

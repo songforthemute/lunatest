@@ -8,6 +8,10 @@
 
 Package status: `Published` (stable packages are available on npm).
 
+The representative wagmi swap proof is currently validated only with freshly
+packed artifacts. npm registry E2 certification remains pending; see the
+[validated quickstart](./docs/guides/wagmi-swap-quickstart.md).
+
 ```lua
 scenario {
   name = "high_slippage_warning",
@@ -88,6 +92,7 @@ pnpm release:publish:stable
 - DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
 - Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
 - local preset authoring: `docs/guides/local-preset-authoring.md`
+- validated wagmi swap quickstart: `docs/guides/wagmi-swap-quickstart.md`
 
 ## Repository Structure
 
@@ -159,15 +164,23 @@ export function App() {
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
+import { createConfig } from "@wagmi/core";
 import {
-  withLunaWagmiConfig,
   createEthersAdapter,
   createWeb3JsAdapter,
 } from "@lunatest/react";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
+import { mainnet } from "viem/chains";
 
 const provider = new LunaProvider({ chainId: "0x1" });
 
-const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const wagmiConfig = createConfig({
+  batch: { multicall: false },
+  chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
+  transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
+});
 const ethersLike = createEthersAdapter(provider);
 const web3Like = createWeb3JsAdapter(provider);
 ```

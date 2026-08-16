@@ -1,0 +1,41 @@
+{
+  "name": "lunatest-wagmi-swap-proof",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.4",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test:browser": "playwright test",
+    "test:vitest": "vitest run --disableConsoleIntercept --testTimeout=360000 tests/journey.test.ts",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "oxlint src tests playwright.config.ts vite.config.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@lunatest/contracts": "0.1.1",
+    "@lunatest/core": "0.2.0",
+    "@lunatest/react": "0.1.5",
+    "@lunatest/runtime-intercept": "0.1.1",
+    "@wagmi/core": "3.6.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "viem": "2.55.11"
+  },
+  "devDependencies": {
+    "@lunatest/cli": "0.1.5",
+    "@lunatest/mcp": "0.1.5",
+    "@lunatest/playwright-plugin": "0.2.1",
+    "@lunatest/vitest-plugin": "0.2.1",
+    "@playwright/test": "1.61.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "oxlint": "1.76.0",
+    "typescript": "6.0.2",
+    "vite": "8.2.0",
+    "vitest": "4.1.6"
+  }
+}
