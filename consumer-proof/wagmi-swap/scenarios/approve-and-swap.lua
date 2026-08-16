@@ -1,0 +1,38 @@
+scenario {
+  name = "approve-and-swap",
+  given = {},
+  when = { action = "complete_swap" },
+  then_ui = {
+    stage = "swap_confirmed",
+    quote = "1800",
+    allowance = "1",
+    input_balance = "24",
+    output_balance = "1800",
+    approval_submitted = true,
+    swap_submitted = true,
+  },
+  then_state = {
+    connected = true,
+    stage = "swap_confirmed",
+    quote = "1800",
+    allowance = "1",
+    input_balance = "24",
+    output_balance = "1800",
+  },
+  stages = {
+    { name = "disconnected" },
+    { name = "wallet_connected" },
+    { name = "quote_ready" },
+    { name = "approval_required" },
+    { name = "approval_pending" },
+    { name = "ready_to_swap" },
+    { name = "swap_pending" },
+    { name = "swap_confirmed" },
+  },
+  not_present = { "error" },
+  coverage = {
+    features = { "connect", "quote", "approve", "swap" },
+    states = { "swap_confirmed" },
+    components = { "swap-journey" },
+  },
+}

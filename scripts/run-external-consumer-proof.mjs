@@ -136,6 +136,7 @@ export function runExternalConsumerProof(lane) {
     run("pnpm", ["run", "lint"], consumerDir, { stdio: "inherit" });
     run("pnpm", ["run", "build"], consumerDir, { stdio: "inherit" });
     if (lane === "pack") {
+      run("pnpm", ["run", "test:vitest"], consumerDir, { stdio: "inherit" });
       run("pnpm", ["run", "test:browser"], consumerDir, { stdio: "inherit" });
     }
 

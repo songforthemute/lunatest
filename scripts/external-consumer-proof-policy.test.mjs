@@ -27,6 +27,7 @@ test("reference fixture pins the supported real wagmi and viem boundary", () => 
   assert.equal(manifest.dependencies.viem, "2.55.11");
   assert.equal(manifest.dependencies.react, "19.2.8");
   assert.equal(manifest.devDependencies["@playwright/test"], "1.61.1");
+  assert.equal(manifest.devDependencies.vitest, "4.1.6");
 
   const recordedPackages = new Set([
     ...Object.keys(manifest.dependencies),
@@ -50,8 +51,21 @@ test("reference fixture remains independent from workspace source", () => {
   assert.doesNotMatch(readFileSync(join(fixtureDir, "src", "App.tsx"), "utf8"), /@lunatest\//);
   assert.match(
     runnerSource,
-    /if \(lane === "pack"\) \{\s*run\("pnpm", \["run", "test:browser"\]/,
+    /if \(lane === "pack"\) \{\s*run\("pnpm", \["run", "test:vitest"\][\s\S]*run\("pnpm", \["run", "test:browser"\]/,
   );
+  const sharedScenario = readFileSync(
+    join(fixtureDir, "scenarios", "approve-and-swap.lua"),
+    "utf8",
+  );
+  assert.match(sharedScenario, /stages = \{/);
+  assert.match(sharedScenario, /then_ui = \{/);
+  assert.match(sharedScenario, /then_state = \{/);
+  for (const runner of ["journey.test.ts", "journey.spec.ts"]) {
+    assert.match(
+      readFileSync(join(fixtureDir, "tests", runner), "utf8"),
+      /SWAP_SCENARIO_ID/,
+    );
+  }
 });
 
 test("lane parser defaults to pack and rejects unknown lanes", () => {

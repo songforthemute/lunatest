@@ -1,97 +1,16 @@
-import { useState } from "react";
-import type { Address, Hash } from "viem";
+import type { Config } from "@wagmi/core";
+import { useMemo, useSyncExternalStore } from "react";
 
-import {
-  approveSwap,
-  connectWallet,
-  readPortfolio,
-  readQuote,
-  submitSwap,
-  type Portfolio,
-} from "./swap";
-import type { JourneyConfig } from "./wagmi";
+import { createSwapJourney } from "./journey";
 
-type Stage =
-  | "disconnected"
-  | "wallet_connected"
-  | "quote_ready"
-  | "approval_required"
-  | "approval_pending"
-  | "ready_to_swap"
-  | "swap_pending"
-  | "swap_confirmed"
-  | "error";
-
-const initialPortfolio: Portfolio = {
-  allowance: 0n,
-  inputBalance: 0n,
-  outputBalance: 0n,
-};
-
-export function App({ config }: { config: JourneyConfig }) {
-  const [account, setAccount] = useState<Address>();
-  const [approvalHash, setApprovalHash] = useState<Hash>();
-  const [error, setError] = useState("");
-  const [history, setHistory] = useState<Stage[]>(["disconnected"]);
-  const [portfolio, setPortfolio] = useState(initialPortfolio);
-  const [quote, setQuote] = useState<bigint>();
-  const [stage, setStage] = useState<Stage>("disconnected");
-  const [swapHash, setSwapHash] = useState<Hash>();
-
-  function transition(next: Stage): void {
-    setStage(next);
-    setHistory((current) => [...current, next]);
-  }
-
-  function fail(cause: unknown): void {
-    setError(cause instanceof Error ? cause.message : String(cause));
-    transition("error");
-  }
-
-  async function handleConnect(): Promise<void> {
-    try {
-      const connectedAccount = await connectWallet(config);
-      setAccount(connectedAccount);
-      setPortfolio(await readPortfolio(config, connectedAccount));
-      transition("wallet_connected");
-    } catch (cause) {
-      fail(cause);
-    }
-  }
-
-  async function handleQuote(): Promise<void> {
-    try {
-      setQuote(await readQuote(config));
-      transition("quote_ready");
-      transition("approval_required");
-    } catch (cause) {
-      fail(cause);
-    }
-  }
-
-  async function handleApprove(): Promise<void> {
-    if (!account) return;
-    try {
-      transition("approval_pending");
-      setApprovalHash(await approveSwap(config, account));
-      setPortfolio(await readPortfolio(config, account));
-      transition("ready_to_swap");
-    } catch (cause) {
-      fail(cause);
-    }
-  }
-
-  async function handleSwap(): Promise<void> {
-    if (!account) return;
-    try {
-      transition("swap_pending");
-      setSwapHash(await submitSwap(config, account));
-      setPortfolio(await readPortfolio(config, account));
-      transition("swap_confirmed");
-    } catch (cause) {
-      fail(cause);
-    }
-  }
+export function App({ config }: { config: Config }) {
+  const journey = useMemo(() => createSwapJourney(config), [config]);
+  const snapshot = useSyncExternalStore(
+    journey.subscribe,
+    journey.getSnapshot,
+    journey.getSnapshot,
+  );
+  const { account, approvalHash, error, history, portfolio, quote, stage, swapHash } = snapshot;
 
   return (
     <main>
@@ -103,16 +22,16 @@ export function App({ config }: { config: JourneyConfig }) {
       </p>
 
       <section className="actions" aria-label="Swap journey actions">
-        <button disabled={stage !== "disconnected"} onClick={handleConnect}>
+        <button disabled={stage !== "disconnected"} onClick={journey.connectWallet}>
           Connect wallet
         </button>
-        <button disabled={stage !== "wallet_connected"} onClick={handleQuote}>
+        <button disabled={stage !== "wallet_connected"} onClick={journey.requestQuote}>
           Get quote
         </button>
-        <button disabled={stage !== "approval_required"} onClick={handleApprove}>
+        <button disabled={stage !== "approval_required"} onClick={journey.approveToken}>
           Approve token
         </button>
-        <button disabled={stage !== "ready_to_swap"} onClick={handleSwap}>
+        <button disabled={stage !== "ready_to_swap"} onClick={journey.swapToken}>
           Swap token
         </button>
       </section>

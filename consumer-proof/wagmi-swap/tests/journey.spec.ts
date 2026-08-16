@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { createLunaCommands, createLunaPageAdapter } from "@lunatest/playwright-plugin";
+
+import { reportSharedScenario, SWAP_SCENARIO_ID } from "./shared-scenario";
 
 test("completes the wagmi journey without outbound traffic", async ({ page }) => {
   const previewOrigin = "http://127.0.0.1:4173";
@@ -33,35 +36,56 @@ test("completes the wagmi journey without outbound traffic", async ({ page }) =>
       `Application did not mount:\n${browserErrors.join("\n")}\nBlocked: ${attemptedOutbound.join(", ")}`,
     );
   }
-  await expect(page.getByTestId("stage")).toHaveText("disconnected");
   await expect(page.evaluate(() => Reflect.get(window, "ethereum")?.isLunaTest)).resolves.toBe(true);
 
-  await page.getByRole("button", { name: "Connect wallet" }).click();
-  await expect(page.getByTestId("stage")).toHaveText("wallet_connected");
+  const execution = await createLunaCommands({ cwd: process.cwd() }).assertScenario(
+    SWAP_SCENARIO_ID,
+    createLunaPageAdapter({
+      page,
+      async runWhen({ config, page: target }) {
+        if (config.when?.action !== "complete_swap") {
+          throw new Error(`Unsupported journey action: ${String(config.when?.action)}`);
+        }
+        await target.getByRole("button", { name: "Connect wallet" }).click();
+        await expect(target.getByTestId("stage")).toHaveText("wallet_connected");
+        await target.getByRole("button", { name: "Get quote" }).click();
+        await expect(target.getByTestId("stage")).toHaveText("approval_required");
+        await target.getByRole("button", { name: "Approve token" }).click();
+        await expect(target.getByTestId("stage")).toHaveText("ready_to_swap");
+        await target.getByRole("button", { name: "Swap token" }).click();
+        await expect(target.getByTestId("stage")).toHaveText("swap_confirmed");
+      },
+      async resolveUi({ page: target }) {
+        const approval = await target.getByTestId("approval-hash").textContent();
+        const swap = await target.getByTestId("swap-hash").textContent();
+        const alert = target.getByRole("alert");
+        return {
+          stage: await target.getByTestId("stage").textContent(),
+          quote: await target.getByTestId("quote").textContent(),
+          allowance: await target.getByTestId("allowance").textContent(),
+          input_balance: await target.getByTestId("input-balance").textContent(),
+          output_balance: await target.getByTestId("output-balance").textContent(),
+          approval_submitted: /^Approval: 0x[0-9a-f]{64}$/.test(approval ?? ""),
+          swap_submitted: /^Swap: 0x[0-9a-f]{64}$/.test(swap ?? ""),
+          ...((await alert.count()) > 0 ? { error: await alert.textContent() } : {}),
+        };
+      },
+      async resolveState({ page: target }) {
+        return {
+          connected: (await target.getByTestId("account").textContent()) !== "not connected",
+          stage: await target.getByTestId("stage").textContent(),
+          quote: await target.getByTestId("quote").textContent(),
+          allowance: await target.getByTestId("allowance").textContent(),
+          input_balance: await target.getByTestId("input-balance").textContent(),
+          output_balance: await target.getByTestId("output-balance").textContent(),
+        };
+      },
+      resolveTransitions: ({ page: target }) =>
+        target.getByTestId("transition-history").getByRole("listitem").allTextContents(),
+    }),
+  );
 
-  await page.getByRole("button", { name: "Get quote" }).click();
-  await expect(page.getByTestId("stage")).toHaveText("approval_required");
-  await expect(page.getByTestId("quote")).toHaveText("1800");
-
-  await page.getByRole("button", { name: "Approve token" }).click();
-  await expect(page.getByTestId("stage")).toHaveText("ready_to_swap");
-  await expect(page.getByTestId("allowance")).toHaveText("1");
-  await expect(page.getByTestId("approval-hash")).toContainText(/^Approval: 0x[0-9a-f]{64}$/);
-
-  await page.getByRole("button", { name: "Swap token" }).click();
-  await expect(page.getByTestId("stage")).toHaveText("swap_confirmed");
-  await expect(page.getByTestId("input-balance")).toHaveText("24");
-  await expect(page.getByTestId("output-balance")).toHaveText("1800");
-  await expect(page.getByTestId("swap-hash")).toContainText(/^Swap: 0x[0-9a-f]{64}$/);
-  await expect(page.getByTestId("transition-history").getByRole("listitem")).toHaveText([
-    "disconnected",
-    "wallet_connected",
-    "quote_ready",
-    "approval_required",
-    "approval_pending",
-    "ready_to_swap",
-    "swap_pending",
-    "swap_confirmed",
-  ]);
+  await reportSharedScenario("playwright", execution.scenario);
+  expect(execution.execution.pass).toBe(true);
   expect(attemptedOutbound).toEqual([]);
 });

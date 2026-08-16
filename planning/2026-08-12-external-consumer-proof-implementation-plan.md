@@ -161,6 +161,10 @@ project runner execution record.
 
 ### Task 5 — Reuse one scenario in Vitest and Playwright
 
+**Status:** Complete on 2026-08-16 in the packed-artifact lane. Registry
+certification remains gated on publishing the package versions that expose the
+shared source digest.
+
 Add `scenarios/approve-and-swap.lua` and explicit host adapters for the two runner lifecycles. Both must load the same project-relative ID and report the same source digest. Vitest may use application state readers; Playwright must use the real rendered application.
 
 **Acceptance:** Changing the scenario expectation changes both runner results. No duplicate scenario definition is permitted.
