@@ -16,6 +16,7 @@ import {
   assertExactDependencyPins,
   assertFixtureSourceIsolation,
   assertInstalledPackageIsolation,
+  assertRegistryPackageSet,
   assertResolutionIsolation,
 } from "./external-consumer-proof-policy.mjs";
 import { packageNames, publicPackages } from "./package-roster.mjs";
@@ -56,6 +57,7 @@ export function parseExternalConsumerProofOptions(args) {
   return {
     enforceCiBudget: args.includes("--enforce-ci-budget"),
     outputPath: outputArgument?.slice("--output=".length),
+    releasePackageSet: args.includes("--release-package-set"),
   };
 }
 
@@ -80,6 +82,31 @@ function repositoryPackageVersions(packages) {
   );
 }
 
+function applyFixturePackageVersions(manifest, versions) {
+  for (const [packageName, version] of Object.entries(versions)) {
+    if (Object.hasOwn(manifest.dependencies ?? {}, packageName)) {
+      manifest.dependencies[packageName] = version;
+    } else if (Object.hasOwn(manifest.devDependencies ?? {}, packageName)) {
+      manifest.devDependencies[packageName] = version;
+    } else {
+      throw new Error(`Fixture does not declare public package ${packageName}`);
+    }
+  }
+}
+
+function readRegistryLatestVersions(names) {
+  return Object.fromEntries(
+    names.map((name) => {
+      const output = run("npm", ["view", `${name}@latest`, "version", "--json"], repositoryRoot);
+      const version = JSON.parse(output);
+      if (typeof version !== "string") {
+        throw new Error(`npm latest for ${name} did not resolve to one exact version`);
+      }
+      return [name, version];
+    }),
+  );
+}
+
 function packWorkspaceConfig(overrides) {
   const formattedOverrides = formatWorkspaceOverrides(overrides);
   return `packages:
@@ -96,6 +123,9 @@ ${formattedOverrides}
 }
 
 export function runExternalConsumerProof(lane, options = {}) {
+  if (options.releasePackageSet && lane !== "registry") {
+    throw new Error("--release-package-set is supported only by the registry lane");
+  }
   const sourceFixtureDir = options.fixtureDir
     ? resolve(options.fixtureDir)
     : fixtureDir;
@@ -113,6 +143,7 @@ export function runExternalConsumerProof(lane, options = {}) {
     vitestCommandMs: 0,
     workspaceBuildAndPackMs: 0,
   };
+  let registryLatestVersions;
 
   try {
     assertExactDependencyPins(fixtureManifest);
@@ -145,10 +176,26 @@ export function runExternalConsumerProof(lane, options = {}) {
       setupTiming.consumerInstallMs = performance.now() - installStarted;
       expectedVersions = repositoryPackageVersions(publicPackages);
     } else {
+      expectedVersions = options.releasePackageSet
+        ? repositoryPackageVersions(publicPackages)
+        : fixturePackageVersions(fixtureManifest, names);
+      if (options.releasePackageSet) {
+        applyFixturePackageVersions(fixtureManifest, expectedVersions);
+        writeFileSync(
+          join(consumerDir, "package.json"),
+          `${JSON.stringify(fixtureManifest, null, 2)}\n`,
+          "utf8",
+        );
+      }
+      registryLatestVersions = readRegistryLatestVersions(names);
       const installStarted = performance.now();
-      run("pnpm", ["install", "--frozen-lockfile"], consumerDir, { stdio: "inherit" });
+      run(
+        "pnpm",
+        ["install", options.releasePackageSet ? "--no-frozen-lockfile" : "--frozen-lockfile"],
+        consumerDir,
+        { stdio: "inherit" },
+      );
       setupTiming.consumerInstallMs = performance.now() - installStarted;
-      expectedVersions = fixturePackageVersions(fixtureManifest, names);
     }
 
     const lockfile = readFileSync(join(consumerDir, "pnpm-lock.yaml"), "utf8");
@@ -162,6 +209,17 @@ export function runExternalConsumerProof(lane, options = {}) {
       repositoryRoot,
       expectedTarballOverrides,
     });
+    let registryEvidence;
+    if (lane === "registry") {
+      assertRegistryPackageSet({
+        expectedVersions,
+        latestVersions: registryLatestVersions,
+        lockfile,
+        manifest: readJson(join(consumerDir, "package.json")),
+        packageNames: names,
+      });
+      registryEvidence = { latestVerified: true, resolutionVerified: true };
+    }
     assertInstalledPackageIsolation({ consumerDir, packageNames: names, repositoryRoot });
     assertInstalledPackageVersions(consumerDir, expectedVersions);
 
@@ -170,66 +228,65 @@ export function runExternalConsumerProof(lane, options = {}) {
     run("pnpm", ["run", "lint"], consumerDir, { stdio: "inherit" });
     run("pnpm", ["run", "build"], consumerDir, { stdio: "inherit" });
     setupTiming.consumerBuildAndStaticChecksMs = performance.now() - staticChecksStarted;
-    if (lane === "pack") {
-      const proofEnv = {
-        ...process.env,
-        LUNATEST_PROOF_DIR: proofDir,
-        LUNATEST_PROOF_RUNS: "30",
-      };
-      let vitestCommandPassed = true;
-      const vitestStarted = performance.now();
-      try {
-        run("pnpm", ["run", "test:vitest"], consumerDir, {
-          env: proofEnv,
-          stdio: "inherit",
-        });
-      } catch {
-        vitestCommandPassed = false;
-      }
-      setupTiming.vitestCommandMs = performance.now() - vitestStarted;
-      let playwrightCommandPassed = true;
-      const playwrightStarted = performance.now();
-      try {
-        run("pnpm", ["run", "test:browser"], consumerDir, {
-          env: proofEnv,
-          stdio: "inherit",
-        });
-      } catch {
-        playwrightCommandPassed = false;
-      }
-      setupTiming.playwrightCommandMs = performance.now() - playwrightStarted;
-
-      const report = createExternalConsumerProofReport({
-        commandResults: {
-          playwright: playwrightCommandPassed,
-          vitest: vitestCommandPassed,
-        },
-        enforceCiBudget: options.enforceCiBudget ?? false,
-        footprint: loadProofFootprint(consumerDir),
-        lane,
-        packages: Object.entries(expectedVersions).map(([name, version]) => ({
-          name,
-          source: "packed-tarball",
-          version,
-        })),
-        playwright: readProofFragment(proofDir, "playwright"),
-        setupTiming: Object.fromEntries(
-          Object.entries(setupTiming).map(([name, value]) => [
-            name,
-            typeof value === "number" ? Math.round(value * 1000) / 1000 : value,
-          ]),
-        ),
-        vitest: readProofFragment(proofDir, "vitest"),
+    const proofEnv = {
+      ...process.env,
+      LUNATEST_PROOF_DIR: proofDir,
+      LUNATEST_PROOF_RUNS: "30",
+    };
+    let vitestCommandPassed = true;
+    const vitestStarted = performance.now();
+    try {
+      run("pnpm", ["run", "test:vitest"], consumerDir, {
+        env: proofEnv,
+        stdio: "inherit",
       });
-      const outputPath = resolve(
-        repositoryRoot,
-        options.outputPath ?? "artifacts/external-consumer-proof/pack.json",
-      );
-      writeExternalConsumerProofReport(outputPath, report);
-      process.stdout.write(`[external-consumer-proof] report=${outputPath}\n`);
-      if (!report.passed) {
-        throw new Error(`External consumer proof gates failed; see ${outputPath}`);
-      }
+    } catch {
+      vitestCommandPassed = false;
+    }
+    setupTiming.vitestCommandMs = performance.now() - vitestStarted;
+    let playwrightCommandPassed = true;
+    const playwrightStarted = performance.now();
+    try {
+      run("pnpm", ["run", "test:browser"], consumerDir, {
+        env: proofEnv,
+        stdio: "inherit",
+      });
+    } catch {
+      playwrightCommandPassed = false;
+    }
+    setupTiming.playwrightCommandMs = performance.now() - playwrightStarted;
+
+    const report = createExternalConsumerProofReport({
+      commandResults: {
+        playwright: playwrightCommandPassed,
+        vitest: vitestCommandPassed,
+      },
+      enforceCiBudget: options.enforceCiBudget ?? false,
+      footprint: loadProofFootprint(consumerDir),
+      lane,
+      packages: Object.entries(expectedVersions).map(([name, version]) => ({
+        name,
+        source: lane === "registry" ? "npm-registry" : "packed-tarball",
+        version,
+      })),
+      playwright: readProofFragment(proofDir, "playwright"),
+      registryEvidence,
+      setupTiming: Object.fromEntries(
+        Object.entries(setupTiming).map(([name, value]) => [
+          name,
+          typeof value === "number" ? Math.round(value * 1000) / 1000 : value,
+        ]),
+      ),
+      vitest: readProofFragment(proofDir, "vitest"),
+    });
+    const outputPath = resolve(
+      repositoryRoot,
+      options.outputPath ?? `artifacts/external-consumer-proof/${lane}.json`,
+    );
+    writeExternalConsumerProofReport(outputPath, report);
+    process.stdout.write(`[external-consumer-proof] report=${outputPath}\n`);
+    if (!report.passed) {
+      throw new Error(`External consumer proof gates failed; see ${outputPath}`);
     }
 
     process.stdout.write(

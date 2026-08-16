@@ -222,6 +222,11 @@ Do not promise “10 minutes” unless the E3 sessions meet the gate.
 
 ### Task 9 — Certify the published E2 package set
 
+**Status:** Release-time registry proof automation implemented on 2026-08-16.
+Certification remains blocked until the pending Core, React, CLI, MCP, Vitest
+plugin, and Playwright plugin versions are published and that automation records
+a passing registry-only report for the exact npm `latest` package set.
+
 After the required package changes are released, run the unchanged proof against
 the exact npm `latest` versions. Enforce the registry-only resolution audit and
 attach the machine-readable report to CI. Record the package versions that earned

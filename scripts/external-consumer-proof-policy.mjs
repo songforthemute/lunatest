@@ -145,6 +145,66 @@ export function assertResolutionIsolation({
   }
 }
 
+export function assertRegistryPackageSet({
+  expectedVersions,
+  latestVersions,
+  lockfile,
+  manifest,
+  packageNames,
+}) {
+  const expectedNames = [...packageNames].sort();
+  const versionNames = Object.keys(expectedVersions).sort();
+  const latestNames = Object.keys(latestVersions).sort();
+  if (
+    JSON.stringify(versionNames) !== JSON.stringify(expectedNames) ||
+    JSON.stringify(latestNames) !== JSON.stringify(expectedNames)
+  ) {
+    throw new Error("registry package set must match the complete public package roster");
+  }
+
+  for (const packageName of expectedNames) {
+    const expectedVersion = expectedVersions[packageName];
+    if (!EXACT_VERSION.test(expectedVersion)) {
+      throw new Error(
+        `registry package ${packageName} must use an exact version, received ${expectedVersion}`,
+      );
+    }
+    if (latestVersions[packageName] !== expectedVersion) {
+      throw new Error(
+        `registry latest mismatch for ${packageName}: expected ${expectedVersion}, received ${latestVersions[packageName] ?? "missing"}`,
+      );
+    }
+
+    const manifestVersion =
+      manifest.dependencies?.[packageName] ?? manifest.devDependencies?.[packageName];
+    if (manifestVersion !== expectedVersion) {
+      throw new Error(
+        `registry fixture version mismatch for ${packageName}: expected ${expectedVersion}, received ${manifestVersion ?? "missing"}`,
+      );
+    }
+
+    const importerResolution = new RegExp(
+      `${escapeRegExp(packageName)}["']?:\\s*\\n\\s+specifier: ${escapeRegExp(expectedVersion)}\\s*\\n\\s+version: ${escapeRegExp(expectedVersion)}(?:\\(|\\s*$)`,
+      "m",
+    );
+    if (!importerResolution.test(lockfile)) {
+      throw new Error(
+        `registry lockfile importer does not resolve ${packageName} to ${expectedVersion}`,
+      );
+    }
+
+    const integritySnapshot = new RegExp(
+      `^\\s{2}["']?${escapeRegExp(packageName)}@${escapeRegExp(expectedVersion)}["']?:\\s*\\n\\s+resolution: \\{integrity: sha512-[^}]+\\}`,
+      "m",
+    );
+    if (!integritySnapshot.test(lockfile)) {
+      throw new Error(
+        `registry lockfile is missing integrity for ${packageName}@${expectedVersion}`,
+      );
+    }
+  }
+}
+
 export function assertInstalledPackageIsolation({
   consumerDir,
   packageNames,

@@ -2,8 +2,12 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
+import { packageNames, publicPackages } from "./package-roster.mjs";
+
 const ITERATION_GATE = 30;
 const RUNTIME_BUDGET_MS = 10_000;
+const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+const PUBLIC_PACKAGE_NAMES = packageNames(publicPackages).sort();
 
 function roundMetric(value) {
   return Math.round(value * 1000) / 1000;
@@ -81,9 +85,26 @@ export function createExternalConsumerProofReport({
   lane,
   packages,
   playwright,
+  registryEvidence,
   setupTiming,
   vitest,
 }) {
+  const expectedPackageSource = lane === "registry" ? "npm-registry" : "packed-tarball";
+  const actualPackageNames = packages.map(({ name }) => name).sort();
+  const packageEvidenceComplete =
+    new Set(actualPackageNames).size === actualPackageNames.length &&
+    JSON.stringify(actualPackageNames) === JSON.stringify(PUBLIC_PACKAGE_NAMES) &&
+    packages.every(
+      ({ name, source, version }) =>
+        typeof name === "string" &&
+        name.length > 0 &&
+        source === expectedPackageSource &&
+        typeof version === "string" && EXACT_VERSION.test(version),
+    );
+  const registryEvidenceComplete =
+    lane !== "registry" ||
+    (registryEvidence?.latestVerified === true &&
+      registryEvidence?.resolutionVerified === true);
   const vitestSummary = summarizeRunner(vitest);
   const playwrightSummary = summarizeRunner(playwright);
   const firstVitest = vitest.measuredRuns?.[0];
@@ -114,7 +135,13 @@ export function createExternalConsumerProofReport({
     runnerCommands: {
       passed: commandResults?.vitest === true && commandResults?.playwright === true,
     },
-    packageIsolation: { passed: true },
+    packageIsolation: {
+      expectedSource: expectedPackageSource,
+      latestVerified: lane === "registry" ? registryEvidence?.latestVerified === true : null,
+      passed: packageEvidenceComplete && registryEvidenceComplete,
+      resolutionVerified:
+        lane === "registry" ? registryEvidence?.resolutionVerified === true : null,
+    },
     realIntegration: { passed: true },
     journeyCoverage: {
       passed:
@@ -168,16 +195,19 @@ export function createExternalConsumerProofReport({
     },
   };
   const passed = Object.values(gates).every((gate) => gate.passed);
+  const certificationEligible = lane === "registry" && passed;
 
   return {
     schemaVersion: 1,
-    certificationEligible: false,
+    certificationEligible,
     commandResults: commandResults ?? { playwright: false, vitest: false },
     lane,
     packages: [...packages].sort((left, right) => left.name.localeCompare(right.name)),
     isolation: {
       forbiddenResolutionMarkers: [],
-      passed: true,
+      latestVerified: gates.packageIsolation.latestVerified,
+      passed: gates.packageIsolation.passed,
+      resolutionVerified: gates.packageIsolation.resolutionVerified,
     },
     integrationFootprint: footprint,
     scenario: {

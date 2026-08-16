@@ -43,3 +43,14 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
       - if: steps.changesets.outputs.hasChangesets != 'true'
         run: pnpm consumer-smoke:npm -- --tag=latest
+      - if: steps.changesets.outputs.hasChangesets != 'true'
+        run: pnpm --filter @lunatest/e2e-tests exec playwright install --with-deps chromium
+      - id: registry-proof
+        if: steps.changesets.outputs.hasChangesets != 'true'
+        run: pnpm consumer-proof:registry -- --release-package-set --enforce-ci-budget
+      - if: always() && steps.registry-proof.outcome != 'skipped'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: external-consumer-proof-registry
+          path: artifacts/external-consumer-proof/registry.json
+          if-no-files-found: error

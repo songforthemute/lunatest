@@ -6,6 +6,15 @@ import {
   median,
   nearestRankPercentile,
 } from "./external-consumer-proof-report.mjs";
+import { packageNames, publicPackages } from "./package-roster.mjs";
+
+function proofPackages(source) {
+  return packageNames(publicPackages).map((name, index) => ({
+    name,
+    source,
+    version: `1.0.${index}`,
+  }));
+}
 
 test("proof statistics use even median and nearest-rank p95", () => {
   const samples = Array.from({ length: 30 }, (_, index) => index + 1);
@@ -38,7 +47,7 @@ test("proof report enforces 30 deterministic cross-runner results", () => {
     enforceCiBudget: true,
     footprint: { sourceDigest: "sha256:footprint" },
     lane: "pack",
-    packages: [{ name: "@lunatest/core", version: "0.2.0", source: "packed-tarball" }],
+    packages: proofPackages("packed-tarball"),
     playwright: fragment,
     vitest: {
       ...fragment,
@@ -53,11 +62,118 @@ test("proof report enforces 30 deterministic cross-runner results", () => {
   });
 
   assert.equal(report.passed, true);
+  assert.equal(report.certificationEligible, false);
   assert.equal(report.runs.playwright.medianMs, 5);
   assert.equal(report.runs.playwright.p95Ms, 5);
   assert.equal(report.gates.determinism.passed, true);
   assert.equal(report.gates.failureQuality.passed, true);
   assert.equal(JSON.stringify(report).includes("/private/"), false);
+});
+
+test("registry proof becomes certification eligible only with passing npm evidence", () => {
+  const run = {
+    durationMs: 5,
+    fingerprint: "sha256:fingerprint",
+    networkAttempts: [],
+    normalizedResult: {
+      assertions: Object.fromEntries(
+        ["negative", "state", "transition", "ui"].map((name) => [name, { pass: true }]),
+      ),
+      pass: true,
+      scenario: {
+        id: "scenarios/approve-and-swap",
+        sourceDigest: "sha256:source",
+      },
+    },
+  };
+  const fragment = {
+    measuredRuns: Array.from({ length: 30 }, () => ({ ...run })),
+    warmupRuns: 1,
+  };
+  const report = createExternalConsumerProofReport({
+    commandResults: { playwright: true, vitest: true },
+    enforceCiBudget: true,
+    footprint: { sourceDigest: "sha256:footprint" },
+    lane: "registry",
+    packages: proofPackages("npm-registry"),
+    playwright: fragment,
+    registryEvidence: { latestVerified: true, resolutionVerified: true },
+    vitest: {
+      ...fragment,
+      deliberateFailure: {
+        actual: "1799",
+        expected: "1800",
+        path: "then_ui.output_balance",
+        qualityPassed: true,
+        scenarioId: "scenarios/approve-and-swap",
+      },
+    },
+  });
+
+  assert.equal(report.passed, true);
+  assert.equal(report.certificationEligible, true);
+  assert.equal(report.gates.packageIsolation.expectedSource, "npm-registry");
+});
+
+test("registry proof rejects incomplete or non-registry package evidence", () => {
+  const runs = Array.from({ length: 30 }, () => ({
+    durationMs: 5,
+    fingerprint: "sha256:stable",
+    networkAttempts: [],
+    normalizedResult: {
+      assertions: Object.fromEntries(
+        ["negative", "state", "transition", "ui"].map((name) => [name, { pass: true }]),
+      ),
+      pass: true,
+      scenario: { id: "scenario", sourceDigest: "sha256:source" },
+    },
+  }));
+  const fragment = { measuredRuns: runs, warmupRuns: 1 };
+  const report = createExternalConsumerProofReport({
+    commandResults: { playwright: true, vitest: true },
+    enforceCiBudget: true,
+    footprint: { sourceDigest: "sha256:footprint" },
+    lane: "registry",
+    packages: proofPackages("npm-registry").slice(0, -1),
+    playwright: fragment,
+    registryEvidence: { latestVerified: true, resolutionVerified: true },
+    vitest: {
+      ...fragment,
+      deliberateFailure: {
+        actual: "1799",
+        expected: "1800",
+        path: "then_ui.output_balance",
+        qualityPassed: true,
+        scenarioId: "scenario",
+      },
+    },
+  });
+
+  assert.equal(report.passed, false);
+  assert.equal(report.certificationEligible, false);
+  assert.equal(report.gates.packageIsolation.passed, false);
+
+  const wrongSource = createExternalConsumerProofReport({
+    commandResults: { playwright: true, vitest: true },
+    enforceCiBudget: true,
+    footprint: { sourceDigest: "sha256:footprint" },
+    lane: "registry",
+    packages: proofPackages("packed-tarball"),
+    playwright: fragment,
+    registryEvidence: { latestVerified: true, resolutionVerified: true },
+    vitest: {
+      ...fragment,
+      deliberateFailure: {
+        actual: "1799",
+        expected: "1800",
+        path: "then_ui.output_balance",
+        qualityPassed: true,
+        scenarioId: "scenario",
+      },
+    },
+  });
+  assert.equal(wrongSource.certificationEligible, false);
+  assert.equal(wrongSource.gates.packageIsolation.passed, false);
 });
 
 test("proof report fails flake, network, and runtime gates", () => {

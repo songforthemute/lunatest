@@ -36,6 +36,9 @@ This fixture is derived from the official Vite React TypeScript template.
   acceptance test. Application journey code itself imports only wagmi/viem.
 - Added exact published LunaTest package versions for the registry lane. The pack
   lane replaces only those packages with staged tarballs in a temporary copy.
+- Release certification may update those exact pins only in a temporary copy to
+  match the versioned workspace manifests, then verifies every pin against npm
+  `latest` and registry lockfile integrity.
 - Added an isolated pnpm workspace policy and committed lockfile.
 - Added one shared Lua scenario and explicit Vitest/Playwright host adapters.
 - Added a measured proof harness with fresh runtime/browser isolation, outbound

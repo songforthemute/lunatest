@@ -7,6 +7,7 @@ import test from "node:test";
 import {
   assertExactDependencyPins,
   assertFixtureSourceIsolation,
+  assertRegistryPackageSet,
   assertResolutionIsolation,
 } from "./external-consumer-proof-policy.mjs";
 import { packageNames, publicPackages } from "./package-roster.mjs";
@@ -87,20 +88,79 @@ test("proof options select a portable output and CI-only budget enforcement", ()
   assert.deepEqual(parseExternalConsumerProofOptions([]), {
     enforceCiBudget: false,
     outputPath: undefined,
+    releasePackageSet: false,
   });
   assert.deepEqual(
     parseExternalConsumerProofOptions([
       "--output=artifacts/custom.json",
       "--enforce-ci-budget",
+      "--release-package-set",
     ]),
     {
       enforceCiBudget: true,
       outputPath: "artifacts/custom.json",
+      releasePackageSet: true,
     },
   );
   assert.match(runnerSource, /LUNATEST_PROOF_RUNS: "30"/);
+  assert.doesNotMatch(runnerSource, /if \(lane === "pack"\) \{\s*const proofEnv/);
+  assert.match(runnerSource, /source: lane === "registry" \? "npm-registry" : "packed-tarball"/);
+  assert.match(runnerSource, /external-consumer-proof\/\$\{lane\}\.json/);
   assert.match(runnerSource, /createExternalConsumerProofReport/);
   assert.match(runnerSource, /writeExternalConsumerProofReport/);
+});
+
+test("registry package-set audit requires exact latest versions and integrity", () => {
+  const names = packageNames(publicPackages);
+  const versions = Object.fromEntries(names.map((name, index) => [name, `1.0.${index}`]));
+  const manifest = { dependencies: { ...versions } };
+  const lockfile = [
+    "importers:",
+    "  .:",
+    "    dependencies:",
+    ...names.flatMap((name) => [
+      `      '${name}':`,
+      `        specifier: ${versions[name]}`,
+      `        version: ${versions[name]}`,
+    ]),
+    "packages:",
+    ...names.flatMap((name) => [
+      `  '${name}@${versions[name]}':`,
+      "    resolution: {integrity: sha512-proof}",
+    ]),
+  ].join("\n");
+
+  assert.doesNotThrow(() =>
+    assertRegistryPackageSet({
+      expectedVersions: versions,
+      latestVersions: versions,
+      lockfile,
+      manifest,
+      packageNames: names,
+    }),
+  );
+  assert.throws(
+    () =>
+      assertRegistryPackageSet({
+        expectedVersions: versions,
+        latestVersions: { ...versions, [names[0]]: "9.9.9" },
+        lockfile,
+        manifest,
+        packageNames: names,
+      }),
+    /registry latest mismatch/,
+  );
+  assert.throws(
+    () =>
+      assertRegistryPackageSet({
+        expectedVersions: versions,
+        latestVersions: versions,
+        lockfile: lockfile.replace("resolution: {integrity: sha512-proof}", "resolution: {}"),
+        manifest,
+        packageNames: names,
+      }),
+    /missing integrity/,
+  );
 });
 
 test("quickstart validator starts from the pinned Vite scaffold before packed proof", () => {
