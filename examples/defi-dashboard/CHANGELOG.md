@@ -1,5 +1,13 @@
 # @lunatest/example-defi-dashboard
 
+## 0.1.3
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.2.1`: dependency range update
+
 ## 0.1.2
 
 ### Patch Changes

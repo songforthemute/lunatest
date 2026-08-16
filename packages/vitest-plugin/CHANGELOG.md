@@ -1,5 +1,13 @@
 # @lunatest/vitest-plugin
 
+## 0.2.2
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.2.1`: dependency range update
+
 ## 0.2.1
 
 ### Patch Changes

@@ -1,5 +1,29 @@
 # @lunatest/react
 
+## 0.2.0
+
+### Minor Changes
+
+### Summary
+
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) Add the `@lunatest/react/wagmi` entrypoint with a real viem transport for
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) wagmi `createConfig`, contract-tested against `@wagmi/core@3.6.4` and
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) `viem@2.55.11`. Add the isolated `@lunatest/react/wagmi/connector` entrypoint
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) for real wagmi connection state and wallet actions. Deprecate the structural
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) `withLunaWagmiConfig` helper without removing it. Accept the browser provider
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) installed by `bootstrapLunaRuntime` at the same public structural boundary and
+- [`b0af4f1`](https://github.com/songforthemute/lunatest/commit/b0af4f1a7eee63fdc6ccae22e44fe4f24d60dbfd) materialize built-in presets before strict runtime interception is enabled.
+
+### Breaking
+
+- None
+
+### Patch Changes
+
+### Packages
+
+- `@lunatest/core@0.2.1`: dependency range update
+
 ## 0.1.5
 
 ### Patch Changes
