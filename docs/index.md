@@ -9,6 +9,7 @@ test double as a full EVM simulation.
 - [Getting Started](./getting-started.md) sets up a LunaTest project.
 - [Writing Scenarios](./guides/writing-scenarios.md) explains Lua scenarios and coverage metadata.
 - [React Integration](./guides/react-integration.md) connects a React tree to a `LunaProvider`.
+- [Validated wagmi Swap Quickstart](./guides/wagmi-swap-quickstart.md) reproduces the measured packed-artifact consumer proof.
 - [Playwright Routing](./guides/playwright-routing.md) controls HTTP and JSON-RPC routes in browser tests.
 - [CLI Workflow](./guides/cli-workflow.md) covers validation, execution, coverage, generation, and diagnostics.
 

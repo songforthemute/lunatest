@@ -110,6 +110,12 @@ test("Docs workflow verifies the Pages artifact has an index page", async () => 
   );
 
   assert.match(workflow, /Verify docs Pages artifact/);
+  assert.match(
+    workflow,
+    /node --test scripts\/docs-contracts\.test\.mjs scripts\/docs-site\.test\.mjs/,
+  );
+  assert.match(workflow, /"scripts\/docs-contracts\.test\.mjs"/);
+  assert.match(workflow, /"scripts\/docs-site\.test\.mjs"/);
   assert.match(workflow, /test -f docs\/\.vitepress\/dist\/index\.html/);
   assert.match(workflow, /test -f docs\/\.vitepress\/dist\/examples\/swap-dapp\/index\.html/);
   assert.match(workflow, /test -f docs\/\.vitepress\/dist\/examples\/swap-dapp\/lunatest\.lua/);

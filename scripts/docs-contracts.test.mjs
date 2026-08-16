@@ -36,6 +36,8 @@ test("consumer installation snippets do not pin stable packages to a prerelease 
     "docs/ko/getting-started.md",
     "docs/guides/library-consumption.md",
     "docs/ko/guides/library-consumption.md",
+    "docs/guides/wagmi-swap-quickstart.md",
+    "docs/ko/guides/wagmi-swap-quickstart.md",
   ];
 
   for (const document of documents) {
@@ -203,12 +205,14 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
     "/guides/playwright-routing",
     "/guides/react-integration",
     "/guides/scenario-examples",
+    "/guides/wagmi-swap-quickstart",
     "/ko/guides/ci-integration",
     "/ko/guides/writing-scenarios",
     "/ko/guides/multi-stage",
     "/ko/guides/wagmi-setup",
     "/ko/guides/ethers-setup",
     "/ko/guides/web3js-setup",
+    "/ko/guides/wagmi-swap-quickstart",
   ];
 
   for (const link of requiredLinks) {
@@ -217,5 +221,47 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
       new RegExp(`\\{\\s*text:\\s*"[^"]+"\\s*,\\s*link:\\s*"${escapeRegExp(link)}"\\s*\\}`),
       link,
     );
+  }
+});
+
+test("validated wagmi quickstart stays aligned with packed proof evidence", () => {
+  const documents = [
+    "docs/guides/wagmi-swap-quickstart.md",
+    "docs/ko/guides/wagmi-swap-quickstart.md",
+  ];
+
+  for (const document of documents) {
+    const source = read(document);
+    for (const version of [
+      "pnpm | 10.33.4",
+      "React / React DOM | 19.2.8",
+      "@wagmi/core` | 3.6.4",
+      "viem` | 2.55.11",
+      "Vitest | 4.1.6",
+      "Playwright | 1.61.1",
+    ]) {
+      assert.match(source, new RegExp(escapeRegExp(version)), `${document}: ${version}`);
+    }
+    for (const command of [
+      "pnpm install --frozen-lockfile",
+      "pnpm --filter @lunatest/e2e-tests exec playwright install --with-deps chromium",
+      "pnpm quickstart:wagmi:validate -- --enforce-ci-budget",
+    ]) {
+      assert.match(source, new RegExp(escapeRegExp(command)), `${document}: ${command}`);
+    }
+    for (const evidence of [
+      "certificationEligible",
+      "30/30",
+      "120.793 ms",
+      "65",
+      "then_ui.output_balance",
+      "packed-artifact",
+      "create-vite@9.1.2",
+      "@wagmi/core >=3.6.4 <4",
+      "viem >=2.55.11 <3",
+    ]) {
+      assert.match(source, new RegExp(escapeRegExp(evidence)), `${document}: ${evidence}`);
+    }
+    assert.doesNotMatch(source, /under 10 minutes|within 10 minutes|10분 (안에|이내)/i);
   }
 });

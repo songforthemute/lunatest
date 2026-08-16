@@ -209,6 +209,11 @@ Only the first observed diagnostic blocker is in scope for this commit.
 
 ### Task 8 — Publish the measured quickstart
 
+**Status:** Complete on 2026-08-16 for the packed-artifact proof. The bilingual
+quickstart is replayed from `create-vite@9.1.2` in a fresh temporary directory,
+then validated through the same 30-run Vitest/Playwright evidence gates. It
+states that registry E2 certification and human onboarding time remain pending.
+
 Write a clean-room quickstart that begins from the pinned scaffold and ends at the shared passing scenario. Include exact commands, supported versions, expected output, troubleshooting, integration footprint, and measured runtime. Validate every command against a fresh copy.
 
 Do not promise “10 minutes” unless the E3 sessions meet the gate.

@@ -37,8 +37,10 @@ This fixture is derived from the official Vite React TypeScript template.
 - Added exact published LunaTest package versions for the registry lane. The pack
   lane replaces only those packages with staged tarballs in a temporary copy.
 - Added an isolated pnpm workspace policy and committed lockfile.
-- Reserved `scenarios/` for the shared Lua runner proof in the next task.
+- Added one shared Lua scenario and explicit Vitest/Playwright host adapters.
+- Added a measured proof harness with fresh runtime/browser isolation, outbound
+  network guards, deterministic fingerprints, and deliberate-failure evidence.
 
 The application now proves deterministic connect, quote, approve, swap, and
-confirmation in Chromium. It intentionally has no shared Lua scenario or
-Vitest/Playwright Luna runner adapter yet; those remain separate proof tasks.
+confirmation through one scenario in Vitest and Chromium. Registry-only E2
+certification remains a separate release task.

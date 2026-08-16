@@ -96,12 +96,15 @@ ${formattedOverrides}
 }
 
 export function runExternalConsumerProof(lane, options = {}) {
+  const sourceFixtureDir = options.fixtureDir
+    ? resolve(options.fixtureDir)
+    : fixtureDir;
   const tempRoot = mkdtempSync(join(tmpdir(), `lunatest-external-proof-${lane}-`));
   const consumerDir = join(tempRoot, "consumer");
   const proofDir = join(tempRoot, "proof-results");
   const tarballsDir = join(tempRoot, "tarballs");
   const names = packageNames(publicPackages);
-  const fixtureManifest = readJson(join(fixtureDir, "package.json"));
+  const fixtureManifest = readJson(join(sourceFixtureDir, "package.json"));
   const setupTiming = {
     browserDownloadMs: null,
     consumerBuildAndStaticChecksMs: 0,
@@ -113,8 +116,8 @@ export function runExternalConsumerProof(lane, options = {}) {
 
   try {
     assertExactDependencyPins(fixtureManifest);
-    assertFixtureSourceIsolation(fixtureDir, repositoryRoot);
-    cpSync(fixtureDir, consumerDir, {
+    assertFixtureSourceIsolation(sourceFixtureDir, repositoryRoot);
+    cpSync(sourceFixtureDir, consumerDir, {
       recursive: true,
       filter(source) {
         return !["node_modules", "dist"].includes(source.split(/[\\/]/).at(-1));

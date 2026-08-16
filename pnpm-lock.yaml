@@ -26,6 +26,9 @@ importers:
       '@types/node':
         specifier: ^24.12.4
         version: 24.12.4
+      create-vite:
+        specifier: 9.1.2
+        version: 9.1.2
       knip:
         specifier: ^5.88.1
         version: 5.88.1(@types/node@24.12.4)(typescript@5.9.3)
@@ -1397,6 +1400,11 @@ packages:
   copy-anything@4.0.5:
     resolution: {integrity: sha512-7Vv6asjS4gMOuILabD3l739tsaxFQmC+a7pLZm02zyvs8p977bL3zEgq3yDk5rn9B0PbYgIv++jmHcuUab4RhA==}
     engines: {node: '>=18'}
+
+  create-vite@9.1.2:
+    resolution: {integrity: sha512-6plDCgTP2LHMQ4QHw8ZgUE+z9vOIU30lC0aq/wF4cOtGNaJg72DdsPS8Jm9geAVnyr4QjgRfepMn8lkXyeSh0g==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -3488,6 +3496,8 @@ snapshots:
   copy-anything@4.0.5:
     dependencies:
       is-what: 5.5.0
+
+  create-vite@9.1.2: {}
 
   cross-spawn@7.0.6:
     dependencies:

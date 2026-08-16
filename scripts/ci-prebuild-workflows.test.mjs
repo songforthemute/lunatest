@@ -111,7 +111,7 @@ test("CI enforces and uploads the packed external consumer proof", async () => {
     proofJob,
     /pnpm --filter @lunatest\/e2e-tests exec playwright install --with-deps chromium/,
   );
-  assert.match(proofJob, /pnpm consumer-proof:pack -- --enforce-ci-budget/);
+  assert.match(proofJob, /pnpm quickstart:wagmi:validate -- --enforce-ci-budget/);
   assert.match(proofJob, /if: always\(\)[\s\S]*actions\/upload-artifact@v7\.0\.1/);
   assert.match(proofJob, /path: artifacts\/external-consumer-proof\/pack\.json/);
   assert.match(proofJob, /if-no-files-found: error/);

@@ -16,9 +16,14 @@ import {
   parseExternalConsumerProofOptions,
   repositoryRoot,
 } from "./run-external-consumer-proof.mjs";
+import { prepareWagmiQuickstart } from "./validate-wagmi-quickstart.mjs";
 const manifest = JSON.parse(readFileSync(join(fixtureDir, "package.json"), "utf8"));
 const runnerSource = readFileSync(
   join(repositoryRoot, "scripts", "run-external-consumer-proof.mjs"),
+  "utf8",
+);
+const quickstartValidatorSource = readFileSync(
+  join(repositoryRoot, "scripts", "validate-wagmi-quickstart.mjs"),
   "utf8",
 );
 
@@ -96,6 +101,33 @@ test("proof options select a portable output and CI-only budget enforcement", ()
   assert.match(runnerSource, /LUNATEST_PROOF_RUNS: "30"/);
   assert.match(runnerSource, /createExternalConsumerProofReport/);
   assert.match(runnerSource, /writeExternalConsumerProofReport/);
+});
+
+test("quickstart validator starts from the pinned Vite scaffold before packed proof", () => {
+  assert.match(quickstartValidatorSource, /create-vite@9\.1\.2/);
+  assert.match(quickstartValidatorSource, /resolveInstalledPackageBin/);
+  assert.match(quickstartValidatorSource, /"wagmi-swap", "--template", "react-ts"/);
+  assert.match(quickstartValidatorSource, /cpSync\(fixtureDir, targetDir/);
+  assert.match(quickstartValidatorSource, /runExternalConsumerProof\("pack"/);
+  assert.match(runnerSource, /options\.fixtureDir/);
+});
+
+test("quickstart validator prepares the pinned scaffold in a temporary directory", () => {
+  const prepared = prepareWagmiQuickstart();
+  try {
+    const preparedManifest = JSON.parse(
+      readFileSync(join(prepared.targetDir, "package.json"), "utf8"),
+    );
+    assert.equal(preparedManifest.name, "lunatest-wagmi-swap-proof");
+    assert.equal(preparedManifest.dependencies.react, "19.2.8");
+    assert.equal(
+      readFileSync(join(prepared.targetDir, "scenarios", "approve-and-swap.lua"), "utf8")
+        .includes('name = "approve-and-swap"'),
+      true,
+    );
+  } finally {
+    rmSync(prepared.tempRoot, { recursive: true, force: true });
+  }
 });
 
 test("resolution policy permits only staged tarballs in the pack lane", () => {

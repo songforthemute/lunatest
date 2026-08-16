@@ -10,8 +10,9 @@ Run the clean packed-artifact lane from the repository root:
 pnpm consumer-proof:pack
 ```
 
-The registry lane uses only the exact LunaTest versions committed to this
-fixture and a frozen lockfile:
+The registry lane is reserved as a static install/typecheck/lint/build preflight.
+It uses only the exact LunaTest versions committed to this fixture and a frozen
+lockfile, but it does not yet run the journey or write a certification report:
 
 ```sh
 pnpm consumer-proof:registry

@@ -14,6 +14,7 @@
     "consumer-smoke:pack": "node scripts/consumer-smoke-pack.mjs",
     "consumer-smoke:npm": "node scripts/consumer-smoke-npm.mjs",
     "consumer-proof:pack": "node scripts/run-external-consumer-proof.mjs --lane=pack",
+    "quickstart:wagmi:validate": "node scripts/validate-wagmi-quickstart.mjs",
     "consumer-proof:registry": "node scripts/run-external-consumer-proof.mjs --lane=registry",
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "node scripts/build-docs-site.mjs",
@@ -38,6 +39,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
     "@types/node": "^24.12.4",
+    "create-vite": "9.1.2",
     "knip": "^5.88.1",
     "typescript": "^5.9.2",
     "vitepress": "^1.6.4",

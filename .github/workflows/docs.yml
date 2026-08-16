@@ -8,6 +8,8 @@ on:
       - "examples/swap-dapp/**"
       - "examples/defi-dashboard/**"
       - "scripts/build-docs-site.mjs"
+      - "scripts/docs-contracts.test.mjs"
+      - "scripts/docs-site.test.mjs"
       - "scripts/check-docs-live-demo.mjs"
       - ".github/workflows/docs.yml"
       - "package.json"
@@ -20,6 +22,8 @@ on:
       - "examples/swap-dapp/**"
       - "examples/defi-dashboard/**"
       - "scripts/build-docs-site.mjs"
+      - "scripts/docs-contracts.test.mjs"
+      - "scripts/docs-site.test.mjs"
       - "scripts/check-docs-live-demo.mjs"
       - ".github/workflows/docs.yml"
       - "package.json"
@@ -43,6 +47,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: node --test scripts/docs-contracts.test.mjs scripts/docs-site.test.mjs
       - name: Resolve docs base for GitHub Pages
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
