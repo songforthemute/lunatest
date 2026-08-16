@@ -32,11 +32,13 @@ This fixture is derived from the official Vite React TypeScript template.
   separate ES2023 Vite config project. These settings replace the upstream
   template's newer syntax flags while preserving project references.
 - Added a real `@wagmi/core@3.6.4` and `viem@2.55.11` `createConfig` boundary.
+- Added the LunaTest runtime composition root and a raw Playwright Chromium
+  acceptance test. Application journey code itself imports only wagmi/viem.
 - Added exact published LunaTest package versions for the registry lane. The pack
   lane replaces only those packages with staged tarballs in a temporary copy.
 - Added an isolated pnpm workspace policy and committed lockfile.
-- Reserved `scenarios/` and `tests/` for later proof tasks without adding journey logic.
+- Reserved `scenarios/` for the shared Lua runner proof in the next task.
 
-The application intentionally has no LunaTest runtime bootstrap, deterministic
-wallet, protocol journey, Lua scenario, Vitest test, or Playwright test yet. Those
-belong to later implementation tasks so this commit remains the clean baseline.
+The application now proves deterministic connect, quote, approve, swap, and
+confirmation in Chromium. It intentionally has no shared Lua scenario or
+Vitest/Playwright Luna runner adapter yet; those remain separate proof tasks.

@@ -1,4 +1,3 @@
-import { type LunaProvider } from "@lunatest/core";
 import {
   ChainNotConfiguredError,
   ConnectorNotConnectedError,
@@ -12,6 +11,8 @@ import {
   SwitchChainError,
   type Address,
 } from "viem";
+
+import type { LunaWagmiProvider } from "./wagmi.js";
 
 type ProviderListener = (...args: unknown[]) => void;
 type ConnectorAccounts<withCapabilities extends boolean> =
@@ -53,9 +54,9 @@ function normalizeChainId(input: unknown): number {
  * Creates a wagmi connector backed by a deterministic LunaTest provider.
  */
 export function createLunaWagmiConnector(
-  provider: LunaProvider,
-): CreateConnectorFn<LunaProvider> {
-  const connector: CreateConnectorFn<LunaProvider> = (config) => {
+  provider: LunaWagmiProvider,
+): CreateConnectorFn<LunaWagmiProvider> {
+  const connector: CreateConnectorFn<LunaWagmiProvider> = (config) => {
     let accountsChanged: ProviderListener | undefined;
     let chainChanged: ProviderListener | undefined;
     let disconnected: ProviderListener | undefined;

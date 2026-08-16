@@ -135,6 +135,9 @@ export function runExternalConsumerProof(lane) {
     run("pnpm", ["run", "typecheck"], consumerDir, { stdio: "inherit" });
     run("pnpm", ["run", "lint"], consumerDir, { stdio: "inherit" });
     run("pnpm", ["run", "build"], consumerDir, { stdio: "inherit" });
+    if (lane === "pack") {
+      run("pnpm", ["run", "test:browser"], consumerDir, { stdio: "inherit" });
+    }
 
     process.stdout.write(
       `[external-consumer-proof] OK lane=${lane} packages=${names.length}\n`,

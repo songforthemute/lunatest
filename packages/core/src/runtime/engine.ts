@@ -11,6 +11,16 @@ import {
 const FUNCTION_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const DEFAULT_MEMORY_LIMIT = 16 * 1024 * 1024;
 
+function createLuaFactory(): LuaFactory {
+  const isBrowserRuntime =
+    typeof globalThis === "object" &&
+    ("document" in globalThis || "WorkerGlobalScope" in globalThis);
+
+  return isBrowserRuntime
+    ? new LuaFactory(new URL("./glue.wasm", import.meta.url).href)
+    : new LuaFactory();
+}
+
 function normalizeFunctionName(name: string): string {
   if (!FUNCTION_NAME_RE.test(name)) {
     throw new Error(`Invalid function name: ${name}`);
@@ -21,7 +31,7 @@ function normalizeFunctionName(name: string): string {
 
 export async function createRuntime(rawOptions: RuntimeOptions = {}): Promise<Runtime> {
   const options = RuntimeOptionsSchema.parse(rawOptions);
-  const factory = new LuaFactory();
+  const factory = createLuaFactory();
   const hostFunctions = new Map<string, (...args: unknown[]) => unknown>();
 
   let instructionLimit = options.instructionLimit;

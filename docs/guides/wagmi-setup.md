@@ -38,6 +38,12 @@ chain switching, transaction submission, receipt lookup, external provider
 events, and disconnect. The transport remains a separate viem-only subpath, so
 direct viem consumers do not need to install `@wagmi/core`.
 
+For protocol presets, await `bootstrapLunaRuntime` first and pass the installed
+browser provider to both factories. Its public `LunaWagmiProvider` structural
+contract is the same one used by `LunaProvider`; no class cast or wallet
+extension is required. Built-in preset assets and the Lua WASM runtime are
+loaded before strict interception and from the installed package, respectively.
+
 `withLunaWagmiConfig` remains temporarily available for compatibility but is
 deprecated. It returns only a structural wagmi-like object and is not the
 supported real wagmi integration.

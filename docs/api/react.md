@@ -22,6 +22,9 @@ Release channel: `latest`
 
 - `createLunaWagmiTransport(provider)` returns a real viem `Transport` for
   wagmi `createConfig`.
+- `LunaWagmiProvider` is the structural `request`/`on`/`removeListener`
+  boundary implemented by both `LunaProvider` and the provider installed by
+  `bootstrapLunaRuntime`.
 - `@lunatest/react/wagmi/connector` exports
   `createLunaWagmiConnector(provider)` for wagmi connection state and wallet
   actions.

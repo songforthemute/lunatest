@@ -134,6 +134,10 @@ resolution and requires the recorded npm versions.
 
 ### Task 4 — Implement the deterministic wallet and protocol journey
 
+**Status:** Complete on 2026-08-16 in the packed-artifact lane. Registry
+certification remains gated on publishing the package versions that contain the
+new wagmi entrypoints.
+
 Add the minimum development/test bootstrap needed for connect → quote → approve → swap → confirmed. Use runtime-intercept and a supported integration boundary. Block all outbound RPC, wallet, quote, and protocol traffic during the scenario.
 
 Do not copy production application logic into the test adapter. The application must make its normal provider/client calls, and LunaTest must observe or intercept those calls at the public boundary.

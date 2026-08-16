@@ -7,6 +7,7 @@
   },
   "workspaces": {
     ".": {
+      "ignoreDependencies": ["@playwright/test"],
       "entry": [
         "scripts/check-pack-integrity.mjs",
         "scripts/check-performance.mjs",
