@@ -22,7 +22,7 @@
 
 ### Task 1 — Establish a supported wagmi/viem bridge
 
-**Status:** Implemented; pending release.
+**Status:** Released and registry-certified on 2026-08-16.
 
 **Intent:** Replace the unproven structural wrapper with a contract that compiles
 and executes through pinned real wagmi/viem packages.
@@ -52,7 +52,7 @@ and executes through pinned real wagmi/viem packages.
 
 ### Task 1b — Add a real wagmi connector contract
 
-**Status:** Implemented; pending release.
+**Status:** Released and registry-certified on 2026-08-16.
 
 **Intent:** Complete the connection-state boundary that a transport alone does
 not provide before building the reference app's connect step.
@@ -67,7 +67,7 @@ as an optional peer isolated to `@lunatest/react/wagmi`.
 
 ### Task 2 — Preserve full Lua scenario semantics
 
-**Status:** Implemented; pending release.
+**Status:** Released and registry-certified on 2026-08-16.
 
 **Expected files:**
 
@@ -102,7 +102,8 @@ implement the bridge. Do not imply compatibility that is not under contract.
 
 ### Task 3 — Add a pinned, isolated reference application
 
-**Status:** Implemented as a clean build baseline; registry certification remains a later E2 gate.
+**Status:** Complete; the clean build baseline and registry-only E2 lane were
+certified on 2026-08-16.
 
 **Expected structure:**
 
@@ -134,9 +135,7 @@ resolution and requires the recorded npm versions.
 
 ### Task 4 — Implement the deterministic wallet and protocol journey
 
-**Status:** Complete on 2026-08-16 in the packed-artifact lane. Registry
-certification remains gated on publishing the package versions that contain the
-new wagmi entrypoints.
+**Status:** Complete and registry-certified on 2026-08-16.
 
 Add the minimum development/test bootstrap needed for connect → quote → approve → swap → confirmed. Use runtime-intercept and a supported integration boundary. Block all outbound RPC, wallet, quote, and protocol traffic during the scenario.
 
@@ -148,7 +147,7 @@ Do not copy production application logic into the test adapter. The application 
 
 ### Task 4.5 — Expose project scenario source identity
 
-**Status:** Implemented on 2026-08-16; pending release.
+**Status:** Released and registry-certified on 2026-08-16.
 
 Expose the exact UTF-8 Lua source identity as a stable SHA-256 digest on the
 public project scenario record. This product gap was discovered while preparing
@@ -161,9 +160,7 @@ project runner execution record.
 
 ### Task 5 — Reuse one scenario in Vitest and Playwright
 
-**Status:** Complete on 2026-08-16 in the packed-artifact lane. Registry
-certification remains gated on publishing the package versions that expose the
-shared source digest.
+**Status:** Complete and registry-certified on 2026-08-16.
 
 Add `scenarios/approve-and-swap.lua` and explicit host adapters for the two runner lifecycles. Both must load the same project-relative ID and report the same source digest. Vitest may use application state readers; Playwright must use the real rendered application.
 
@@ -173,13 +170,12 @@ Add `scenarios/approve-and-swap.lua` and explicit host adapters for the two runn
 
 ### Task 6 — Add proof metrics and determinism gates
 
-**Status:** Complete on 2026-08-16 in the packed-artifact lane. The enforced
-proof completed 30/30 measured runs in both Vitest and Playwright after one
-excluded warm-up, produced one shared fingerprint, attempted no outbound
-network access, and observed a 122.020 ms Playwright p95 against the 10 s CI
-budget. The report remains non-certifying until Task 9 runs the unchanged proof
-against the published registry package set. Task 7 was brought forward as an
-independent fix during the diagnostic preflight.
+**Status:** Complete and registry-certified on 2026-08-16. The authoritative
+registry proof completed 30/30 measured runs in both Vitest and Playwright after
+one excluded warm-up, produced one shared fingerprint, attempted no outbound
+network access, and observed a 214.317 ms Playwright p95 against the 10 s CI
+budget. Task 7 was brought forward as an independent fix during the diagnostic
+preflight.
 
 Produce a machine-readable report containing:
 
@@ -199,7 +195,7 @@ CI uploads the report as an artifact and enforces the E2 gates from the design. 
 
 ### Task 7 — Close the first diagnostic gap
 
-**Status:** Implemented on 2026-08-16; pending release.
+**Status:** Released and registry-certified on 2026-08-16.
 
 Deliberately break one nested expectation. If current output does not identify scenario ID, stage/path, expected, and actual values, write a failing focused test in the owning Core/runner package and improve the normalized result or assertion error.
 
@@ -209,10 +205,10 @@ Only the first observed diagnostic blocker is in scope for this commit.
 
 ### Task 8 — Publish the measured quickstart
 
-**Status:** Complete on 2026-08-16 for the packed-artifact proof. The bilingual
-quickstart is replayed from `create-vite@9.1.2` in a fresh temporary directory,
-then validated through the same 30-run Vitest/Playwright evidence gates. It
-states that registry E2 certification and human onboarding time remain pending.
+**Status:** Complete on 2026-08-16. The bilingual quickstart is replayed from
+`create-vite@9.1.2` in a fresh temporary directory, then validated through the
+same 30-run Vitest/Playwright evidence gates. Registry E2 certification is now
+recorded; human onboarding time remains pending E3 research.
 
 Write a clean-room quickstart that begins from the pinned scaffold and ends at the shared passing scenario. Include exact commands, supported versions, expected output, troubleshooting, integration footprint, and measured runtime. Validate every command against a fresh copy.
 
@@ -222,10 +218,15 @@ Do not promise “10 minutes” unless the E3 sessions meet the gate.
 
 ### Task 9 — Certify the published E2 package set
 
-**Status:** Release-time registry proof automation implemented on 2026-08-16.
-Certification remains blocked until the pending Core, React, CLI, MCP, Vitest
-plugin, and Playwright plugin versions are published and that automation records
-a passing registry-only report for the exact npm `latest` package set.
+**Status:** Complete on 2026-08-16. Release run
+[`31935453165`](https://github.com/songforthemute/lunatest/actions/runs/31935453165)
+published the required versions and recorded a passing registry-only report for
+the exact eight-package npm `latest` set. The
+`external-consumer-proof-registry` artifact has
+`certificationEligible: true`, verified registry integrity and isolation,
+30/30 Vitest and Playwright runs, one shared fingerprint, and zero outbound
+requests. Artifact `9260530901` has SHA-256
+`1b5b20cd374ff1fc3fd10051dbd6d7dd8145e7b90800683ed47ee43a7ea34764`.
 
 After the required package changes are released, run the unchanged proof against
 the exact npm `latest` versions. Enforce the registry-only resolution audit and

@@ -6,13 +6,18 @@ Uniswap V3 quote, 입력 토큰 approve, swap 제출을 실행하고 같은 Lua
 
 ## 증거 상태
 
-현재 결과는 **packed-artifact proof**이며 registry 인증을 마친 E2 증거가
-아닙니다. runner는 workspace 밖의 깨끗한 임시 consumer에 방금 pack한 공개
-패키지를 설치합니다. 따라서 리포트의 `certificationEligible`은 `false`입니다.
+대표 여정은 이제 **registry 인증 E2 증거**입니다. Release run
+[`31935453165`](https://github.com/songforthemute/lunatest/actions/runs/31935453165)은
+정확한 npm `latest` 패키지 집합을 registry integrity와 함께 설치하고, 변경하지
+않은 Vitest/Playwright proof를 실행해 `certificationEligible: true`를 기록했습니다.
+machine report는
+[`external-consumer-proof-registry`](https://github.com/songforthemute/lunatest/actions/runs/31935453165/artifacts/9260530901)
+workflow artifact로 첨부됩니다(SHA-256
+`1b5b20cd374ff1fc3fd10051dbd6d7dd8145e7b90800683ed47ee43a7ea34764`).
 
-packed lane을 npm `latest`로 바꿔 실행한 뒤 인증됐다고 표현하면 안 됩니다.
-필요한 패키지가 배포되면 Task 9에서 같은 proof를 registry-only resolution으로
-실행합니다.
+packed-artifact lane은 계속 pre-release gate이므로
+`certificationEligible: false`를 보고합니다. 이 결과를 registry 증거로 표현하면
+안 됩니다.
 
 또한 이것은 독립 사용자 검증이 아닙니다. 저장소 작성자가 reference consumer를
 구현했습니다. 이후 E3 세션에서 대상 개발자가 작성자 도움 없이 이 문서를 따라갈
@@ -39,6 +44,19 @@ Vite MIT license는 fixture에 보존되어 있습니다.
 공개 peer 범위는 이 측정 조합보다 넓습니다. React/React DOM
 `^18.3.1 || ^19.0.0`, `@wagmi/core >=3.6.4 <4`, `viem >=2.55.11 <3`입니다.
 이 페이지의 전체 여정은 표의 exact version 조합으로만 검증했습니다.
+
+인증된 LunaTest 패키지 집합은 다음과 같습니다.
+
+| 패키지 | 인증된 npm `latest` |
+| --- | --- |
+| `@lunatest/contracts` | 0.1.1 |
+| `@lunatest/core` | 0.2.1 |
+| `@lunatest/runtime-intercept` | 0.1.1 |
+| `@lunatest/cli` | 0.1.6 |
+| `@lunatest/react` | 0.2.0 |
+| `@lunatest/mcp` | 0.1.6 |
+| `@lunatest/playwright-plugin` | 0.2.2 |
+| `@lunatest/vitest-plugin` | 0.2.2 |
 
 pack lane은 정확한 LunaTest 패키지 이름, 버전, `packed-tarball` source를
 리포트에 기록합니다. manifest 버전은 검사한 artifact를 식별하며, 동일한 npm
@@ -107,6 +125,16 @@ JSON 리포트에서 다음을 확인합니다.
 - `failureQuality`와 Playwright p95 10초 강제 budget을 포함한 모든 gate가
   green입니다.
 
+committed frozen lockfile로 인증된 패키지 집합을 다시 실행하려면 다음 명령을
+사용합니다.
+
+```bash
+pnpm consumer-proof:registry -- --enforce-ci-budget
+```
+
+이 lane은 workspace link, local tarball, override, 누락된 integrity, 또는 npm
+`latest`와 달라진 exact fixture version을 거부합니다.
+
 ## 애플리케이션에 추가되는 것
 
 reference application은 LunaTest를 composition/test 경계에만 둡니다. 일반
@@ -151,6 +179,16 @@ Uniswap V3 preset이 synthetic provider를 통해 protocol request를 처리합�
 두 runner의 fingerprint는
 `sha256:143b046c151669494867a2ad534f96abc69e4310be10fca884c291db76bd6a93`로
 같았고, 제외된 warm-up까지 포함해 outbound HTTP/WebSocket 시도는 0건이었습니다.
+
+같은 날짜의 authoritative registry 인증 결과는 다음과 같습니다.
+
+| Runner | 측정 성공 | Median | p95 |
+| --- | ---: | ---: | ---: |
+| Vitest | 30/30 | 6.953 ms | 12.911 ms |
+| Playwright | 30/30 | 199.325 ms | 214.317 ms |
+
+동일 fingerprint, outbound 요청 0건, 8개 패키지의 npm `latest` 일치, 강제된
+10초 browser budget을 모두 통과했습니다.
 
 setup 시간은 별도로 보고합니다. package build/pack, clean install, static check,
 runner command 시간은 scenario runtime에 포함되지 않습니다. 이번 실행에서는 browser

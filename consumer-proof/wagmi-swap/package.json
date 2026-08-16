@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@lunatest/contracts": "0.1.1",
-    "@lunatest/core": "0.2.0",
-    "@lunatest/react": "0.1.5",
+    "@lunatest/core": "0.2.1",
+    "@lunatest/react": "0.2.0",
     "@lunatest/runtime-intercept": "0.1.1",
     "@wagmi/core": "3.6.4",
     "react": "19.2.8",
@@ -24,10 +24,10 @@
     "viem": "2.55.11"
   },
   "devDependencies": {
-    "@lunatest/cli": "0.1.5",
-    "@lunatest/mcp": "0.1.5",
-    "@lunatest/playwright-plugin": "0.2.1",
-    "@lunatest/vitest-plugin": "0.2.1",
+    "@lunatest/cli": "0.1.6",
+    "@lunatest/mcp": "0.1.6",
+    "@lunatest/playwright-plugin": "0.2.2",
+    "@lunatest/vitest-plugin": "0.2.2",
     "@playwright/test": "1.61.1",
     "@types/node": "24.13.3",
     "@types/react": "19.2.18",

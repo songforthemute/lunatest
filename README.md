@@ -1,15 +1,15 @@
 # LunaTest
 
 > Deterministic testing SDK for Web3 frontend applications.
-> No chain. No fork. No flaky tests. Deterministic Web3 UI testing in milliseconds.
+> No external chain. No fork. Deterministic Web3 UI testing with measured evidence.
 > Korean version: [README.ko.md](./README.ko.md)
 
-**LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI — all under 1ms per test. Flaky? Zero. If a test fails, it's a bug. Period.
+**LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI. The registry-certified reference journey completed 30/30 Vitest and Chromium runs with identical results and zero outbound requests.
 
 Package status: `Published` (stable packages are available on npm).
 
-The representative wagmi swap proof is currently validated only with freshly
-packed artifacts. npm registry E2 certification remains pending; see the
+The representative wagmi swap proof is certified against the exact npm
+`latest` package set in both Vitest and Chromium; see the
 [validated quickstart](./docs/guides/wagmi-swap-quickstart.md).
 
 ```lua
@@ -308,9 +308,9 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
 | ---------------------- | ------------- | -------------------- | -------------- | ---------------- | ---------------- | ------------------- |
 | Layer                  | Unit test     | E2E browser          | HTTP intercept | Local chain fork | Browser + Wallet | Lua VM mock         |
 | Web3 aware             | ❌            | ❌                   | △              | ✅               | ✅               | **✅**              |
-| Speed                  | ~1-5ms        | ~1-10s               | ~5-20ms        | ~1-10s           | ~10-30s          | **~0.1-1ms**        |
+| Speed                  | ~1-5ms        | ~1-10s               | ~5-20ms        | ~1-10s           | ~10-30s          | **6.953ms Vitest median*** |
 | Deterministic          | ✅            | △                    | ✅             | ❌               | ❌               | **✅**              |
-| Flaky                  | Low           | High                 | Medium         | High             | High             | **0%**              |
+| Certified replay      | —             | —                    | —              | —                | —                | **30/30 identical*** |
 | Isolates frontend bugs | ✅            | △                    | △              | △                | △                | **✅**              |
 | CI cost                | Low           | Medium               | Low            | High             | High             | **Low**             |
 | Human-friendly         | △ ABI noise   | ✅ visual            | △ hex fixtures | ❌ chain ops     | △ flaky          | **✅ Lua tables**   |
@@ -320,12 +320,15 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
 ## Features
 
 - **One-line dev bootstrap** — enable intercept in app entry, guarded by `NODE_ENV`.
-- **Fully deterministic** — Sandboxed Lua VM. No timers, no system clock, no flaky. Ever.
-- **Millisecond execution** — 1,000 scenarios under 1 second.
-- **Precise edge cases** — Flaky 0% means every failure is a real bug. Test boundary values aggressively.
+- **Measured determinism** — The registry-certified reference journey produced one fingerprint across 30/30 runs per runner with zero outbound requests.
+- **Measured runtime** — The certified journey recorded 6.953ms Vitest and 199.325ms Playwright medians on the pinned CI environment.
+- **Precise edge cases** — Deliberate mismatches report the scenario ID, failing path, expected value, and actual value.
 - **Anyone can read it** — Lua tables read like specs. QA writes scenarios, PM reviews them, git log becomes business history.
 - **AI-native** — MCP server for autonomous scenario generation and coverage analysis.
 - **~200KB runtime** — C Lua 5.4 compiled to WebAssembly via Wasmoon.
+
+\* Registry-certified reference journey on the pinned Linux CI environment;
+not a universal benchmark or flake-rate guarantee.
 
 ## Who is this for
 
