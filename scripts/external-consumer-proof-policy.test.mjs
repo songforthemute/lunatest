@@ -15,6 +15,7 @@ import {
   fixtureDir,
   parseExternalConsumerProofLane,
   parseExternalConsumerProofOptions,
+  publicPackageBuildArgs,
   repositoryRoot,
 } from "./run-external-consumer-proof.mjs";
 import { prepareWagmiQuickstart } from "./validate-wagmi-quickstart.mjs";
@@ -73,6 +74,21 @@ test("reference fixture remains independent from workspace source", () => {
       /SWAP_SCENARIO_ID/,
     );
   }
+});
+
+test("packed proof builds only public packages in topological serial order", () => {
+  const args = publicPackageBuildArgs();
+  const filters = args
+    .map((argument, index) => (argument === "--filter" ? args[index + 1] : undefined))
+    .filter(Boolean);
+
+  assert.equal(args[0], "--workspace-concurrency=1");
+  assert.equal(args[1], "-r");
+  assert.equal(args[2], "--sort");
+  assert.deepEqual(filters, packageNames(publicPackages));
+  assert.deepEqual(args.slice(-3), ["--if-present", "run", "build"]);
+  assert.equal(filters.some((name) => name.includes("example")), false);
+  assert.doesNotMatch(runnerSource, /run\("pnpm", \["run", "build:workspace:ci"\]/);
 });
 
 test("lane parser defaults to pack and rejects unknown lanes", () => {

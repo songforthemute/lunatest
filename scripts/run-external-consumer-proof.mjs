@@ -122,6 +122,18 @@ ${formattedOverrides}
 `;
 }
 
+export function publicPackageBuildArgs(packages = publicPackages) {
+  return [
+    "--workspace-concurrency=1",
+    "-r",
+    "--sort",
+    ...packages.flatMap(({ name }) => ["--filter", name]),
+    "--if-present",
+    "run",
+    "build",
+  ];
+}
+
 export function runExternalConsumerProof(lane, options = {}) {
   if (options.releasePackageSet && lane !== "registry") {
     throw new Error("--release-package-set is supported only by the registry lane");
@@ -159,7 +171,7 @@ export function runExternalConsumerProof(lane, options = {}) {
     let expectedVersions;
     if (lane === "pack") {
       const workspaceStarted = performance.now();
-      run("pnpm", ["run", "build:workspace:ci"], repositoryRoot, { stdio: "inherit" });
+      run("pnpm", publicPackageBuildArgs(), repositoryRoot, { stdio: "inherit" });
       mkdirSync(tarballsDir, { recursive: true });
       const tarballs = publicPackages.map((pkg) => ({
         name: pkg.name,
