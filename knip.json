@@ -12,6 +12,7 @@
         "scripts/check-performance.mjs",
         "scripts/consumer-smoke-npm.mjs",
         "scripts/consumer-smoke-pack.mjs",
+        "scripts/run-external-consumer-proof.mjs",
         "scripts/publish-packages.mjs"
       ],
       "project": ["scripts/**/*.mjs"]

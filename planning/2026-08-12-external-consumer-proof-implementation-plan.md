@@ -102,6 +102,8 @@ implement the bridge. Do not imply compatibility that is not under contract.
 
 ### Task 3 — Add a pinned, isolated reference application
 
+**Status:** Implemented as a clean build baseline; registry certification remains a later E2 gate.
+
 **Expected structure:**
 
 ```text

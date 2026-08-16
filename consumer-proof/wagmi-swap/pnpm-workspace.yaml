@@ -1,0 +1,14 @@
+packages:
+  - "."
+
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - "@lunatest/contracts"
+  - "@lunatest/core"
+  - "@lunatest/runtime-intercept"
+  - "@lunatest/cli"
+  - "@lunatest/react"
+  - "@lunatest/mcp"
+  - "@lunatest/vitest-plugin"
+  - "@lunatest/playwright-plugin"
+blockExoticSubdeps: true

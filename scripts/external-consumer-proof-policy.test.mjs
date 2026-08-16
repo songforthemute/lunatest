@@ -1,0 +1,184 @@
+import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+
+import {
+  assertExactDependencyPins,
+  assertFixtureSourceIsolation,
+  assertResolutionIsolation,
+} from "./external-consumer-proof-policy.mjs";
+import { packageNames, publicPackages } from "./package-roster.mjs";
+import {
+  fixtureDir,
+  parseExternalConsumerProofLane,
+  repositoryRoot,
+} from "./run-external-consumer-proof.mjs";
+const manifest = JSON.parse(readFileSync(join(fixtureDir, "package.json"), "utf8"));
+
+test("reference fixture pins the supported real wagmi and viem boundary", () => {
+  assertExactDependencyPins(manifest);
+  assert.equal(manifest.dependencies["@wagmi/core"], "3.6.4");
+  assert.equal(manifest.dependencies.viem, "2.55.11");
+  assert.equal(manifest.dependencies.react, "19.2.8");
+
+  const recordedPackages = new Set([
+    ...Object.keys(manifest.dependencies),
+    ...Object.keys(manifest.devDependencies),
+  ]);
+  assert.deepEqual(
+    packageNames(publicPackages).filter((name) => !recordedPackages.has(name)),
+    [],
+  );
+});
+
+test("reference fixture remains independent from workspace source", () => {
+  assertFixtureSourceIsolation(fixtureDir, repositoryRoot);
+  const workspace = readFileSync(join(repositoryRoot, "pnpm-workspace.yaml"), "utf8");
+  const fixtureWorkspace = readFileSync(join(fixtureDir, "pnpm-workspace.yaml"), "utf8");
+  assert.doesNotMatch(workspace, /consumer-proof/);
+  for (const packageName of packageNames(publicPackages)) {
+    assert.match(fixtureWorkspace, new RegExp(packageName.replace("/", "\\/")));
+  }
+  assert.match(readFileSync(join(fixtureDir, "src", "wagmi.ts"), "utf8"), /createConfig/);
+  assert.doesNotMatch(readFileSync(join(fixtureDir, "src", "App.tsx"), "utf8"), /@lunatest\//);
+});
+
+test("lane parser defaults to pack and rejects unknown lanes", () => {
+  assert.equal(parseExternalConsumerProofLane([]), "pack");
+  assert.equal(parseExternalConsumerProofLane(["--lane=registry"]), "registry");
+  assert.throws(
+    () => parseExternalConsumerProofLane(["--lane=workspace"]),
+    /Unsupported external consumer proof lane/,
+  );
+});
+
+test("resolution policy permits only staged tarballs in the pack lane", () => {
+  const root = mkdtempSync(join(tmpdir(), "lunatest-proof-policy-"));
+  const consumerDir = join(root, "consumer");
+  const tarballsDir = join(root, "tarballs");
+  mkdirSync(consumerDir);
+  mkdirSync(tarballsDir);
+  writeFileSync(join(tarballsDir, "lunatest-core.tgz"), "fixture");
+  const expectedTarballOverrides = {
+    "@lunatest/core": "file:../tarballs/lunatest-core.tgz",
+  };
+
+  try {
+    assert.doesNotThrow(() =>
+      assertResolutionIsolation({
+        lane: "pack",
+        lockfile: [
+          "  '@lunatest/core':",
+          "    version: file:../tarballs/lunatest-core.tgz",
+        ].join("\n"),
+        workspaceConfig: 'overrides:\n  "@lunatest/core": "file:../tarballs/lunatest-core.tgz"',
+        consumerDir,
+        tarballsDir,
+        repositoryRoot,
+        expectedTarballOverrides,
+      }),
+    );
+    assert.throws(
+      () =>
+        assertResolutionIsolation({
+          lane: "pack",
+          lockfile: "resolution: file:../source/package.json",
+          workspaceConfig: "overrides:",
+          consumerDir,
+          tarballsDir,
+          repositoryRoot,
+          expectedTarballOverrides,
+        }),
+      /not a staged tarball/,
+    );
+    assert.throws(
+      () =>
+        assertResolutionIsolation({
+          lane: "pack",
+          lockfile: "specifier: workspace:*",
+          workspaceConfig: "overrides:",
+          consumerDir,
+          tarballsDir,
+          repositoryRoot,
+          expectedTarballOverrides,
+        }),
+      /forbidden resolution marker/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("pack resolution policy rejects a LunaTest registry fallback", () => {
+  const root = mkdtempSync(join(tmpdir(), "lunatest-proof-fallback-"));
+  const consumerDir = join(root, "consumer");
+  const tarballsDir = join(root, "tarballs");
+  mkdirSync(consumerDir);
+  mkdirSync(tarballsDir);
+  writeFileSync(join(tarballsDir, "lunatest-core.tgz"), "fixture");
+  writeFileSync(join(tarballsDir, "lunatest-react.tgz"), "fixture");
+
+  try {
+    assert.throws(
+      () =>
+        assertResolutionIsolation({
+          lane: "pack",
+          lockfile: [
+            "  '@lunatest/core':",
+            "    version: file:../tarballs/lunatest-core.tgz",
+            "  '@lunatest/react@0.1.5':",
+            "    resolution: {integrity: sha512-registry}",
+          ].join("\n"),
+          workspaceConfig:
+            'overrides:\n  "@lunatest/core": "file:../tarballs/lunatest-core.tgz"',
+          consumerDir,
+          tarballsDir,
+          repositoryRoot,
+          expectedTarballOverrides: {
+            "@lunatest/core": "file:../tarballs/lunatest-core.tgz",
+            "@lunatest/react": "file:../tarballs/lunatest-react.tgz",
+          },
+        }),
+      /do not match|missing the staged override|does not resolve|registry fallback/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("registry resolution policy rejects local and override installs", () => {
+  const input = {
+    lane: "registry",
+    consumerDir: fixtureDir,
+    tarballsDir: fixtureDir,
+    repositoryRoot,
+  };
+
+  assert.doesNotThrow(() =>
+    assertResolutionIsolation({
+      ...input,
+      lockfile: "resolution: {integrity: sha512-proof}",
+      workspaceConfig: 'packages:\n  - "."',
+    }),
+  );
+  assert.throws(
+    () =>
+      assertResolutionIsolation({
+        ...input,
+        lockfile: "resolution: file:../lunatest-core.tgz",
+        workspaceConfig: 'packages:\n  - "."',
+      }),
+    /registry lane contains forbidden resolution marker/,
+  );
+  assert.throws(
+    () =>
+      assertResolutionIsolation({
+        ...input,
+        lockfile: "resolution: {integrity: sha512-proof}",
+        workspaceConfig: "overrides:\n  @lunatest/core: 0.2.0",
+      }),
+    /registry lane contains forbidden resolution marker/,
+  );
+});

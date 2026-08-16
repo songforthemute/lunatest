@@ -5,7 +5,7 @@
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
-    "test:scripts": "node --test scripts/check-workspace-type-resolution.test.mjs scripts/ci-prebuild-workflows.test.mjs scripts/changeset-config.test.mjs scripts/package-metadata.test.mjs scripts/docs-site.test.mjs scripts/docs-contracts.test.mjs scripts/dependency-policy.test.mjs scripts/consumer-workflow-fixtures.test.mjs scripts/example-build-scripts.test.mjs",
+    "test:scripts": "node --test scripts/check-workspace-type-resolution.test.mjs scripts/ci-prebuild-workflows.test.mjs scripts/changeset-config.test.mjs scripts/package-metadata.test.mjs scripts/docs-site.test.mjs scripts/docs-contracts.test.mjs scripts/dependency-policy.test.mjs scripts/consumer-workflow-fixtures.test.mjs scripts/example-build-scripts.test.mjs scripts/external-consumer-proof-policy.test.mjs",
     "lint": "pnpm -r --if-present run lint",
     "lint:workspace-types": "node scripts/check-workspace-type-resolution.mjs",
     "lint:deadcode": "knip --config knip.json --include files",
@@ -13,6 +13,8 @@
     "pack:check-integrity": "node scripts/check-pack-integrity.mjs",
     "consumer-smoke:pack": "node scripts/consumer-smoke-pack.mjs",
     "consumer-smoke:npm": "node scripts/consumer-smoke-npm.mjs",
+    "consumer-proof:pack": "node scripts/run-external-consumer-proof.mjs --lane=pack",
+    "consumer-proof:registry": "node scripts/run-external-consumer-proof.mjs --lane=registry",
     "docs:dev": "vitepress dev docs --host",
     "docs:build": "node scripts/build-docs-site.mjs",
     "docs:preview": "vitepress preview docs",
