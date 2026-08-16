@@ -146,6 +146,19 @@ Do not copy production application logic into the test adapter. The application 
 
 **Commit:** `feat(consumer-proof): run deterministic wagmi swap journey`
 
+### Task 4.5 — Expose project scenario source identity
+
+**Status:** Implemented on 2026-08-16; pending release.
+
+Expose the exact UTF-8 Lua source identity as a stable SHA-256 digest on the
+public project scenario record. This product gap was discovered while preparing
+the cross-runner reuse proof and is delivered independently from the fixture.
+
+**Acceptance:** The digest changes with the source and is available on every
+project runner execution record.
+
+**Commit:** `feat(core): expose project scenario source digest`
+
 ### Task 5 — Reuse one scenario in Vitest and Playwright
 
 Add `scenarios/approve-and-swap.lua` and explicit host adapters for the two runner lifecycles. Both must load the same project-relative ID and report the same source digest. Vitest may use application state readers; Playwright must use the real rendered application.

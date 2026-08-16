@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import { access, readFile } from "node:fs/promises";
 import { relative } from "node:path";
@@ -33,10 +34,15 @@ export type LunaProjectScenario = {
   id: string;
   name: string;
   source: string;
+  sourceDigest: `sha256:${string}`;
   lua: string;
   config: LuaConfig;
   coverage: CoverageMetadata;
 };
+
+function digestLuaSource(lua: string): `sha256:${string}` {
+  return `sha256:${createHash("sha256").update(lua, "utf8").digest("hex")}`;
+}
 
 async function canAccess(path: string): Promise<boolean> {
   try {
@@ -121,6 +127,7 @@ async function loadLunaProjectScenarioSource(
     id: toScenarioId(config.projectRoot, source),
     name: parsedConfig.name ?? source,
     source,
+    sourceDigest: digestLuaSource(lua),
     lua,
     config: parsedConfig,
     coverage: cloneCoverage(resolveCoverageMetadata(parsedConfig)),

@@ -146,7 +146,7 @@ type CoverageSnapshot = {
 
 `loadLunaProjectConfig` resolves an optional `lunatest.config.json` asynchronously from a working directory or explicit path. `loadLunaProjectConfigSync` returns the identical normalized result for synchronous host-configuration integration such as Vitest watch setup. Its `ResolvedLunaProjectConfig` result includes the normalized `scenarioDir`, `luaConfigPath`, `coverageCatalog`, optional AI adapter configuration, `projectRoot`, and resolved source paths.
 
-`resolveLunaScenarioSources` expands a requested source, glob, or the configured default source set into sorted, unique Lua file paths. `loadLunaProjectScenarios` parses those files and returns project-relative scenario ids, names, source paths, parsed configs, and resolved coverage metadata. Use `allowEmpty` only when an empty source set is valid for the calling workflow.
+`resolveLunaScenarioSources` expands a requested source, glob, or the configured default source set into sorted, unique Lua file paths. `loadLunaProjectScenarios` parses those files and returns project-relative scenario ids, names, source paths, a `sha256:`-prefixed `sourceDigest` of the exact UTF-8 Lua source, parsed configs, and resolved coverage metadata. Use `allowEmpty` only when an empty source set is valid for the calling workflow.
 
 ## Project scenario runner
 
@@ -155,6 +155,16 @@ type LunaProjectRunnerOptions = {
   cwd?: string;
   configPath?: string;
   scenarioDir?: string;
+};
+
+type LunaProjectScenario = {
+  id: string;
+  name: string;
+  source: string;
+  sourceDigest: `sha256:${string}`;
+  lua: string;
+  config: LuaConfig;
+  coverage: CoverageMetadata;
 };
 
 type LunaProjectScenarioExecution = {
