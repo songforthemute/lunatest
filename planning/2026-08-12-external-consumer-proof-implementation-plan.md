@@ -173,9 +173,13 @@ Add `scenarios/approve-and-swap.lua` and explicit host adapters for the two runn
 
 ### Task 6 — Add proof metrics and determinism gates
 
-**Status:** In progress. The diagnostic preflight exposed a product gap, so
-Task 7 was brought forward as an independent fix before the E2 report is allowed
-to pass.
+**Status:** Complete on 2026-08-16 in the packed-artifact lane. The enforced
+proof completed 30/30 measured runs in both Vitest and Playwright after one
+excluded warm-up, produced one shared fingerprint, attempted no outbound
+network access, and observed a 122.020 ms Playwright p95 against the 10 s CI
+budget. The report remains non-certifying until Task 9 runs the unchanged proof
+against the published registry package set. Task 7 was brought forward as an
+independent fix during the diagnostic preflight.
 
 Produce a machine-readable report containing:
 

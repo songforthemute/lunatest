@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test:browser": "playwright test",
-    "test:vitest": "vitest run --disableConsoleIntercept tests/journey.test.ts",
+    "test:vitest": "vitest run --disableConsoleIntercept --testTimeout=360000 tests/journey.test.ts",
     "typecheck": "tsc -b --pretty false",
     "lint": "oxlint src tests playwright.config.ts vite.config.ts",
     "preview": "vite preview"

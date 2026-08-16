@@ -13,6 +13,7 @@ import { packageNames, publicPackages } from "./package-roster.mjs";
 import {
   fixtureDir,
   parseExternalConsumerProofLane,
+  parseExternalConsumerProofOptions,
   repositoryRoot,
 } from "./run-external-consumer-proof.mjs";
 const manifest = JSON.parse(readFileSync(join(fixtureDir, "package.json"), "utf8"));
@@ -51,7 +52,7 @@ test("reference fixture remains independent from workspace source", () => {
   assert.doesNotMatch(readFileSync(join(fixtureDir, "src", "App.tsx"), "utf8"), /@lunatest\//);
   assert.match(
     runnerSource,
-    /if \(lane === "pack"\) \{\s*run\("pnpm", \["run", "test:vitest"\][\s\S]*run\("pnpm", \["run", "test:browser"\]/,
+    /run\("pnpm", \["run", "test:vitest"\][\s\S]*run\("pnpm", \["run", "test:browser"\]/,
   );
   const sharedScenario = readFileSync(
     join(fixtureDir, "scenarios", "approve-and-swap.lua"),
@@ -75,6 +76,26 @@ test("lane parser defaults to pack and rejects unknown lanes", () => {
     () => parseExternalConsumerProofLane(["--lane=workspace"]),
     /Unsupported external consumer proof lane/,
   );
+});
+
+test("proof options select a portable output and CI-only budget enforcement", () => {
+  assert.deepEqual(parseExternalConsumerProofOptions([]), {
+    enforceCiBudget: false,
+    outputPath: undefined,
+  });
+  assert.deepEqual(
+    parseExternalConsumerProofOptions([
+      "--output=artifacts/custom.json",
+      "--enforce-ci-budget",
+    ]),
+    {
+      enforceCiBudget: true,
+      outputPath: "artifacts/custom.json",
+    },
+  );
+  assert.match(runnerSource, /LUNATEST_PROOF_RUNS: "30"/);
+  assert.match(runnerSource, /createExternalConsumerProofReport/);
+  assert.match(runnerSource, /writeExternalConsumerProofReport/);
 });
 
 test("resolution policy permits only staged tarballs in the pack lane", () => {

@@ -1,5 +1,6 @@
 import {
   cpSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -8,6 +9,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -26,6 +28,11 @@ import {
   packPackage,
   run,
 } from "./smoke-helpers.mjs";
+import {
+  createExternalConsumerProofReport,
+  loadProofFootprint,
+  writeExternalConsumerProofReport,
+} from "./external-consumer-proof-report.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 export const repositoryRoot = resolve(scriptDir, "..");
@@ -42,6 +49,14 @@ export function parseExternalConsumerProofLane(args) {
     throw new Error(`Unsupported external consumer proof lane: ${lane}`);
   }
   return lane;
+}
+
+export function parseExternalConsumerProofOptions(args) {
+  const outputArgument = args.find((argument) => argument.startsWith("--output="));
+  return {
+    enforceCiBudget: args.includes("--enforce-ci-budget"),
+    outputPath: outputArgument?.slice("--output=".length),
+  };
 }
 
 function fixturePackageVersions(manifest, names) {
@@ -80,12 +95,21 @@ ${formattedOverrides}
 `;
 }
 
-export function runExternalConsumerProof(lane) {
+export function runExternalConsumerProof(lane, options = {}) {
   const tempRoot = mkdtempSync(join(tmpdir(), `lunatest-external-proof-${lane}-`));
   const consumerDir = join(tempRoot, "consumer");
+  const proofDir = join(tempRoot, "proof-results");
   const tarballsDir = join(tempRoot, "tarballs");
   const names = packageNames(publicPackages);
   const fixtureManifest = readJson(join(fixtureDir, "package.json"));
+  const setupTiming = {
+    browserDownloadMs: null,
+    consumerBuildAndStaticChecksMs: 0,
+    consumerInstallMs: 0,
+    playwrightCommandMs: 0,
+    vitestCommandMs: 0,
+    workspaceBuildAndPackMs: 0,
+  };
 
   try {
     assertExactDependencyPins(fixtureManifest);
@@ -100,6 +124,7 @@ export function runExternalConsumerProof(lane) {
     let expectedTarballOverrides;
     let expectedVersions;
     if (lane === "pack") {
+      const workspaceStarted = performance.now();
       run("pnpm", ["run", "build:workspace:ci"], repositoryRoot, { stdio: "inherit" });
       mkdirSync(tarballsDir, { recursive: true });
       const tarballs = publicPackages.map((pkg) => ({
@@ -111,10 +136,15 @@ export function runExternalConsumerProof(lane) {
         join(consumerDir, "pnpm-workspace.yaml"),
         packWorkspaceConfig(expectedTarballOverrides),
       );
+      setupTiming.workspaceBuildAndPackMs = performance.now() - workspaceStarted;
+      const installStarted = performance.now();
       run("pnpm", ["install", "--no-frozen-lockfile"], consumerDir, { stdio: "inherit" });
+      setupTiming.consumerInstallMs = performance.now() - installStarted;
       expectedVersions = repositoryPackageVersions(publicPackages);
     } else {
+      const installStarted = performance.now();
       run("pnpm", ["install", "--frozen-lockfile"], consumerDir, { stdio: "inherit" });
+      setupTiming.consumerInstallMs = performance.now() - installStarted;
       expectedVersions = fixturePackageVersions(fixtureManifest, names);
     }
 
@@ -132,12 +162,71 @@ export function runExternalConsumerProof(lane) {
     assertInstalledPackageIsolation({ consumerDir, packageNames: names, repositoryRoot });
     assertInstalledPackageVersions(consumerDir, expectedVersions);
 
+    const staticChecksStarted = performance.now();
     run("pnpm", ["run", "typecheck"], consumerDir, { stdio: "inherit" });
     run("pnpm", ["run", "lint"], consumerDir, { stdio: "inherit" });
     run("pnpm", ["run", "build"], consumerDir, { stdio: "inherit" });
+    setupTiming.consumerBuildAndStaticChecksMs = performance.now() - staticChecksStarted;
     if (lane === "pack") {
-      run("pnpm", ["run", "test:vitest"], consumerDir, { stdio: "inherit" });
-      run("pnpm", ["run", "test:browser"], consumerDir, { stdio: "inherit" });
+      const proofEnv = {
+        ...process.env,
+        LUNATEST_PROOF_DIR: proofDir,
+        LUNATEST_PROOF_RUNS: "30",
+      };
+      let vitestCommandPassed = true;
+      const vitestStarted = performance.now();
+      try {
+        run("pnpm", ["run", "test:vitest"], consumerDir, {
+          env: proofEnv,
+          stdio: "inherit",
+        });
+      } catch {
+        vitestCommandPassed = false;
+      }
+      setupTiming.vitestCommandMs = performance.now() - vitestStarted;
+      let playwrightCommandPassed = true;
+      const playwrightStarted = performance.now();
+      try {
+        run("pnpm", ["run", "test:browser"], consumerDir, {
+          env: proofEnv,
+          stdio: "inherit",
+        });
+      } catch {
+        playwrightCommandPassed = false;
+      }
+      setupTiming.playwrightCommandMs = performance.now() - playwrightStarted;
+
+      const report = createExternalConsumerProofReport({
+        commandResults: {
+          playwright: playwrightCommandPassed,
+          vitest: vitestCommandPassed,
+        },
+        enforceCiBudget: options.enforceCiBudget ?? false,
+        footprint: loadProofFootprint(consumerDir),
+        lane,
+        packages: Object.entries(expectedVersions).map(([name, version]) => ({
+          name,
+          source: "packed-tarball",
+          version,
+        })),
+        playwright: readProofFragment(proofDir, "playwright"),
+        setupTiming: Object.fromEntries(
+          Object.entries(setupTiming).map(([name, value]) => [
+            name,
+            typeof value === "number" ? Math.round(value * 1000) / 1000 : value,
+          ]),
+        ),
+        vitest: readProofFragment(proofDir, "vitest"),
+      });
+      const outputPath = resolve(
+        repositoryRoot,
+        options.outputPath ?? "artifacts/external-consumer-proof/pack.json",
+      );
+      writeExternalConsumerProofReport(outputPath, report);
+      process.stdout.write(`[external-consumer-proof] report=${outputPath}\n`);
+      if (!report.passed) {
+        throw new Error(`External consumer proof gates failed; see ${outputPath}`);
+      }
     }
 
     process.stdout.write(
@@ -152,6 +241,18 @@ export function runExternalConsumerProof(lane) {
   }
 }
 
+function readProofFragment(proofDir, runner) {
+  const path = join(proofDir, `${runner}.json`);
+  if (!existsSync(path)) {
+    return { measuredRuns: [], runner, warmupRuns: 0 };
+  }
+  return readJson(path);
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  runExternalConsumerProof(parseExternalConsumerProofLane(process.argv.slice(2)));
+  const args = process.argv.slice(2);
+  runExternalConsumerProof(
+    parseExternalConsumerProofLane(args),
+    parseExternalConsumerProofOptions(args),
+  );
 }
