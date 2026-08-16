@@ -1,5 +1,37 @@
 # @lunatest/core
 
+## 0.2.1
+
+### Patch Changes
+
+### Summary
+
+- [`bf98a40`](https://github.com/songforthemute/lunatest/commit/bf98a4046029a921d8c7e1d4e895e349605d2faa) Report the first nested UI, state, or transition mismatch with a structured
+- [`bf98a40`](https://github.com/songforthemute/lunatest/commit/bf98a4046029a921d8c7e1d4e895e349605d2faa) path and leaf-level expected and actual values.
+
+### Breaking
+
+- None
+
+### Summary
+
+- [`c29aee9`](https://github.com/songforthemute/lunatest/commit/c29aee95bc49116d348bda73e6c0d1c854e99ced) Preserve documented `stages`, `not_present`, and `timing_ms` assertions when
+- [`c29aee9`](https://github.com/songforthemute/lunatest/commit/c29aee95bc49116d348bda73e6c0d1c854e99ced) executing Lua scenarios through `executeLuaScenario`. Ship the Lua WASM binary
+- [`c29aee9`](https://github.com/songforthemute/lunatest/commit/c29aee95bc49116d348bda73e6c0d1c854e99ced) with the browser package so deterministic runtimes do not fetch it from a CDN.
+
+### Breaking
+
+- None
+
+### Summary
+
+- [`fe233ac`](https://github.com/songforthemute/lunatest/commit/fe233acabc427d207e3587a1ad9843e0d55e291a) Expose a stable SHA-256 source digest on project scenarios so multiple runners
+- [`fe233ac`](https://github.com/songforthemute/lunatest/commit/fe233acabc427d207e3587a1ad9843e0d55e291a) can prove they executed the same Lua source.
+
+### Breaking
+
+- None
+
 ## 0.2.0
 
 ### Minor Changes
