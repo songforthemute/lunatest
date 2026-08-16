@@ -231,7 +231,7 @@ type LuaConfig = {
 - `resolveTransitions`
 - `resolveElapsedMs`
 
-The result includes `scenarioName`, `pass`, optional `error`, optional `result`, and the resolved `config`.
+The result includes `scenarioName`, `pass`, optional `error`, optional `result`, and the resolved `config`. A UI, state, or transition value mismatch includes a structured `mismatch` with the first failing path and its leaf-level `expected` and `actual` values; the human-readable diff carries the same detail.
 
 `createDeterministicScenarioAdapter` is the built-in adapter for deterministic scenario execution. It applies the scenario's route and state data without a browser, then exposes the resulting intercept state to the UI and state resolvers. Supply `resolveTransitions` or `resolveElapsedMs` in a custom adapter when the scenario needs those assertions.
 

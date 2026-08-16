@@ -173,6 +173,10 @@ Add `scenarios/approve-and-swap.lua` and explicit host adapters for the two runn
 
 ### Task 6 — Add proof metrics and determinism gates
 
+**Status:** In progress. The diagnostic preflight exposed a product gap, so
+Task 7 was brought forward as an independent fix before the E2 report is allowed
+to pass.
+
 Produce a machine-readable report containing:
 
 - resolved LunaTest versions and sources;
@@ -190,6 +194,8 @@ CI uploads the report as an artifact and enforces the E2 gates from the design. 
 ## Phase 3: Make the Experience Usable
 
 ### Task 7 — Close the first diagnostic gap
+
+**Status:** Implemented on 2026-08-16; pending release.
 
 Deliberately break one nested expectation. If current output does not identify scenario ID, stage/path, expected, and actual values, write a failing focused test in the owning Core/runner package and improve the normalized result or assertion error.
 

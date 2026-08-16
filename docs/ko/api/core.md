@@ -231,7 +231,7 @@ type LuaConfig = {
 - `resolveTransitions`
 - `resolveElapsedMs`
 
-결과에는 `scenarioName`, `pass`, optional `error`, optional `result`, resolved `config`가 들어갑니다.
+결과에는 `scenarioName`, `pass`, optional `error`, optional `result`, resolved `config`가 들어갑니다. UI, state, transition 값이 불일치하면 첫 실패 path와 leaf 단위 `expected`, `actual` 값을 담은 구조화된 `mismatch`가 포함되며, 사람이 읽는 diff에도 같은 정보가 표시됩니다.
 
 `createDeterministicScenarioAdapter`는 browser 없이 결정적 scenario 실행을 위한 built-in adapter입니다. scenario의 route/state data를 적용한 뒤 결과 intercept state를 UI/state resolver에 노출합니다. transition 또는 elapsed-time assertion이 필요하면 custom adapter에서 `resolveTransitions`, `resolveElapsedMs`를 제공하세요.
 
