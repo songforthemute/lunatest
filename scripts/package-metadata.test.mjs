@@ -18,6 +18,7 @@ import {
   repositoryUrl,
   stablePackages,
 } from "./package-roster.mjs";
+import { createChangesetsTagOutput } from "./publish-packages.mjs";
 
 async function readJson(path) {
   return JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
@@ -92,6 +93,30 @@ test("release scripts publish package channels from the shared roster helper", a
     "@lunatest/playwright-plugin",
   ]);
   assert.deepEqual(packageNames(nextPackages), []);
+});
+
+test("release publisher emits Changesets tags only for successful selected packages", () => {
+  const selectedPackageNames = packageNames(stablePackages);
+  const output = [
+    "npm notice Publishing to https://registry.npmjs.org/ with tag latest and public access",
+    "\u001B[32m+ @lunatest/core@0.2.1\u001B[39m",
+    "+ @lunatest/react@0.2.0",
+    "+ unrelated-package@1.0.0",
+    "+ @lunatest/core@0.2.1",
+  ].join("\n");
+
+  assert.equal(
+    createChangesetsTagOutput({ output, selectedPackageNames, dryRun: false }),
+    "New tag: @lunatest/core@0.2.1\nNew tag: @lunatest/react@0.2.0\n",
+  );
+  assert.equal(
+    createChangesetsTagOutput({ output: "There are no new packages that should be published\n", selectedPackageNames, dryRun: false }),
+    "",
+  );
+  assert.equal(
+    createChangesetsTagOutput({ output, selectedPackageNames, dryRun: true }),
+    "",
+  );
 });
 
 test("registry consumer smoke verifies packages installed by its selected channel", () => {
