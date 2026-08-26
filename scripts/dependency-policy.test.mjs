@@ -161,7 +161,7 @@ test("DeFi dashboard clean-checkout scripts prebuild workspace dependencies", as
 
   assert.equal(
     pkg.scripts["build:deps"],
-    "pnpm --filter @lunatest/contracts --filter @lunatest/core --filter @lunatest/runtime-intercept build",
+    "pnpm --workspace-concurrency=1 --filter @lunatest/contracts --filter @lunatest/core --filter @lunatest/runtime-intercept build",
   );
   assert.equal(pkg.scripts.predev, "pnpm run build:deps");
   assert.equal(pkg.scripts.pretest, "pnpm run build:deps");
