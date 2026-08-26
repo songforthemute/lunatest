@@ -26,8 +26,12 @@ test("package.json exposes CI wrapper scripts", async () => {
   const pkg = await readJson(new URL("../package.json", import.meta.url));
 
   assert.equal(
+    pkg.scripts.build,
+    "pnpm --workspace-concurrency=1 -r --if-present run build",
+  );
+  assert.equal(
     pkg.scripts["build:workspace:ci"],
-    "pnpm -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run build",
+    "pnpm --workspace-concurrency=1 -r --filter=!lunatest --filter=!@lunatest/e2e-tests --if-present run build",
   );
   assert.equal(
     pkg.scripts["lint:workspace:ci"],
