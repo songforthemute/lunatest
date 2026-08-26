@@ -39,7 +39,7 @@ pnpm run test:browser:ci
 pnpm run perf:regression:ci
 ```
 
-예약된 Benchmark workflow에서는 아래 명령도 실행합니다.
+필요할 때 수동으로 실행하는 Benchmark workflow에서는 아래 명령도 실행합니다.
 
 ```sh
 pnpm run test:e2e:extended:ci
@@ -64,9 +64,9 @@ pnpm run perf:absolute:ci
 
 `test:browser`는 Chromium scenario contract를 실행합니다. 로컬 실행 전에는 `pnpm --filter @lunatest/e2e-tests exec playwright install chromium`으로 같은 browser binary를 설치하세요. browser 설치는 의도적으로 Linux CI job에만 제한하며 Windows/macOS consumer job은 browser를 설치하지 않습니다.
 
-## 야간 Benchmark Workflow
+## 수동 Benchmark Workflow
 
-`.github/workflows/benchmark.yml`은 매일 `00:00 UTC`에 실행되며 수동 실행도 가능합니다. Ubuntu job 두 개로 구성됩니다.
+`.github/workflows/benchmark.yml`은 수동으로 실행할 때만 동작합니다. Ubuntu job 두 개로 구성됩니다.
 
 1. `nightly-performance`는 `pnpm run perf:absolute:ci`를 실행하고 `scripts/perf-current-absolute.json`을 artifact로 업로드합니다.
 2. `nightly-e2e-extended`는 `pnpm run test:e2e:extended:ci`를 실행합니다.

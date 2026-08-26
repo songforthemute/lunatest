@@ -39,7 +39,7 @@ pnpm run test:browser:ci
 pnpm run perf:regression:ci
 ```
 
-The scheduled Benchmark workflow also runs:
+When manually dispatched as needed, the Benchmark workflow runs:
 
 ```sh
 pnpm run test:e2e:extended:ci
@@ -64,9 +64,9 @@ Every job installs with `pnpm install --frozen-lockfile`. Packed-consumer jobs e
 
 `test:browser` runs the Chromium scenario contract. Before running it locally, install the matching browser binary with `pnpm --filter @lunatest/e2e-tests exec playwright install chromium`. Browser installation is intentionally restricted to the Linux CI job; the Windows and macOS consumer jobs stay browser-free.
 
-## Nightly Benchmark Workflow
+## Manual Benchmark Workflow
 
-`.github/workflows/benchmark.yml` runs daily at `00:00 UTC` and can also be started manually. It has two Ubuntu jobs:
+`.github/workflows/benchmark.yml` runs only when manually dispatched. It has two Ubuntu jobs:
 
 1. `nightly-performance` runs `pnpm run perf:absolute:ci` and uploads `scripts/perf-current-absolute.json`.
 2. `nightly-e2e-extended` runs `pnpm run test:e2e:extended:ci`.
