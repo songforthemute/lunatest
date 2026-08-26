@@ -46,7 +46,7 @@ pnpm pack:check-integrity
 
 `pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm -r build`, which creates the workspace package entries it loads.
 
-## CI and Nightly Commands
+## CI and Manual Benchmark Commands
 
 Fresh-checkout CI jobs use their own wrapper contracts instead of the local E2E and performance commands:
 
@@ -61,7 +61,7 @@ pnpm run test:e2e:smoke:ci
 pnpm run perf:regression:ci
 ```
 
-The nightly Benchmark workflow additionally runs:
+When manually dispatched as needed, the Benchmark workflow runs:
 
 ```bash
 pnpm run test:e2e:extended:ci
@@ -373,7 +373,7 @@ not a universal benchmark or flake-rate guarantee.
 - CI workspace quality: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
 - Dead-code gates: `pnpm lint:deadcode` for fast unused-file checks, `pnpm lint:deadcode:strict` for broader audits
 - Workspace-source E2E smoke (PR): `pnpm run test:e2e:smoke:ci`
-- Workspace-source E2E extended (nightly): `pnpm run test:e2e:extended:ci`
+- Workspace-source E2E extended (manual Benchmark): `pnpm run test:e2e:extended:ci`
 - Package entry smoke: `pnpm consumer-smoke:pack`, `pnpm consumer-smoke:npm`
 - Packed tarball smoke covers every public stable package plus React 18/19 peer compatibility.
 - Performance regression: `pnpm run perf:regression:ci`
@@ -382,12 +382,12 @@ not a universal benchmark or flake-rate guarantee.
 ## Performance Policy
 
 - PR: p95 regression gate (fails when p95 exceeds the baseline by more than 10%)
-- Nightly: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
+- Manual Benchmark: absolute gate (`p95 < 1ms`, `1000 scenarios < 1s`)
 
 ## CI/CD
 
 - PR/Push quality gate: `.github/workflows/ci.yml`
-- Nightly absolute benchmark: `.github/workflows/benchmark.yml`
+- Manually dispatched absolute benchmark: `.github/workflows/benchmark.yml`
 - Docs build/deploy: `.github/workflows/docs.yml`
 - Changesets release pipeline: `.github/workflows/release.yml`
 - Release auth: npm Trusted Publishing (GitHub OIDC, no long-lived publish token)

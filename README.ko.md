@@ -32,7 +32,7 @@ pnpm pack:check-integrity
 
 `pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 `pnpm -r build`를 실행해야 합니다.
 
-## CI 및 야간 명령
+## CI 및 수동 Benchmark 명령
 
 fresh checkout CI job은 로컬 E2E/성능 명령 대신 아래 CI 계약 명령을 사용합니다.
 
@@ -47,7 +47,7 @@ pnpm run test:e2e:smoke:ci
 pnpm run perf:regression:ci
 ```
 
-야간 Benchmark workflow에서는 아래 명령도 실행합니다.
+필요할 때 수동으로 실행하는 Benchmark workflow에서는 아래 명령도 실행합니다.
 
 ```bash
 pnpm run test:e2e:extended:ci
@@ -283,7 +283,7 @@ scenario ID는 정확한 project-relative path입니다. integration이 Lua에�
 ## CI / 게이트
 
 - 품질 게이트: `.github/workflows/ci.yml`
-- 야간 성능/확장 게이트: `.github/workflows/benchmark.yml`
+- 수동 성능/확장 게이트: `.github/workflows/benchmark.yml`
 - 문서 배포: `.github/workflows/docs.yml` (GitHub Pages)
 - 릴리스 파이프라인: `.github/workflows/release.yml`
 - 릴리스 인증: npm Trusted Publishing(GitHub OIDC, 장기 publish 토큰 미사용)

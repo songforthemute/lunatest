@@ -77,7 +77,7 @@ pnpm run test:e2e:smoke:ci
 pnpm run perf:regression:ci
 ```
 
-예약된 Benchmark workflow에서는 아래 명령도 실행합니다.
+필요할 때 수동으로 실행하는 Benchmark workflow에서는 아래 명령도 실행합니다.
 
 ```bash
 pnpm run test:e2e:extended:ci

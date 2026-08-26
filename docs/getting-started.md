@@ -77,7 +77,7 @@ pnpm run test:e2e:smoke:ci
 pnpm run perf:regression:ci
 ```
 
-The scheduled Benchmark workflow additionally runs:
+When manually dispatched as needed, the Benchmark workflow runs:
 
 ```bash
 pnpm run test:e2e:extended:ci
