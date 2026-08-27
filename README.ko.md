@@ -1,7 +1,7 @@
 # LunaTest (한국어 가이드)
 
 > Web3 프론트엔드를 위한 결정론 테스트 SDK
-> 체인 포크나 flaky 테스트 없이, 밀리초 단위로 빠르게 검증
+> 문서화된 지갑·RPC 프론트엔드 흐름에는 외부 체인이나 포크가 필요 없습니다. 측정 근거를 갖춘 결정론적 Web3 UI 테스트
 > English version: [README.md](./README.md)
 
 LunaTest는 Wasm 기반 Lua 런타임으로 지갑·RPC 의존 프론트엔드 흐름을 빠르고
@@ -319,6 +319,19 @@ scenario ID는 정확한 project-relative path입니다. integration이 Lua에�
 한국어 문서 인덱스: `docs/ko/index.md`
 한국어 시나리오 예제: `docs/ko/guides/scenario-examples.md`
 한국어 E2E 워크스루: `docs/ko/guides/e2e-0to1.md`
+
+## 올바른 테스트 계층 선택
+
+하나의 테스트 도구가 모든 경계를 검증하지는 않습니다. LunaTest는 문서화된
+결정론적 L3 지갑·RPC 프론트엔드 흐름에만 사용하고, 증명하려는 동작에 맞는
+계층을 선택하세요.
+
+| 검증할 동작 | 테스트 계층 |
+| --- | --- |
+| 문서화된 결정론적 L3 지갑·RPC 프론트엔드 흐름 | LunaTest |
+| 정확한 EVM bytecode, gas, 과거 상태, protocol math | Anvil, Foundry 또는 forked RPC |
+| 애플리케이션 HTTP 경계 | 애플리케이션별 HTTP mock |
+| 브라우저의 시각적 동작 또는 lifecycle | [문서화된 browser-runner 경로](./docs/ko/guides/playwright-routing.md) |
 
 ## 릴리스 채널
 

@@ -496,3 +496,67 @@ test("public integration entry points distinguish verified and structural suppor
   assert.doesNotMatch(englishReadme, /replaces slow, non-deterministic Web3 test setups/, "README.md");
   assert.doesNotMatch(read("README.ko.md"), /withLunaWagmiConfig/, "README.ko.md");
 });
+
+test("README positioning selects a bounded test layer instead of ranking competitors", () => {
+  const englishReadme = read("README.md");
+  const koreanReadme = read("README.ko.md");
+
+  assert.match(
+    englishReadme,
+    /No external chain or fork required for documented wallet\/RPC frontend flows\./,
+    "README.md",
+  );
+  assert.match(englishReadme, /## Choose the Right Test Layer/, "README.md");
+  assert.match(
+    englishReadme,
+    /\| Documented deterministic L3 wallet\/RPC frontend flow \| LunaTest \|/,
+    "README.md",
+  );
+  assert.match(
+    englishReadme,
+    /\| Exact EVM bytecode, gas, historical state, or protocol math \| Anvil, Foundry, or a forked RPC \|/,
+    "README.md",
+  );
+  assert.match(
+    englishReadme,
+    /\| Application HTTP boundary \| Application-specific HTTP mocks \|/,
+    "README.md",
+  );
+  assert.match(
+    englishReadme,
+    /\| Browser visual behavior or lifecycle \| The \[documented browser-runner path\]/,
+    "README.md",
+  );
+  assert.doesNotMatch(
+    englishReadme,
+    /Jest \/ Vitest|Cypress \/ Playwright|Anvil \/ Hardhat|Synpress|Non-dev participation/,
+    "README.md",
+  );
+
+  assert.match(
+    koreanReadme,
+    /문서화된 지갑·RPC 프론트엔드 흐름에는 외부 체인이나 포크가 필요 없습니다\./,
+    "README.ko.md",
+  );
+  assert.match(koreanReadme, /## 올바른 테스트 계층 선택/, "README.ko.md");
+  assert.match(
+    koreanReadme,
+    /\| 문서화된 결정론적 L3 지갑·RPC 프론트엔드 흐름 \| LunaTest \|/,
+    "README.ko.md",
+  );
+  assert.match(
+    koreanReadme,
+    /\| 정확한 EVM bytecode, gas, 과거 상태, protocol math \| Anvil, Foundry 또는 forked RPC \|/,
+    "README.ko.md",
+  );
+  assert.match(
+    koreanReadme,
+    /\| 애플리케이션 HTTP 경계 \| 애플리케이션별 HTTP mock \|/,
+    "README.ko.md",
+  );
+  assert.match(
+    koreanReadme,
+    /\| 브라우저의 시각적 동작 또는 lifecycle \| \[문서화된 browser-runner 경로\]/,
+    "README.ko.md",
+  );
+});

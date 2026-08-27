@@ -1,7 +1,7 @@
 # LunaTest
 
 > Deterministic testing SDK for Web3 frontend applications.
-> No external chain. No fork. Deterministic Web3 UI testing with measured evidence.
+> No external chain or fork required for documented wallet/RPC frontend flows. Deterministic Web3 UI testing with measured evidence.
 > Korean version: [README.ko.md](./README.ko.md)
 
 **LunaTest** makes wallet- and RPC-dependent frontend flows deterministic with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI. It complements Anvil, Foundry, and forked RPC tests when exact protocol behavior is required, and application-specific HTTP mocks when those boundaries are under test. The registry-certified reference journey completed 30/30 Vitest and Chromium runs with identical results and zero outbound requests.
@@ -341,20 +341,18 @@ await createLunaCommands({ cwd: process.cwd() }).assertScenario(
 
 Scenario IDs are exact project-relative paths. The integrations do not infer selectors or actions from Lua. `createLunaFixture().injectProvider` is deprecated and is not a wallet emulator; bootstrap `@lunatest/runtime-intercept` for deterministic wallet behavior.
 
-## Why
+## Choose the Right Test Layer
 
-|                        | Jest / Vitest | Cypress / Playwright | MSW / Mock     | Anvil / Hardhat  | Synpress         | **LunaTest**        |
-| ---------------------- | ------------- | -------------------- | -------------- | ---------------- | ---------------- | ------------------- |
-| Layer                  | Unit test     | E2E browser          | HTTP intercept | Local chain fork | Browser + Wallet | Lua VM mock         |
-| Web3 aware             | ❌            | ❌                   | △              | ✅               | ✅               | **✅**              |
-| Speed                  | ~1-5ms        | ~1-10s               | ~5-20ms        | ~1-10s           | ~10-30s          | **6.953ms Vitest median*** |
-| Deterministic          | ✅            | △                    | ✅             | ❌               | ❌               | **✅**              |
-| Certified replay      | —             | —                    | —              | —                | —                | **30/30 identical*** |
-| Isolates frontend bugs | ✅            | △                    | △              | △                | △                | **✅**              |
-| CI cost                | Low           | Medium               | Low            | High             | High             | **Low**             |
-| Human-friendly         | △ ABI noise   | ✅ visual            | △ hex fixtures | ❌ chain ops     | △ flaky          | **✅ Lua tables**   |
-| AI-friendly            | △             | ❌ browser           | △              | ❌ infra         | ❌ browser       | **✅ MCP native**   |
-| Non-dev participation  | ❌            | △ visual only        | ❌             | ❌               | ❌               | **✅ QA/PM/Design** |
+No single test tool covers every boundary. Use LunaTest only for the
+documented deterministic L3 wallet/RPC frontend flows; use the layer that
+matches the behavior you need to prove.
+
+| Behavior to verify | Test layer |
+| --- | --- |
+| Documented deterministic L3 wallet/RPC frontend flow | LunaTest |
+| Exact EVM bytecode, gas, historical state, or protocol math | Anvil, Foundry, or a forked RPC |
+| Application HTTP boundary | Application-specific HTTP mocks |
+| Browser visual behavior or lifecycle | The [documented browser-runner path](./docs/guides/playwright-routing.md) |
 
 ## Features
 
