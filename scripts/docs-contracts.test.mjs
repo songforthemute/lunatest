@@ -273,8 +273,9 @@ test("published documentation source excludes historical plans and the legacy PR
   assertExists("planning/archive/plans");
 });
 
-test("documentation navigation exposes bilingual API and guide coverage", () => {
+test("documentation navigation exposes bilingual API, guide, and concept coverage", () => {
   const config = read("docs/.vitepress/config.mts");
+  const koreanIndex = read("docs/ko/index.md");
   const requiredLinks = [
     "/api/contracts",
     "/api/core",
@@ -305,6 +306,9 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
     "/ko/guides/ethers-setup",
     "/ko/guides/web3js-setup",
     "/ko/guides/wagmi-swap-quickstart",
+    "/ko/concepts/architecture",
+    "/ko/concepts/determinism",
+    "/ko/concepts/mock-provider",
   ];
 
   for (const link of requiredLinks) {
@@ -313,6 +317,22 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
       new RegExp(`\\{\\s*text:\\s*"[^"]+"\\s*,\\s*link:\\s*"${escapeRegExp(link)}"\\s*\\}`),
       link,
     );
+  }
+
+  for (const document of [
+    "docs/ko/concepts/architecture.md",
+    "docs/ko/concepts/determinism.md",
+    "docs/ko/concepts/mock-provider.md",
+  ]) {
+    assertExists(document);
+  }
+
+  for (const link of [
+    "./concepts/architecture.md",
+    "./concepts/determinism.md",
+    "./concepts/mock-provider.md",
+  ]) {
+    assert.match(koreanIndex, new RegExp(escapeRegExp(link)), link);
   }
 });
 

@@ -23,9 +23,14 @@ LunaTest는 Web3 프론트엔드의 지갑, 네트워크 라우트, 시나리오
 - [Sepolia 스왑 데모](./guides/swap-demo-sepolia-uniswapv3.md)
 - [Local Preset 작성](./guides/local-preset-authoring.md)
 
+## 핵심 개념
+
+- [아키텍처](./concepts/architecture.md)
+- [결정론성](./concepts/determinism.md)
+- [Mock Provider 원칙](./concepts/mock-provider.md)
+
 ## 레퍼런스
 
-- [아키텍처](../concepts/architecture.md)
 - [Core API](./api/core.md)
 - [Runtime Intercept API](./api/runtime-intercept.md)
 - [React API](./api/react.md)
