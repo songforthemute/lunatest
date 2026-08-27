@@ -30,6 +30,12 @@ LunaTest는 Web3 프론트엔드의 지갑, 네트워크 라우트, 시나리오
 - [결정론성](./concepts/determinism.md)
 - [Mock Provider 원칙](./concepts/mock-provider.md)
 
+## 레시피
+
+- [스왑 테스트](./recipes/swap-testing.md)
+- [승인 흐름](./recipes/approval-flow.md)
+- [오류 처리](./recipes/error-handling.md)
+
 ## 레퍼런스
 
 - [Core API](./api/core.md)

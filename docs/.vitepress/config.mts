@@ -71,6 +71,9 @@ export default defineConfig({
           { text: "API: MCP", link: "/ko/api/mcp" },
           { text: "API: Vitest Plugin", link: "/ko/api/vitest-plugin" },
           { text: "API: Playwright Plugin", link: "/ko/api/playwright-plugin" },
+          { text: "레시피: 스왑 테스트", link: "/ko/recipes/swap-testing" },
+          { text: "레시피: 승인 흐름", link: "/ko/recipes/approval-flow" },
+          { text: "레시피: 오류 처리", link: "/ko/recipes/error-handling" },
         ],
       },
       {

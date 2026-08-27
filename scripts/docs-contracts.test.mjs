@@ -310,6 +310,9 @@ test("documentation navigation exposes bilingual API, guide, and concept coverag
     "/ko/concepts/architecture",
     "/ko/concepts/determinism",
     "/ko/concepts/mock-provider",
+    "/ko/recipes/swap-testing",
+    "/ko/recipes/approval-flow",
+    "/ko/recipes/error-handling",
   ];
 
   for (const link of requiredLinks) {
@@ -325,6 +328,9 @@ test("documentation navigation exposes bilingual API, guide, and concept coverag
     "docs/ko/concepts/architecture.md",
     "docs/ko/concepts/determinism.md",
     "docs/ko/concepts/mock-provider.md",
+    "docs/ko/recipes/swap-testing.md",
+    "docs/ko/recipes/approval-flow.md",
+    "docs/ko/recipes/error-handling.md",
   ]) {
     assertExists(document);
   }
@@ -334,6 +340,9 @@ test("documentation navigation exposes bilingual API, guide, and concept coverag
     "./concepts/architecture.md",
     "./concepts/determinism.md",
     "./concepts/mock-provider.md",
+    "./recipes/swap-testing.md",
+    "./recipes/approval-flow.md",
+    "./recipes/error-handling.md",
   ]) {
     assert.match(koreanIndex, new RegExp(escapeRegExp(link)), link);
   }
