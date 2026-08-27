@@ -42,6 +42,7 @@ export default defineConfig({
           { text: "빠른 시작", link: "/ko/getting-started" },
           { text: "라이브 데모", link: "/ko/guides/live-demo" },
           { text: "라이브러리 소비자 가이드", link: "/ko/guides/library-consumption" },
+          { text: "wagmi 통합", link: "/ko/wagmi-integration" },
           { text: "아키텍처", link: "/ko/concepts/architecture" },
           { text: "결정론성", link: "/ko/concepts/determinism" },
           { text: "Mock Provider 원칙", link: "/ko/concepts/mock-provider" },

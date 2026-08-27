@@ -299,6 +299,7 @@ test("documentation navigation exposes bilingual API, guide, and concept coverag
     "/guides/react-integration",
     "/guides/scenario-examples",
     "/guides/wagmi-swap-quickstart",
+    "/ko/wagmi-integration",
     "/ko/guides/ci-integration",
     "/ko/guides/writing-scenarios",
     "/ko/guides/multi-stage",
@@ -320,6 +321,7 @@ test("documentation navigation exposes bilingual API, guide, and concept coverag
   }
 
   for (const document of [
+    "docs/ko/wagmi-integration.md",
     "docs/ko/concepts/architecture.md",
     "docs/ko/concepts/determinism.md",
     "docs/ko/concepts/mock-provider.md",
@@ -328,6 +330,7 @@ test("documentation navigation exposes bilingual API, guide, and concept coverag
   }
 
   for (const link of [
+    "./wagmi-integration.md",
     "./concepts/architecture.md",
     "./concepts/determinism.md",
     "./concepts/mock-provider.md",
