@@ -68,8 +68,8 @@ pnpm run perf:absolute:ci
 
 `.github/workflows/benchmark.yml`은 수동으로 실행할 때만 동작합니다. Ubuntu job 두 개로 구성됩니다.
 
-1. `nightly-performance`는 `pnpm run perf:absolute:ci`를 실행하고 `scripts/perf-current-absolute.json`을 artifact로 업로드합니다.
-2. `nightly-e2e-extended`는 `pnpm run test:e2e:extended:ci`를 실행합니다.
+1. `benchmark-performance`는 `pnpm run perf:absolute:ci`를 실행하고 `scripts/perf-current-absolute.json`을 artifact로 업로드합니다.
+2. `benchmark-e2e-extended`는 `pnpm run test:e2e:extended:ci`를 실행합니다.
 
 ## 성능 계약
 

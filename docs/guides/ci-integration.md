@@ -68,8 +68,8 @@ Every job installs with `pnpm install --frozen-lockfile`. Packed-consumer jobs e
 
 `.github/workflows/benchmark.yml` runs only when manually dispatched. It has two Ubuntu jobs:
 
-1. `nightly-performance` runs `pnpm run perf:absolute:ci` and uploads `scripts/perf-current-absolute.json`.
-2. `nightly-e2e-extended` runs `pnpm run test:e2e:extended:ci`.
+1. `benchmark-performance` runs `pnpm run perf:absolute:ci` and uploads `scripts/perf-current-absolute.json`.
+2. `benchmark-e2e-extended` runs `pnpm run test:e2e:extended:ci`.
 
 ## Performance Contract
 
