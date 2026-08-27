@@ -67,6 +67,19 @@ test("package.json exposes CI wrapper scripts", async () => {
   );
 });
 
+test("extended Vitest excludes browser tests handled by Playwright", async () => {
+  const e2ePkg = await readJson(new URL("../e2e-tests/package.json", import.meta.url));
+
+  assert.equal(
+    e2ePkg.scripts["test:extended"],
+    "vitest run --exclude=\"**/*.browser.test.ts\"",
+  );
+  assert.equal(
+    e2ePkg.scripts["test:browser"],
+    "playwright test --config playwright.config.ts",
+  );
+});
+
 test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
   const benchmarkWorkflow = await readFile(

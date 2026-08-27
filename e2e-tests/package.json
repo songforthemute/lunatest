@@ -9,7 +9,7 @@
     "test": "pnpm test:smoke",
     "test:smoke": "vitest run mcp-flow.smoke.test.ts playwright-routing.smoke.test.ts runner-integration.smoke.test.ts cli-gen.smoke.test.ts protocol-wallet-completion.smoke.test.ts",
     "test:browser": "playwright test --config playwright.config.ts",
-    "test:extended": "vitest run"
+    "test:extended": "vitest run --exclude=\"**/*.browser.test.ts\""
   },
   "dependencies": {
     "@lunatest/cli": "workspace:*",
