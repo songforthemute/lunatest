@@ -219,6 +219,37 @@ await runStdioServer({
 });
 ```
 
+## Playwright 라우팅 예시
+
+`createLunaFixture`로 RPC와 HTTP endpoint를 명시적으로 라우팅할 수 있습니다. `strict` 모드에서는 선언하지 않은 요청을 통과시키지 않으므로, 테스트가 실제 네트워크에 의존하지 않도록 유지합니다.
+
+```ts
+import { createLunaFixture } from "@lunatest/playwright-plugin";
+
+const fixture = createLunaFixture({
+  routing: {
+    mode: "strict",
+    rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
+    httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+  },
+  mockResponses: {
+    eth_call: { result: "0x01" },
+    quote: { status: 200, body: { amountOut: "123.45" } },
+  },
+});
+```
+
+## Vitest matcher 예시
+
+`toLunaPass` matcher를 등록하면 LunaTest 실행 결과를 Vitest assertion으로 읽기 쉽게 검증할 수 있습니다.
+
+```ts
+import { toLunaPass } from "@lunatest/vitest-plugin";
+
+expect.extend({ toLunaPass });
+expect({ pass: true }).toLunaPass();
+```
+
 ## Scenario Runner 예시
 
 두 integration 모두 `lunatest.config.json`을 로드하고 정확한 project-relative scenario ID를 요구합니다. Lua에서 UI selector나 action을 추론하지 않습니다.

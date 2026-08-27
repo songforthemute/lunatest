@@ -204,6 +204,17 @@ test("Core references document project and deterministic runner helpers", () => 
   }
 });
 
+test("Korean library guidance includes public Vitest matcher and Playwright routing examples", () => {
+  const source = read("docs/ko/guides/library-consumption.md");
+
+  assert.match(source, /## Playwright 라우팅 예시/);
+  assert.match(source, /createLunaFixture/);
+  assert.match(source, /mode: "strict"/);
+  assert.match(source, /## Vitest matcher 예시/);
+  assert.match(source, /import \{ toLunaPass \} from "@lunatest\/vitest-plugin"/);
+  assert.match(source, /expect\.extend\(\{ toLunaPass \}\)/);
+});
+
 test("runner integration references document executable adapter contracts", () => {
   for (const document of ["docs/api/vitest-plugin.md", "docs/ko/api/vitest-plugin.md"]) {
     const source = read(document);
