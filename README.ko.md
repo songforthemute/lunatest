@@ -19,7 +19,7 @@ Chromium에서 E2 인증을 마쳤습니다. 자세한 내용은
 ```bash
 pnpm install --frozen-lockfile
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
@@ -31,7 +31,7 @@ pnpm lint:deadcode
 pnpm pack:check-integrity
 ```
 
-`pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 `pnpm -r build`를 실행해야 합니다.
+`pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 workspace build writer를 직렬화하는 `pnpm run build`를 실행해야 합니다.
 
 ## CI 및 수동 Benchmark 명령
 

@@ -8,7 +8,7 @@ Use the direct commands during normal development:
 
 ```sh
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 pnpm test:e2e:extended
@@ -18,7 +18,7 @@ pnpm test:browser
 The direct E2E commands load workspace package entries and therefore require the preceding build. To investigate performance locally, build first and invoke the runner directly:
 
 ```sh
-pnpm -r build
+pnpm run build
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
 ```

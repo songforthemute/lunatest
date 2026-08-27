@@ -55,6 +55,23 @@ test("consumer installation snippets do not pin stable packages to a prerelease 
   }
 });
 
+test("public repository build instructions use the serialized root build wrapper", () => {
+  const documents = [
+    "README.md",
+    "README.ko.md",
+    "docs/getting-started.md",
+    "docs/ko/getting-started.md",
+    "docs/guides/ci-integration.md",
+    "docs/ko/guides/ci-integration.md",
+  ];
+
+  for (const document of documents) {
+    const source = read(document);
+    assert.doesNotMatch(source, /pnpm -r build/, document);
+    assert.match(source, /pnpm run build/, document);
+  }
+});
+
 test("every public package has English and Korean API references", () => {
   const packageToPage = new Map([
     ["@lunatest/contracts", "contracts"],

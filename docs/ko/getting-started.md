@@ -22,12 +22,12 @@ Vitest와 Playwright 연동을 포함한 모든 공개 LunaTest 패키지는 `la
 
 ```bash
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
 
-위 명령은 로컬 개발용입니다. `pnpm test:e2e:smoke`는 빌드된 workspace package entry를 읽으므로 먼저 `pnpm -r build`를 실행해야 합니다. 확장 시나리오가 필요하면 `pnpm test:e2e:extended`를 로컬에서 실행합니다.
+위 명령은 로컬 개발용입니다. `pnpm test:e2e:smoke`는 빌드된 workspace package entry를 읽으므로 workspace build writer를 직렬화하는 `pnpm run build`를 먼저 실행해야 합니다. 확장 시나리오가 필요하면 `pnpm test:e2e:extended`를 로컬에서 실행합니다.
 
 ## 4) CLI 실행
 
@@ -55,7 +55,7 @@ node packages/cli/dist/index.js gen --ai
 성능을 로컬에서 조사할 때는 workspace를 먼저 빌드한 뒤 runner를 직접 실행합니다.
 
 ```bash
-pnpm -r build
+pnpm run build
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
 ```

@@ -32,7 +32,7 @@ scenario {
 ```bash
 pnpm install --frozen-lockfile
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
@@ -44,7 +44,7 @@ pnpm lint:deadcode
 pnpm pack:check-integrity
 ```
 
-`pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm -r build`, which creates the workspace package entries it loads.
+`pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm run build`, which serializes workspace build writers and creates the package entries it loads.
 
 ## CI and Manual Benchmark Commands
 
@@ -379,7 +379,7 @@ not a universal benchmark or flake-rate guarantee.
 
 ## Quality and Gates
 
-- Local workspace quality: `pnpm -r build`, `pnpm -r lint`, `pnpm -r test`
+- Local workspace quality: `pnpm run build`, `pnpm -r lint`, `pnpm -r test`
 - CI workspace quality: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
 - Dead-code gates: `pnpm lint:deadcode` for fast unused-file checks, `pnpm lint:deadcode:strict` for broader audits
 - Workspace-source E2E smoke (PR): `pnpm run test:e2e:smoke:ci`

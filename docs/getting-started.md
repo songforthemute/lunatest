@@ -22,12 +22,12 @@ For runnable library examples, see the [Library Consumption Guide](./guides/libr
 
 ```bash
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
 
-These are the local developer commands. `pnpm test:e2e:smoke` loads built workspace package entries, so run it after `pnpm -r build`. Use `pnpm test:e2e:extended` for the local extended suite when you need it.
+These are the local developer commands. `pnpm test:e2e:smoke` loads built workspace package entries, so run it after `pnpm run build`, which serializes workspace build writers. Use `pnpm test:e2e:extended` for the local extended suite when you need it.
 
 ## 4. Run the CLI
 
@@ -55,7 +55,7 @@ node packages/cli/dist/index.js gen --ai
 Build the workspace first, then run the runner directly when investigating performance locally:
 
 ```bash
-pnpm -r build
+pnpm run build
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
 ```
