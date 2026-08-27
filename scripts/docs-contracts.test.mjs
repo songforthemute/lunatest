@@ -362,6 +362,22 @@ test("public documentation does not promise participant research or recruitment"
   }
 });
 
+test("public documentation does not make an unqualified runtime-size claim", () => {
+  const documents = [
+    "README.md",
+    "README.ko.md",
+    ...markdownDocuments("docs"),
+  ];
+
+  for (const document of documents) {
+    assert.doesNotMatch(
+      read(document),
+      /~\s*200\s*(?:KB|KiB)\s+runtime/i,
+      document,
+    );
+  }
+});
+
 test("public integration entry points distinguish verified and structural support", () => {
   const englishDocuments = [
     "README.md",

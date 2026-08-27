@@ -335,7 +335,7 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
 - **Precise edge cases** — Deliberate mismatches report the scenario ID, failing path, expected value, and actual value.
 - **Anyone can read it** — Lua tables read like specs. QA writes scenarios, PM reviews them, git log becomes business history.
 - **AI-native** — MCP server for autonomous scenario generation and coverage analysis.
-- **~200KB runtime** — C Lua 5.4 compiled to WebAssembly via Wasmoon.
+- **Lua WASM runtime** — C Lua 5.4 compiled to WebAssembly via Wasmoon.
 
 \* Registry-certified reference journey on the pinned Linux CI environment;
 not a universal benchmark or flake-rate guarantee.
