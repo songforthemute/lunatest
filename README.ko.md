@@ -14,7 +14,49 @@ forked RPC 테스트를 함께 사용하고, HTTP 경계는 애플리케이션�
 Chromium에서 E2 인증을 마쳤습니다. 자세한 내용은
 [검증된 빠른 시작](./docs/ko/guides/wagmi-swap-quickstart.md)을 참고하세요.
 
-## 로컬 빠른 시작
+## 기존 앱에서 시작하기
+
+테스트하려는 경계에 맞는 패키지만 설치하세요. provider만 필요한 가장 작은 설정은
+다음과 같습니다.
+
+```bash
+pnpm add @lunatest/core
+```
+
+프로젝트 scenario 명령을 사용하려면 공개 CLI를 설치하고 설치된 실행 파일을
+사용합니다.
+
+```bash
+pnpm add -D @lunatest/cli
+pnpm exec lunatest validate
+```
+
+[빠른 시작](./docs/ko/getting-started.md)에서 패키지 선택을 확인하고, 실행 가능한
+[라이브러리 소비자 가이드](./docs/ko/guides/library-consumption.md)와
+[CLI 워크플로](./docs/ko/guides/cli-workflow.md)를 참고하세요. 아래 예시는 provider,
+React, 통합 경계를 더 자세히 보여 줍니다.
+
+## 이 저장소에 기여하기
+
+저장소 CI의 기준 환경은 Node 24와 pnpm 10.33.4입니다. 이는 저장소의 CI/tooling
+기준일 뿐, 모든 공개 패키지가 Node 24를 요구한다는 뜻은 아닙니다.
+
+Node 24 설치에 Corepack이 포함되어 있다면 활성화한 뒤 저장소의
+`packageManager` 필드가 pnpm 10.33.4를 선택하도록 할 수 있습니다.
+
+```bash
+corepack enable
+corepack install
+```
+
+Corepack을 사용할 수 없거나 환경에 맞지 않으면, 다른 지원 방법으로 같은 pnpm
+버전을 설치하세요. 예를 들면 다음과 같습니다.
+
+```bash
+npm install --global pnpm@10.33.4
+```
+
+그 다음 contributor용 로컬 체크를 실행합니다.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -33,7 +75,7 @@ pnpm pack:check-integrity
 
 `pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 workspace build writer를 직렬화하는 `pnpm run build`를 실행해야 합니다.
 
-## CI 및 수동 Benchmark 명령
+### CI 재현 및 수동 Benchmark
 
 fresh checkout CI job은 로컬 E2E/성능 명령 대신 아래 CI 계약 명령을 사용합니다.
 
@@ -57,29 +99,14 @@ pnpm run perf:absolute:ci
 
 `lint:workspace-types`는 lint 전에 package `dist` 디렉터리를 임시로 제거합니다. `*:ci` wrapper는 fresh checkout에 package 산출물이 없을 때 필요한 prebuild를 중앙화합니다. 일반 로컬 반복에서는 위의 로컬 명령을 사용하고, CI 재현이 필요할 때만 wrapper를 사용합니다.
 
-## 사용 가이드
+CI wrapper와 성능 명령은 저장소 유지보수 또는 로컬 CI 재현용입니다. job 그래프와
+릴리스 정책은 [CI 통합 가이드](./docs/ko/guides/ci-integration.md)를 참고하세요.
 
-1. 문서 사이트 로컬 실행
+### 저장소 문서와 릴리스
 
-```bash
-pnpm docs:dev
-```
-
-2. stable 패키지 배포
-
-```bash
-pnpm release:publish:stable
-```
-
-3. 주요 문서 진입점
-- 시작 가이드: `docs/getting-started.md`
-- 아키텍처: `docs/concepts/architecture.md`
-- CI 게이트: `docs/ko/guides/ci-integration.md`
-- 프로토콜/지갑 지원 범위: `docs/guides/protocol-support.md`
-- DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
-- Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
-- Local preset 작성: `docs/guides/local-preset-authoring.md`
-- 검증된 wagmi 스왑 빠른 시작: `docs/ko/guides/wagmi-swap-quickstart.md`
+문서 사이트는 `pnpm docs:dev`로 실행하고, stable 패키지는
+`pnpm release:publish:stable`로 배포합니다. 가이드, API 레퍼런스, 검증된 wagmi
+빠른 시작은 [문서 색인](./docs/ko/index.md)에서 확인하세요.
 
 ## 저장소 구조
 

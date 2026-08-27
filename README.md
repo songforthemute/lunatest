@@ -27,7 +27,50 @@ scenario {
 }
 ```
 
-## Local Quick Start
+## Start in an Existing App
+
+Install the package that matches the boundary you want to test. The smallest
+provider-only setup is:
+
+```bash
+pnpm add @lunatest/core
+```
+
+For project scenario commands, install the public CLI and invoke its installed
+executable:
+
+```bash
+pnpm add -D @lunatest/cli
+pnpm exec lunatest validate
+```
+
+The [Getting Started guide](./docs/getting-started.md) explains package choices
+and links to the runnable [Library Consumption Guide](./docs/guides/library-consumption.md)
+and [CLI workflow](./docs/guides/cli-workflow.md). The examples below show the
+provider, React, and integration boundaries in more detail.
+
+## Contribute to This Repository
+
+Repository CI uses Node 24 and pnpm 10.33.4 as its baseline. This is the
+repository's CI/tooling baseline, not a claim that every published package
+requires Node 24.
+
+If your Node 24 installation includes Corepack, enable it and let the
+repository's `packageManager` field select pnpm 10.33.4:
+
+```bash
+corepack enable
+corepack install
+```
+
+If Corepack is unavailable or unsuitable for your environment, install the
+same pnpm version by another supported means, for example:
+
+```bash
+npm install --global pnpm@10.33.4
+```
+
+Then install and run the local contributor checks:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -46,7 +89,7 @@ pnpm pack:check-integrity
 
 `pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm run build`, which serializes workspace build writers and creates the package entries it loads.
 
-## CI and Manual Benchmark Commands
+### Reproduce CI or Run Manual Benchmarks
 
 Fresh-checkout CI jobs use their own wrapper contracts instead of the local E2E and performance commands:
 
@@ -70,29 +113,15 @@ pnpm run perf:absolute:ci
 
 `lint:workspace-types` temporarily removes package `dist` directories before linting. The `*:ci` wrappers centralize the prebuild required when a fresh checkout has no package artifacts. They are intended for CI or for reproducing CI locally; use the local commands above for normal iteration.
 
-## Usage Guide
+The CI wrappers and performance commands are for repository maintenance or
+local CI reproduction. The [CI Integration guide](./docs/guides/ci-integration.md)
+documents their job graph and release policy.
 
-1. Run docs locally:
+### Repository Documentation and Release
 
-```bash
-pnpm docs:dev
-```
-
-2. Publish stable packages:
-
-```bash
-pnpm release:publish:stable
-```
-
-3. Explore API and guides:
-- docs index: `docs/index.md`
-- getting started: `docs/getting-started.md`
-- CI and gates: `docs/guides/ci-integration.md`
-- protocol and wallet support: `docs/guides/protocol-support.md`
-- DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
-- Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
-- local preset authoring: `docs/guides/local-preset-authoring.md`
-- validated wagmi swap quickstart: `docs/guides/wagmi-swap-quickstart.md`
+Run the documentation site locally with `pnpm docs:dev`, and publish stable
+packages with `pnpm release:publish:stable`. See the [documentation index](./docs/index.md)
+for the guides, API references, and validated wagmi quickstart.
 
 ## Repository Structure
 

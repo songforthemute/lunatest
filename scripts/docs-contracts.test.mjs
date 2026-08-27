@@ -152,6 +152,37 @@ test("Korean CLI guidance uses the installed public executable and covers its co
   assert.match(read(documents[1]), /pnpm exec lunatest run/, documents[1]);
 });
 
+test("onboarding separates consumer entry points from repository contributor work", () => {
+  const englishDocuments = ["README.md", "docs/getting-started.md"];
+  const koreanDocuments = ["README.ko.md", "docs/ko/getting-started.md"];
+
+  for (const document of englishDocuments) {
+    const source = read(document);
+    assert.match(source, /## Start in an Existing App|## Use LunaTest in an Existing App/, document);
+    assert.match(source, /## Contribute to (?:(?:This|the) )?Repository/, document);
+    assert.match(source, /pnpm add -D @lunatest\/cli/, document);
+    assert.match(source, /pnpm exec lunatest (validate|run)/, document);
+    assert.doesNotMatch(source, /node packages\/cli\/dist\/index\.js/, document);
+    assert.match(source, /Node 24 and pnpm 10\.33\.4 as its baseline/, document);
+    assert.match(source, /not a claim that every published package\s+requires Node 24/, document);
+    assert.match(source, /corepack enable/, document);
+    assert.match(source, /npm install --global pnpm@10\.33\.4/, document);
+  }
+
+  for (const document of koreanDocuments) {
+    const source = read(document);
+    assert.match(source, /## 기존 앱에서 (시작하기|LunaTest 사용하기)/, document);
+    assert.match(source, /## (이 )?저장소에 기여하기/, document);
+    assert.match(source, /pnpm add -D @lunatest\/cli/, document);
+    assert.match(source, /pnpm exec lunatest (validate|run)/, document);
+    assert.doesNotMatch(source, /node packages\/cli\/dist\/index\.js/, document);
+    assert.match(source, /Node 24와 pnpm 10\.33\.4/, document);
+    assert.match(source, /모든 공개 패키지가 Node 24를 요구한다는 뜻은 아닙니다/, document);
+    assert.match(source, /corepack enable/, document);
+    assert.match(source, /npm install --global pnpm@10\.33\.4/, document);
+  }
+});
+
 test("Core references document project and deterministic runner helpers", () => {
   const names = [
     "loadLunaProjectConfig",
