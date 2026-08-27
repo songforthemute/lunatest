@@ -154,7 +154,17 @@ export function App() {
 }
 ```
 
-## Adapter Example (wagmi / ethers / web3.js)
+## Integration Boundaries (wagmi / ethers / web3.js)
+
+**Verified integration:** wagmi and viem are verified through the real wagmi
+`createConfig` transport and connector boundaries with `@wagmi/core@3.6.4` and
+`viem@2.55.11`. The [validated wagmi quickstart](./wagmi-swap-quickstart.md)
+contains the independent npm-package proof.
+
+**Structural adapters:** `createEthersAdapter` and `createWeb3JsAdapter` only
+forward their documented request surfaces to `LunaProvider.request`. They are
+not ethers or Web3.js SDK integrations; create any version-specific wrapper in
+the consuming application.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";

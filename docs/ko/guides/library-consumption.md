@@ -162,7 +162,15 @@ export function App() {
 }
 ```
 
-## 어댑터 예시 (wagmi / ethers / web3.js)
+## 통합 경계 (wagmi / ethers / web3.js)
+
+**검증된 통합:** wagmi와 viem은 실제 wagmi `createConfig` transport 및 connector
+경계에서 `@wagmi/core@3.6.4`, `viem@2.55.11` 조합으로 검증되었습니다. 독립 npm
+패키지 proof는 [검증된 wagmi 빠른 시작](./wagmi-swap-quickstart.md)을 보세요.
+
+**구조적 어댑터:** `createEthersAdapter`와 `createWeb3JsAdapter`는 문서화된 요청
+surface만 `LunaProvider.request`로 전달합니다. ethers나 Web3.js SDK 통합은 아니므로,
+버전별 wrapper는 소비 애플리케이션에서 만드세요.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";

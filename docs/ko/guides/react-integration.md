@@ -2,6 +2,14 @@
 
 이 문서는 React 앱에서 LunaTest provider를 연결하고, wagmi/ethers/web3.js와 연동하는 최소 단계를 정리합니다.
 
+**검증된 통합:** wagmi와 viem은 실제 wagmi `createConfig` transport 및 connector
+경계에서 `@wagmi/core@3.6.4`, `viem@2.55.11` 조합으로 검증되었습니다. 자세한 내용은
+[wagmi 설정](./wagmi-setup.md)을 보세요.
+
+**구조적 어댑터:** ethers와 Web3.js helper는 문서화된 요청 surface만
+`LunaProvider.request`로 전달합니다. SDK 통합은 아니며, 각 경계는
+[ethers 설정](./ethers-setup.md), [Web3.js 설정](./web3js-setup.md)을 보세요.
+
 ## 1) Provider 연결
 
 ```tsx

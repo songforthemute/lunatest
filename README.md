@@ -4,7 +4,7 @@
 > No external chain. No fork. Deterministic Web3 UI testing with measured evidence.
 > Korean version: [README.ko.md](./README.ko.md)
 
-**LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI. The registry-certified reference journey completed 30/30 Vitest and Chromium runs with identical results and zero outbound requests.
+**LunaTest** makes wallet- and RPC-dependent frontend flows deterministic with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI. It complements Anvil, Foundry, and forked RPC tests when exact protocol behavior is required, and application-specific HTTP mocks when those boundaries are under test. The registry-certified reference journey completed 30/30 Vitest and Chromium runs with identical results and zero outbound requests.
 
 Package status: `Published` (stable packages are available on npm).
 
@@ -160,7 +160,17 @@ export function App() {
 }
 ```
 
-### 3) Adapter bridge (wagmi / ethers / web3.js)
+### 3) Integration boundaries (wagmi / ethers / web3.js)
+
+**Verified integration:** wagmi and viem are verified through the real wagmi
+`createConfig` transport and connector boundaries with `@wagmi/core@3.6.4` and
+`viem@2.55.11`. The [validated wagmi quickstart](./docs/guides/wagmi-swap-quickstart.md)
+contains the independent npm-package proof.
+
+**Structural adapters:** `createEthersAdapter` and `createWeb3JsAdapter` only
+forward their documented request surfaces to `LunaProvider.request`. They are
+not ethers or Web3.js SDK integrations; create any version-specific wrapper in
+the consuming application.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";

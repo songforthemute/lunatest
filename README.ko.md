@@ -4,8 +4,9 @@
 > 체인 포크나 flaky 테스트 없이, 밀리초 단위로 빠르게 검증
 > English version: [README.md](./README.md)
 
-LunaTest는 Anvil fork, RPC stub, 느린 브라우저 E2E 중심의 기존 Web3 테스트 흐름을
-Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경험을 제공합니다.
+LunaTest는 Wasm 기반 Lua 런타임으로 지갑·RPC 의존 프론트엔드 흐름을 빠르고
+재현 가능하게 테스트합니다. 정확한 protocol 동작이 필요하면 Anvil, Foundry,
+forked RPC 테스트를 함께 사용하고, HTTP 경계는 애플리케이션별 mock을 함께 사용하세요.
 
 패키지 상태: `Published` (stable 패키지가 npm에 배포되어 있습니다.)
 
@@ -142,18 +143,34 @@ export function App() {
 }
 ```
 
-### 3) 어댑터 (wagmi/ethers/web3.js)
+### 3) 통합 경계 (wagmi / ethers / web3.js)
+
+**검증된 통합:** wagmi와 viem은 실제 wagmi `createConfig` transport 및 connector
+경계에서 `@wagmi/core@3.6.4`, `viem@2.55.11` 조합으로 검증되었습니다. 독립 npm
+패키지 proof는 [검증된 wagmi 빠른 시작](./docs/ko/guides/wagmi-swap-quickstart.md)을 보세요.
+
+**구조적 어댑터:** `createEthersAdapter`와 `createWeb3JsAdapter`는 문서화된 요청
+surface만 `LunaProvider.request`로 전달합니다. ethers나 Web3.js SDK 통합은 아니므로,
+버전별 wrapper는 소비 애플리케이션에서 만드세요.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
+import { createConfig } from "@wagmi/core";
 import {
-  withLunaWagmiConfig,
   createEthersAdapter,
   createWeb3JsAdapter,
 } from "@lunatest/react";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
+import { mainnet } from "viem/chains";
 
 const provider = new LunaProvider({ chainId: "0x1" });
-const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const wagmiConfig = createConfig({
+  batch: { multicall: false },
+  chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
+  transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
+});
 const ethersLike = createEthersAdapter(provider);
 const web3Like = createWeb3JsAdapter(provider);
 ```

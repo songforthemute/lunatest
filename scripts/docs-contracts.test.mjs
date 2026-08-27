@@ -279,3 +279,33 @@ test("validated wagmi quickstart stays aligned with packed and registry evidence
     assert.doesNotMatch(source, /under 10 minutes|within 10 minutes|10분 (안에|이내)/i);
   }
 });
+
+test("public integration entry points distinguish verified and structural support", () => {
+  const englishDocuments = [
+    "README.md",
+    "docs/guides/library-consumption.md",
+    "docs/guides/react-integration.md",
+  ];
+  const koreanDocuments = [
+    "README.ko.md",
+    "docs/ko/guides/library-consumption.md",
+    "docs/ko/guides/react-integration.md",
+  ];
+
+  for (const document of englishDocuments) {
+    const source = read(document);
+    assert.match(source, /\*\*Verified integration:\*\* wagmi and viem/, document);
+    assert.match(source, /\*\*Structural adapters:\*\*[\s\S]*not ethers or\s+Web3\.js SDK integrations/, document);
+  }
+
+  for (const document of koreanDocuments) {
+    const source = read(document);
+    assert.match(source, /\*\*검증된 통합:\*\* wagmi와 viem/, document);
+    assert.match(source, /\*\*구조적 어댑터:\*\*[\s\S]*SDK 통합은 아니/, document);
+  }
+
+  const englishReadme = read("README.md");
+  assert.match(englishReadme, /complements Anvil, Foundry, and forked RPC tests/, "README.md");
+  assert.doesNotMatch(englishReadme, /replaces slow, non-deterministic Web3 test setups/, "README.md");
+  assert.doesNotMatch(read("README.ko.md"), /withLunaWagmiConfig/, "README.ko.md");
+});
