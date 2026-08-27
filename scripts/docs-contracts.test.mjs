@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,17 @@ function read(relativePath) {
 
 function assertExists(relativePath) {
   assert.equal(existsSync(path.join(ROOT, relativePath)), true, relativePath);
+}
+
+function markdownDocuments(relativeDirectory) {
+  const absoluteDirectory = path.join(ROOT, relativeDirectory);
+  return readdirSync(absoluteDirectory, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = path.join(relativeDirectory, entry.name);
+    if (entry.isDirectory()) {
+      return markdownDocuments(relativePath);
+    }
+    return entry.isFile() && entry.name.endsWith(".md") ? [relativePath] : [];
+  });
 }
 
 function bashBlocks(source) {
@@ -327,6 +338,27 @@ test("validated wagmi quickstart stays aligned with packed and registry evidence
       assert.match(source, new RegExp(escapeRegExp(tableRow)), `${document}: ${tableRow}`);
     }
     assert.doesNotMatch(source, /under 10 minutes|within 10 minutes|10분 (안에|이내)/i);
+  }
+});
+
+test("public documentation does not promise participant research or recruitment", () => {
+  const documents = [
+    "README.md",
+    "README.ko.md",
+    ...markdownDocuments("docs"),
+  ];
+  const participantResearchPlans = [
+    /\bE3\b/i,
+    /\b(?:participant|target developer)\b.{0,80}\b(?:recruit(?:ment)?|session|user research|user stud(?:y|ies))\b/i,
+    /\b(?:recruit(?:ment)?|user research|user stud(?:y|ies))\b.{0,80}\b(?:participant|target developer)\b/i,
+    /(?:참가자 모집|사용자 연구|사용자 조사|리서치 세션|E3)/,
+  ];
+
+  for (const document of documents) {
+    const source = read(document);
+    for (const plan of participantResearchPlans) {
+      assert.doesNotMatch(source, plan, `${document}: ${plan}`);
+    }
   }
 });
 
