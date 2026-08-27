@@ -11,7 +11,7 @@ pnpm install --frozen-lockfile
 ```bash
 pnpm add @lunatest/core @lunatest/react @lunatest/mcp
 pnpm add @lunatest/runtime-intercept
-pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
+pnpm add -D @lunatest/cli @lunatest/vitest-plugin @lunatest/playwright-plugin
 ```
 
 Vitest와 Playwright 연동을 포함한 모든 공개 LunaTest 패키지는 `latest` 채널로 배포됩니다.
@@ -43,11 +43,12 @@ pnpm test:e2e:smoke
 ```
 
 ```bash
-pnpm --filter @lunatest/cli build
-node packages/cli/dist/index.js run
-node packages/cli/dist/index.js gen --ai
+pnpm exec lunatest validate
+pnpm exec lunatest run
+pnpm exec lunatest gen --ai
 ```
 
+`lunatest`는 위에서 프로젝트에 설치한 `@lunatest/cli`가 제공하는 실행 파일입니다.
 `lunatest gen --ai`는 외부 adapter에 scenario, coverage, preset catalog, prompt 데이터를 전달합니다. `ai.command`가 없으면 scenario를 생성하지 않고 종료합니다.
 
 ## 5) 로컬 성능 체크 실행

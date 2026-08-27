@@ -108,6 +108,39 @@ test("CLI references document every registered command", () => {
   }
 });
 
+test("Korean CLI guidance uses the installed public executable and covers its commands", () => {
+  const documents = [
+    "docs/ko/guides/cli-workflow.md",
+    "docs/ko/getting-started.md",
+  ];
+  const workflow = read(documents[0]);
+
+  for (const document of documents) {
+    assert.doesNotMatch(read(document), /node packages\/cli\/dist\/index\.js/, document);
+  }
+
+  assert.match(workflow, /pnpm add -D @lunatest\/cli/, documents[0]);
+  for (const command of [
+    "validate",
+    "run",
+    "watch",
+    "coverage",
+    "gen --ai",
+    "doctor",
+    "devtools --open",
+  ]) {
+    assert.match(
+      workflow,
+      new RegExp(`pnpm exec lunatest ${escapeRegExp(command)}`),
+      `${documents[0]}: ${command}`,
+    );
+  }
+
+  assert.match(read(documents[1]), /pnpm add -D @lunatest\/cli/, documents[1]);
+  assert.match(read(documents[1]), /pnpm exec lunatest validate/, documents[1]);
+  assert.match(read(documents[1]), /pnpm exec lunatest run/, documents[1]);
+});
+
 test("Core references document project and deterministic runner helpers", () => {
   const names = [
     "loadLunaProjectConfig",
