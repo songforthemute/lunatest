@@ -265,6 +265,21 @@ test("scenario authoring guides include explicit coverage metadata", () => {
   }
 });
 
+test("Korean scenario examples cover warning, absence, state, and stage assertions", () => {
+  const source = read("docs/ko/guides/scenario-examples.md");
+
+  for (const assertion of [
+    'name = "high-slippage-warning"',
+    'not_present = { "insufficient-balance-error" }',
+    'name = "approval-flow"',
+    'then_state = { allowanceUpdated = true, allowanceValue = "1000000" }',
+    '{ name = "approval_required" }',
+    '{ name = "approval_confirmed" }',
+  ]) {
+    assert.match(source, new RegExp(escapeRegExp(assertion)), assertion);
+  }
+});
+
 test("published documentation source excludes historical plans and the legacy PRD", () => {
   assert.equal(existsSync(path.join(ROOT, "docs/PRD.md")), false);
   assert.equal(existsSync(path.join(ROOT, "docs/plans")), false);
