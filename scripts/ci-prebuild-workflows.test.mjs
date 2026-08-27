@@ -72,7 +72,7 @@ test("extended Vitest excludes browser tests handled by Playwright", async () =>
 
   assert.equal(
     e2ePkg.scripts["test:extended"],
-    "vitest run --exclude='**/*.browser.test.ts'",
+    "vitest run --exclude=\"**/*.browser.test.ts\"",
   );
   assert.equal(
     e2ePkg.scripts["test:browser"],
