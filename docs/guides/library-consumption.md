@@ -211,6 +211,9 @@ await runStdioServer({
 
 ## Playwright Routing Example
 
+`createLunaFixture` only configures the fixture. Call `installRouting(page)`
+before navigation to install the Playwright routes and activate `strict` mode.
+
 ```ts
 import { createLunaFixture } from "@lunatest/playwright-plugin";
 
@@ -225,6 +228,9 @@ const fixture = createLunaFixture({
     quote: { status: 200, body: { amountOut: "123.45" } },
   },
 });
+
+await fixture.installRouting(page);
+await page.goto("http://localhost:3000");
 ```
 
 ## Vitest Matcher Example

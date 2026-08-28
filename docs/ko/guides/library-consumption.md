@@ -221,7 +221,7 @@ await runStdioServer({
 
 ## Playwright 라우팅 예시
 
-`createLunaFixture`로 RPC와 HTTP endpoint를 명시적으로 라우팅할 수 있습니다. `strict` 모드에서는 선언하지 않은 요청을 통과시키지 않으므로, 테스트가 실제 네트워크에 의존하지 않도록 유지합니다.
+`createLunaFixture`는 RPC와 HTTP endpoint의 라우팅 설정만 생성합니다. 실제 Playwright route를 설치하고 `strict` 모드를 활성화하려면 navigation 전에 `installRouting(page)`를 호출해야 합니다. `strict` 모드에서는 선언하지 않은 요청을 통과시키지 않으므로, 테스트가 실제 네트워크에 의존하지 않도록 유지합니다.
 
 ```ts
 import { createLunaFixture } from "@lunatest/playwright-plugin";
@@ -237,6 +237,9 @@ const fixture = createLunaFixture({
     quote: { status: 200, body: { amountOut: "123.45" } },
   },
 });
+
+await fixture.installRouting(page);
+await page.goto("http://localhost:3000");
 ```
 
 ## Vitest matcher 예시

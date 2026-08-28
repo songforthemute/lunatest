@@ -204,15 +204,23 @@ test("Core references document project and deterministic runner helpers", () => 
   }
 });
 
-test("Korean library guidance includes public Vitest matcher and Playwright routing examples", () => {
-  const source = read("docs/ko/guides/library-consumption.md");
-
-  assert.match(source, /## Playwright 라우팅 예시/);
-  assert.match(source, /createLunaFixture/);
-  assert.match(source, /mode: "strict"/);
-  assert.match(source, /## Vitest matcher 예시/);
-  assert.match(source, /import \{ toLunaPass \} from "@lunatest\/vitest-plugin"/);
-  assert.match(source, /expect\.extend\(\{ toLunaPass \}\)/);
+test("library guidance installs Playwright routing and includes the public Vitest matcher", () => {
+  for (const document of [
+    "docs/guides/library-consumption.md",
+    "docs/ko/guides/library-consumption.md",
+  ]) {
+    const source = read(document);
+    assert.match(source, /createLunaFixture/, document);
+    assert.match(source, /mode: "strict"/, document);
+    assert.match(source, /await fixture\.installRouting\(page\)/, document);
+    assert.match(source, /await page\.goto\(/, document);
+    assert.ok(
+      source.indexOf("await fixture.installRouting(page)") < source.indexOf("await page.goto("),
+      `${document}: routing must be installed before navigation`,
+    );
+    assert.match(source, /import \{ toLunaPass \} from "@lunatest\/vitest-plugin"/, document);
+    assert.match(source, /expect\.extend\(\{ toLunaPass \}\)/, document);
+  }
 });
 
 test("runner integration references document executable adapter contracts", () => {
