@@ -1,6 +1,7 @@
 # CLI 워크플로 가이드
 
-LunaTest CLI는 `run`, `watch`, `coverage`, `gen --ai`, `devtools --open`, `doctor` 흐름을 제공합니다.
+LunaTest CLI는 `validate`, `run`, `watch`, `coverage`, `gen --ai`, `doctor`,
+`devtools --open` 흐름을 제공합니다.
 
 선택적으로 프로젝트 루트 `lunatest.config.json`을 읽습니다.
 
@@ -20,19 +21,25 @@ LunaTest CLI는 `run`, `watch`, `coverage`, `gen --ai`, `devtools --open`, `doct
 }
 ```
 
-## 빌드
+시나리오를 소유한 프로젝트에 배포된 CLI를 설치한 뒤, 그 프로젝트 루트에서
+`pnpm exec lunatest <command>`를 실행합니다.
 
 ```bash
-pnpm --filter @lunatest/cli build
+pnpm add -D @lunatest/cli
 ```
 
-## 1) run
+## 1) validate와 run
 
 ```bash
-node packages/cli/dist/index.js run
+pnpm exec lunatest validate
+pnpm exec lunatest run
 ```
 
-예상 출력:
+`validate`는 선택된 Lua source를 실행하지 않고 parse합니다. `run`은 scenario를
+실행하며 실패가 있으면 non-zero로 종료합니다. 두 명령 모두
+`--scenario <file-or-glob>`으로 source set을 좁힐 수 있습니다.
+
+`run`의 예상 출력:
 
 ```text
 Scenario Summary
@@ -44,13 +51,13 @@ failed=0
 필터 지정:
 
 ```bash
-node packages/cli/dist/index.js run swap
+pnpm exec lunatest run swap
 ```
 
 ## 2) watch
 
 ```bash
-node packages/cli/dist/index.js watch
+pnpm exec lunatest watch
 ```
 
 동작:
@@ -67,7 +74,7 @@ Scenario Summary
 ## 3) coverage
 
 ```bash
-node packages/cli/dist/index.js coverage
+pnpm exec lunatest coverage
 ```
 
 출력 필드:
@@ -86,7 +93,7 @@ node packages/cli/dist/index.js coverage
 ## 4) gen --ai
 
 ```bash
-node packages/cli/dist/index.js gen --ai
+pnpm exec lunatest gen --ai
 ```
 
 전제:
@@ -108,12 +115,21 @@ executed=1
 
 - `gen`을 `--ai` 없이 실행하면 실패로 처리됩니다.
 - `gen --ai`를 쓰려면 `ai.command`가 필요합니다.
-- 빌드 전에 `dist` 경로를 직접 실행하면 파일이 없어 실패할 수 있습니다.
+- 전역 설치 대신 프로젝트에 설치한 CLI를 `pnpm exec lunatest`로 실행합니다.
 
-## 5) devtools --open
+## 5) doctor
 
 ```bash
-node packages/cli/dist/index.js devtools --open
+pnpm exec lunatest doctor
+```
+
+`doctor`는 resolved config path, scenario source 위치, runtime-intercept guard와
+현재 enablement, AI adapter 설정을 보고합니다.
+
+## 6) devtools --open
+
+```bash
+pnpm exec lunatest devtools --open
 ```
 
 출력:

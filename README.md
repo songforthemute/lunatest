@@ -1,10 +1,10 @@
 # LunaTest
 
 > Deterministic testing SDK for Web3 frontend applications.
-> No external chain. No fork. Deterministic Web3 UI testing with measured evidence.
+> No external chain or fork required for documented wallet/RPC frontend flows. Deterministic Web3 UI testing with measured evidence.
 > Korean version: [README.ko.md](./README.ko.md)
 
-**LunaTest** replaces slow, non-deterministic Web3 test setups (Anvil forks, MSW mocks, RPC stubs) with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI. The registry-certified reference journey completed 30/30 Vitest and Chromium runs with identical results and zero outbound requests.
+**LunaTest** makes wallet- and RPC-dependent frontend flows deterministic with a lightweight Lua VM running in WebAssembly. Declare your scenario in a Lua table, inject it via an EIP-1193 compatible provider, and assert your UI. It complements Anvil, Foundry, and forked RPC tests when exact protocol behavior is required, and application-specific HTTP mocks when those boundaries are under test. The registry-certified reference journey completed 30/30 Vitest and Chromium runs with identical results and zero outbound requests.
 
 Package status: `Published` (stable packages are available on npm).
 
@@ -27,12 +27,55 @@ scenario {
 }
 ```
 
-## Local Quick Start
+## Start in an Existing App
+
+Install the package that matches the boundary you want to test. The smallest
+provider-only setup is:
+
+```bash
+pnpm add @lunatest/core
+```
+
+For project scenario commands, install the public CLI and invoke its installed
+executable:
+
+```bash
+pnpm add -D @lunatest/cli
+pnpm exec lunatest validate
+```
+
+The [Getting Started guide](./docs/getting-started.md) explains package choices
+and links to the runnable [Library Consumption Guide](./docs/guides/library-consumption.md)
+and [CLI workflow](./docs/guides/cli-workflow.md). The examples below show the
+provider, React, and integration boundaries in more detail.
+
+## Contribute to This Repository
+
+Repository CI uses Node 24 and pnpm 10.33.4 as its baseline. This is the
+repository's CI/tooling baseline, not a claim that every published package
+requires Node 24.
+
+If your Node 24 installation includes Corepack, enable it and let the
+repository's `packageManager` field select pnpm 10.33.4:
+
+```bash
+corepack enable
+corepack install
+```
+
+If Corepack is unavailable or unsuitable for your environment, install the
+same pnpm version by another supported means, for example:
+
+```bash
+npm install --global pnpm@10.33.4
+```
+
+Then install and run the local contributor checks:
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
@@ -44,9 +87,9 @@ pnpm lint:deadcode
 pnpm pack:check-integrity
 ```
 
-`pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm -r build`, which creates the workspace package entries it loads.
+`pnpm test:e2e:smoke` is the local E2E command. Run it after `pnpm run build`, which serializes workspace build writers and creates the package entries it loads.
 
-## CI and Manual Benchmark Commands
+### Reproduce CI or Run Manual Benchmarks
 
 Fresh-checkout CI jobs use their own wrapper contracts instead of the local E2E and performance commands:
 
@@ -70,29 +113,15 @@ pnpm run perf:absolute:ci
 
 `lint:workspace-types` temporarily removes package `dist` directories before linting. The `*:ci` wrappers centralize the prebuild required when a fresh checkout has no package artifacts. They are intended for CI or for reproducing CI locally; use the local commands above for normal iteration.
 
-## Usage Guide
+The CI wrappers and performance commands are for repository maintenance or
+local CI reproduction. The [CI Integration guide](./docs/guides/ci-integration.md)
+documents their job graph and release policy.
 
-1. Run docs locally:
+### Repository Documentation and Release
 
-```bash
-pnpm docs:dev
-```
-
-2. Publish stable packages:
-
-```bash
-pnpm release:publish:stable
-```
-
-3. Explore API and guides:
-- docs index: `docs/index.md`
-- getting started: `docs/getting-started.md`
-- CI and gates: `docs/guides/ci-integration.md`
-- protocol and wallet support: `docs/guides/protocol-support.md`
-- DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
-- Sepolia swap sample: `docs/guides/swap-demo-sepolia-uniswapv3.md`
-- local preset authoring: `docs/guides/local-preset-authoring.md`
-- validated wagmi swap quickstart: `docs/guides/wagmi-swap-quickstart.md`
+Run the documentation site locally with `pnpm docs:dev`, and publish stable
+packages with `pnpm release:publish:stable`. See the [documentation index](./docs/index.md)
+for the guides, API references, and validated wagmi quickstart.
 
 ## Repository Structure
 
@@ -160,7 +189,17 @@ export function App() {
 }
 ```
 
-### 3) Adapter bridge (wagmi / ethers / web3.js)
+### 3) Integration boundaries (wagmi / ethers / web3.js)
+
+**Verified integration:** wagmi and viem are verified through the real wagmi
+`createConfig` transport and connector boundaries with `@wagmi/core@3.6.4` and
+`viem@2.55.11`. The [validated wagmi quickstart](./docs/guides/wagmi-swap-quickstart.md)
+contains the independent npm-package proof.
+
+**Structural adapters:** `createEthersAdapter` and `createWeb3JsAdapter` only
+forward their documented request surfaces to `LunaProvider.request`. They are
+not ethers or Web3.js SDK integrations; create any version-specific wrapper in
+the consuming application.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -302,20 +341,18 @@ await createLunaCommands({ cwd: process.cwd() }).assertScenario(
 
 Scenario IDs are exact project-relative paths. The integrations do not infer selectors or actions from Lua. `createLunaFixture().injectProvider` is deprecated and is not a wallet emulator; bootstrap `@lunatest/runtime-intercept` for deterministic wallet behavior.
 
-## Why
+## Choose the Right Test Layer
 
-|                        | Jest / Vitest | Cypress / Playwright | MSW / Mock     | Anvil / Hardhat  | Synpress         | **LunaTest**        |
-| ---------------------- | ------------- | -------------------- | -------------- | ---------------- | ---------------- | ------------------- |
-| Layer                  | Unit test     | E2E browser          | HTTP intercept | Local chain fork | Browser + Wallet | Lua VM mock         |
-| Web3 aware             | ❌            | ❌                   | △              | ✅               | ✅               | **✅**              |
-| Speed                  | ~1-5ms        | ~1-10s               | ~5-20ms        | ~1-10s           | ~10-30s          | **6.953ms Vitest median*** |
-| Deterministic          | ✅            | △                    | ✅             | ❌               | ❌               | **✅**              |
-| Certified replay      | —             | —                    | —              | —                | —                | **30/30 identical*** |
-| Isolates frontend bugs | ✅            | △                    | △              | △                | △                | **✅**              |
-| CI cost                | Low           | Medium               | Low            | High             | High             | **Low**             |
-| Human-friendly         | △ ABI noise   | ✅ visual            | △ hex fixtures | ❌ chain ops     | △ flaky          | **✅ Lua tables**   |
-| AI-friendly            | △             | ❌ browser           | △              | ❌ infra         | ❌ browser       | **✅ MCP native**   |
-| Non-dev participation  | ❌            | △ visual only        | ❌             | ❌               | ❌               | **✅ QA/PM/Design** |
+No single test tool covers every boundary. Use LunaTest only for the
+documented deterministic L3 wallet/RPC frontend flows; use the layer that
+matches the behavior you need to prove.
+
+| Behavior to verify | Test layer |
+| --- | --- |
+| Documented deterministic L3 wallet/RPC frontend flow | LunaTest |
+| Exact EVM bytecode, gas, historical state, or protocol math | Anvil, Foundry, or a forked RPC |
+| Application HTTP boundary | Application-specific HTTP mocks |
+| Browser visual behavior or lifecycle | The [documented browser-runner path](./docs/guides/playwright-routing.md) |
 
 ## Features
 
@@ -325,7 +362,7 @@ Scenario IDs are exact project-relative paths. The integrations do not infer sel
 - **Precise edge cases** — Deliberate mismatches report the scenario ID, failing path, expected value, and actual value.
 - **Anyone can read it** — Lua tables read like specs. QA writes scenarios, PM reviews them, git log becomes business history.
 - **AI-native** — MCP server for autonomous scenario generation and coverage analysis.
-- **~200KB runtime** — C Lua 5.4 compiled to WebAssembly via Wasmoon.
+- **Lua WASM runtime** — C Lua 5.4 compiled to WebAssembly via Wasmoon.
 
 \* Registry-certified reference journey on the pinned Linux CI environment;
 not a universal benchmark or flake-rate guarantee.
@@ -369,7 +406,7 @@ not a universal benchmark or flake-rate guarantee.
 
 ## Quality and Gates
 
-- Local workspace quality: `pnpm -r build`, `pnpm -r lint`, `pnpm -r test`
+- Local workspace quality: `pnpm run build`, `pnpm -r lint`, `pnpm -r test`
 - CI workspace quality: `pnpm run build:workspace:ci`, `pnpm run lint:workspace:ci`, `pnpm run test:workspace:ci`
 - Dead-code gates: `pnpm lint:deadcode` for fast unused-file checks, `pnpm lint:deadcode:strict` for broader audits
 - Workspace-source E2E smoke (PR): `pnpm run test:e2e:smoke:ci`

@@ -24,6 +24,50 @@ scenario {
 
 `then_state`, `not_present`, `stages`, `timing_ms`는 검증 의도를 더 명확하게 할 때만 추가합니다.
 
+## 경고와 부정 UI
+
+```lua
+scenario {
+  name = "high-slippage-warning",
+  given = {
+    wallet = { connected = true, ETH = "50" },
+    market = { volatility = "high" },
+  },
+  when = { action = "swap", tokenIn = "ETH", amountIn = "20" },
+  then_ui = {
+    warning = true,
+    warningLevel = "high",
+    warningLabel = "> 10%",
+  },
+  not_present = { "insufficient-balance-error" },
+}
+```
+
+경고처럼 사용자에게 보이는 값은 `then_ui`에 두고, 같은 흐름에서
+보이면 안 되는 오류나 배지는 `not_present`로 검증합니다.
+
+## 상태와 단계 검증
+
+```lua
+scenario {
+  name = "approval-flow",
+  given = {
+    allowance = { USDC = "0" },
+    wallet = { connected = true },
+  },
+  when = { action = "approve", token = "USDC", spender = "router" },
+  then_ui = { approvalStatus = "confirmed" },
+  then_state = { allowanceUpdated = true, allowanceValue = "1000000" },
+  stages = {
+    { name = "approval_required" },
+    { name = "approval_confirmed" },
+  },
+}
+```
+
+`then_state`는 내부 계약을 위한 값에 사용하고, `stages`에는 사용자 흐름에서
+의미 있는 중간 상태만 선언합니다.
+
 ## Coverage metadata
 
 `coverage`는 feature, state, component coverage 보고서에 쓰는 선택 메타데이터입니다. 추론된 key보다 제품 용어가 더 적절할 때 명시합니다.

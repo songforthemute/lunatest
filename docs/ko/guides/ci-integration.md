@@ -8,7 +8,7 @@ LunaTest는 빠른 로컬 반복과 fresh checkout CI를 분리합니다. 로컬
 
 ```sh
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 pnpm test:e2e:extended
@@ -18,7 +18,7 @@ pnpm test:browser
 직접 E2E 명령은 workspace package entry를 읽으므로 먼저 build가 필요합니다. 로컬에서 성능을 조사할 때도 먼저 빌드한 뒤 runner를 직접 실행합니다.
 
 ```sh
-pnpm -r build
+pnpm run build
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
 ```
@@ -68,8 +68,8 @@ pnpm run perf:absolute:ci
 
 `.github/workflows/benchmark.yml`은 수동으로 실행할 때만 동작합니다. Ubuntu job 두 개로 구성됩니다.
 
-1. `nightly-performance`는 `pnpm run perf:absolute:ci`를 실행하고 `scripts/perf-current-absolute.json`을 artifact로 업로드합니다.
-2. `nightly-e2e-extended`는 `pnpm run test:e2e:extended:ci`를 실행합니다.
+1. `benchmark-performance`는 `pnpm run perf:absolute:ci`를 실행하고 `scripts/perf-current-absolute.json`을 artifact로 업로드합니다.
+2. `benchmark-e2e-extended`는 `pnpm run test:e2e:extended:ci`를 실행합니다.
 
 ## 성능 계약
 

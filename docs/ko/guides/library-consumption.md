@@ -162,7 +162,15 @@ export function App() {
 }
 ```
 
-## 어댑터 예시 (wagmi / ethers / web3.js)
+## 통합 경계 (wagmi / ethers / web3.js)
+
+**검증된 통합:** wagmi와 viem은 실제 wagmi `createConfig` transport 및 connector
+경계에서 `@wagmi/core@3.6.4`, `viem@2.55.11` 조합으로 검증되었습니다. 독립 npm
+패키지 proof는 [검증된 wagmi 빠른 시작](./wagmi-swap-quickstart.md)을 보세요.
+
+**구조적 어댑터:** `createEthersAdapter`와 `createWeb3JsAdapter`는 문서화된 요청
+surface만 `LunaProvider.request`로 전달합니다. ethers나 Web3.js SDK 통합은 아니므로,
+버전별 wrapper는 소비 애플리케이션에서 만드세요.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -209,6 +217,40 @@ await runStdioServer({
   output: process.stdout,
   server,
 });
+```
+
+## Playwright 라우팅 예시
+
+`createLunaFixture`는 RPC와 HTTP endpoint의 라우팅 설정만 생성합니다. 실제 Playwright route를 설치하고 `strict` 모드를 활성화하려면 navigation 전에 `installRouting(page)`를 호출해야 합니다. `strict` 모드에서는 선언하지 않은 요청을 통과시키지 않으므로, 테스트가 실제 네트워크에 의존하지 않도록 유지합니다.
+
+```ts
+import { createLunaFixture } from "@lunatest/playwright-plugin";
+
+const fixture = createLunaFixture({
+  routing: {
+    mode: "strict",
+    rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
+    httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+  },
+  mockResponses: {
+    eth_call: { result: "0x01" },
+    quote: { status: 200, body: { amountOut: "123.45" } },
+  },
+});
+
+await fixture.installRouting(page);
+await page.goto("http://localhost:3000");
+```
+
+## Vitest matcher 예시
+
+`toLunaPass` matcher를 등록하면 LunaTest 실행 결과를 Vitest assertion으로 읽기 쉽게 검증할 수 있습니다.
+
+```ts
+import { toLunaPass } from "@lunatest/vitest-plugin";
+
+expect.extend({ toLunaPass });
+expect({ pass: true }).toLunaPass();
 ```
 
 ## Scenario Runner 예시

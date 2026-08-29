@@ -1,11 +1,12 @@
 # LunaTest (한국어 가이드)
 
 > Web3 프론트엔드를 위한 결정론 테스트 SDK
-> 체인 포크나 flaky 테스트 없이, 밀리초 단위로 빠르게 검증
+> 문서화된 지갑·RPC 프론트엔드 흐름에는 외부 체인이나 포크가 필요 없습니다. 측정 근거를 갖춘 결정론적 Web3 UI 테스트
 > English version: [README.md](./README.md)
 
-LunaTest는 Anvil fork, RPC stub, 느린 브라우저 E2E 중심의 기존 Web3 테스트 흐름을
-Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경험을 제공합니다.
+LunaTest는 Wasm 기반 Lua 런타임으로 지갑·RPC 의존 프론트엔드 흐름을 빠르고
+재현 가능하게 테스트합니다. 정확한 protocol 동작이 필요하면 Anvil, Foundry,
+forked RPC 테스트를 함께 사용하고, HTTP 경계는 애플리케이션별 mock을 함께 사용하세요.
 
 패키지 상태: `Published` (stable 패키지가 npm에 배포되어 있습니다.)
 
@@ -13,12 +14,54 @@ Wasm 기반 Lua 런타임으로 바꿔, 빠르고 재현 가능한 테스트 경
 Chromium에서 E2 인증을 마쳤습니다. 자세한 내용은
 [검증된 빠른 시작](./docs/ko/guides/wagmi-swap-quickstart.md)을 참고하세요.
 
-## 로컬 빠른 시작
+## 기존 앱에서 시작하기
+
+테스트하려는 경계에 맞는 패키지만 설치하세요. provider만 필요한 가장 작은 설정은
+다음과 같습니다.
+
+```bash
+pnpm add @lunatest/core
+```
+
+프로젝트 scenario 명령을 사용하려면 공개 CLI를 설치하고 설치된 실행 파일을
+사용합니다.
+
+```bash
+pnpm add -D @lunatest/cli
+pnpm exec lunatest validate
+```
+
+[빠른 시작](./docs/ko/getting-started.md)에서 패키지 선택을 확인하고, 실행 가능한
+[라이브러리 소비자 가이드](./docs/ko/guides/library-consumption.md)와
+[CLI 워크플로](./docs/ko/guides/cli-workflow.md)를 참고하세요. 아래 예시는 provider,
+React, 통합 경계를 더 자세히 보여 줍니다.
+
+## 이 저장소에 기여하기
+
+저장소 CI의 기준 환경은 Node 24와 pnpm 10.33.4입니다. 이는 저장소의 CI/tooling
+기준일 뿐, 모든 공개 패키지가 Node 24를 요구한다는 뜻은 아닙니다.
+
+Node 24 설치에 Corepack이 포함되어 있다면 활성화한 뒤 저장소의
+`packageManager` 필드가 pnpm 10.33.4를 선택하도록 할 수 있습니다.
+
+```bash
+corepack enable
+corepack install
+```
+
+Corepack을 사용할 수 없거나 환경에 맞지 않으면, 다른 지원 방법으로 같은 pnpm
+버전을 설치하세요. 예를 들면 다음과 같습니다.
+
+```bash
+npm install --global pnpm@10.33.4
+```
+
+그 다음 contributor용 로컬 체크를 실행합니다.
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 ```
@@ -30,9 +73,9 @@ pnpm lint:deadcode
 pnpm pack:check-integrity
 ```
 
-`pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 `pnpm -r build`를 실행해야 합니다.
+`pnpm test:e2e:smoke`는 로컬 E2E 명령입니다. 이 명령이 읽는 workspace package entry를 만들기 위해 먼저 workspace build writer를 직렬화하는 `pnpm run build`를 실행해야 합니다.
 
-## CI 및 수동 Benchmark 명령
+### CI 재현 및 수동 Benchmark
 
 fresh checkout CI job은 로컬 E2E/성능 명령 대신 아래 CI 계약 명령을 사용합니다.
 
@@ -56,29 +99,14 @@ pnpm run perf:absolute:ci
 
 `lint:workspace-types`는 lint 전에 package `dist` 디렉터리를 임시로 제거합니다. `*:ci` wrapper는 fresh checkout에 package 산출물이 없을 때 필요한 prebuild를 중앙화합니다. 일반 로컬 반복에서는 위의 로컬 명령을 사용하고, CI 재현이 필요할 때만 wrapper를 사용합니다.
 
-## 사용 가이드
+CI wrapper와 성능 명령은 저장소 유지보수 또는 로컬 CI 재현용입니다. job 그래프와
+릴리스 정책은 [CI 통합 가이드](./docs/ko/guides/ci-integration.md)를 참고하세요.
 
-1. 문서 사이트 로컬 실행
+### 저장소 문서와 릴리스
 
-```bash
-pnpm docs:dev
-```
-
-2. stable 패키지 배포
-
-```bash
-pnpm release:publish:stable
-```
-
-3. 주요 문서 진입점
-- 시작 가이드: `docs/getting-started.md`
-- 아키텍처: `docs/concepts/architecture.md`
-- CI 게이트: `docs/ko/guides/ci-integration.md`
-- 프로토콜/지갑 지원 범위: `docs/guides/protocol-support.md`
-- DeFi dashboard dogfood: `docs/guides/defi-dashboard-dogfood.md`
-- Sepolia 스왑 샘플: `docs/guides/swap-demo-sepolia-uniswapv3.md`
-- Local preset 작성: `docs/guides/local-preset-authoring.md`
-- 검증된 wagmi 스왑 빠른 시작: `docs/ko/guides/wagmi-swap-quickstart.md`
+문서 사이트는 `pnpm docs:dev`로 실행하고, stable 패키지는
+`pnpm release:publish:stable`로 배포합니다. 가이드, API 레퍼런스, 검증된 wagmi
+빠른 시작은 [문서 색인](./docs/ko/index.md)에서 확인하세요.
 
 ## 저장소 구조
 
@@ -142,18 +170,34 @@ export function App() {
 }
 ```
 
-### 3) 어댑터 (wagmi/ethers/web3.js)
+### 3) 통합 경계 (wagmi / ethers / web3.js)
+
+**검증된 통합:** wagmi와 viem은 실제 wagmi `createConfig` transport 및 connector
+경계에서 `@wagmi/core@3.6.4`, `viem@2.55.11` 조합으로 검증되었습니다. 독립 npm
+패키지 proof는 [검증된 wagmi 빠른 시작](./docs/ko/guides/wagmi-swap-quickstart.md)을 보세요.
+
+**구조적 어댑터:** `createEthersAdapter`와 `createWeb3JsAdapter`는 문서화된 요청
+surface만 `LunaProvider.request`로 전달합니다. ethers나 Web3.js SDK 통합은 아니므로,
+버전별 wrapper는 소비 애플리케이션에서 만드세요.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
+import { createConfig } from "@wagmi/core";
 import {
-  withLunaWagmiConfig,
   createEthersAdapter,
   createWeb3JsAdapter,
 } from "@lunatest/react";
+import { createLunaWagmiTransport } from "@lunatest/react/wagmi";
+import { createLunaWagmiConnector } from "@lunatest/react/wagmi/connector";
+import { mainnet } from "viem/chains";
 
 const provider = new LunaProvider({ chainId: "0x1" });
-const wagmiConfig = withLunaWagmiConfig({ chains: [{ id: 1 }] }, provider);
+const wagmiConfig = createConfig({
+  batch: { multicall: false },
+  chains: [mainnet],
+  connectors: [createLunaWagmiConnector(provider)],
+  transports: { [mainnet.id]: createLunaWagmiTransport(provider) },
+});
 const ethersLike = createEthersAdapter(provider);
 const web3Like = createWeb3JsAdapter(provider);
 ```
@@ -275,6 +319,19 @@ scenario ID는 정확한 project-relative path입니다. integration이 Lua에�
 한국어 문서 인덱스: `docs/ko/index.md`
 한국어 시나리오 예제: `docs/ko/guides/scenario-examples.md`
 한국어 E2E 워크스루: `docs/ko/guides/e2e-0to1.md`
+
+## 올바른 테스트 계층 선택
+
+하나의 테스트 도구가 모든 경계를 검증하지는 않습니다. LunaTest는 문서화된
+결정론적 L3 지갑·RPC 프론트엔드 흐름에만 사용하고, 증명하려는 동작에 맞는
+계층을 선택하세요.
+
+| 검증할 동작 | 테스트 계층 |
+| --- | --- |
+| 문서화된 결정론적 L3 지갑·RPC 프론트엔드 흐름 | LunaTest |
+| 정확한 EVM bytecode, gas, 과거 상태, protocol math | Anvil, Foundry 또는 forked RPC |
+| 애플리케이션 HTTP 경계 | 애플리케이션별 HTTP mock |
+| 브라우저의 시각적 동작 또는 lifecycle | [문서화된 browser-runner 경로](./docs/ko/guides/playwright-routing.md) |
 
 ## 릴리스 채널
 
