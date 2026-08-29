@@ -13,6 +13,11 @@ All public LunaTest packages, including the Vitest and Playwright integrations, 
 For scenario commands, use the installed public CLI rather than a repository
 build artifact:
 
+Before running these commands, create `lunatest.lua` and at least one Lua
+scenario source. The [CLI workflow](./guides/cli-workflow.md) explains the
+project configuration, and [Writing Scenarios](./guides/writing-scenarios.md)
+shows how to create the source.
+
 ```bash
 pnpm add -D @lunatest/cli
 pnpm exec lunatest validate

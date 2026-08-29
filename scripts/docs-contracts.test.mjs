@@ -152,6 +152,34 @@ test("Korean CLI guidance uses the installed public executable and covers its co
   assert.match(read(documents[1]), /pnpm exec lunatest run/, documents[1]);
 });
 
+test("consumer CLI quick starts state scenario prerequisites before commands", () => {
+  const documents = [
+    [
+      "docs/getting-started.md",
+      "Before running these commands, create `lunatest.lua` and at least one Lua\nscenario source.",
+      "[CLI workflow](./guides/cli-workflow.md)",
+      "[Writing Scenarios](./guides/writing-scenarios.md)",
+    ],
+    [
+      "docs/ko/getting-started.md",
+      "아래 명령을 실행하기 전에 `lunatest.lua`와 하나 이상의 Lua scenario source를\n만드세요.",
+      "[CLI 워크플로](./guides/cli-workflow.md)",
+      "[scenario 작성](./guides/writing-scenarios.md)",
+    ],
+  ];
+
+  for (const [document, prerequisite, workflowLink, authoringLink] of documents) {
+    const source = read(document);
+    assert.match(source, new RegExp(escapeRegExp(prerequisite)), document);
+    assert.match(source, new RegExp(escapeRegExp(workflowLink)), document);
+    assert.match(source, new RegExp(escapeRegExp(authoringLink)), document);
+    assert.ok(
+      source.indexOf(prerequisite) < source.indexOf("pnpm exec lunatest validate"),
+      `${document}: prerequisite precedes validate`,
+    );
+  }
+});
+
 test("onboarding separates consumer entry points from repository contributor work", () => {
   const englishDocuments = ["README.md", "docs/getting-started.md"];
   const koreanDocuments = ["README.ko.md", "docs/ko/getting-started.md"];
