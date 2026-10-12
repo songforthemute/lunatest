@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -14,6 +14,17 @@ function read(relativePath) {
 
 function assertExists(relativePath) {
   assert.equal(existsSync(path.join(ROOT, relativePath)), true, relativePath);
+}
+
+function markdownDocuments(relativeDirectory) {
+  const absoluteDirectory = path.join(ROOT, relativeDirectory);
+  return readdirSync(absoluteDirectory, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = path.join(relativeDirectory, entry.name);
+    if (entry.isDirectory()) {
+      return markdownDocuments(relativePath);
+    }
+    return entry.isFile() && entry.name.endsWith(".md") ? [relativePath] : [];
+  });
 }
 
 function bashBlocks(source) {
@@ -55,6 +66,23 @@ test("consumer installation snippets do not pin stable packages to a prerelease 
   }
 });
 
+test("public repository build instructions use the serialized root build wrapper", () => {
+  const documents = [
+    "README.md",
+    "README.ko.md",
+    "docs/getting-started.md",
+    "docs/ko/getting-started.md",
+    "docs/guides/ci-integration.md",
+    "docs/ko/guides/ci-integration.md",
+  ];
+
+  for (const document of documents) {
+    const source = read(document);
+    assert.doesNotMatch(source, /pnpm -r build/, document);
+    assert.match(source, /pnpm run build/, document);
+  }
+});
+
 test("every public package has English and Korean API references", () => {
   const packageToPage = new Map([
     ["@lunatest/contracts", "contracts"],
@@ -91,6 +119,98 @@ test("CLI references document every registered command", () => {
   }
 });
 
+test("Korean CLI guidance uses the installed public executable and covers its commands", () => {
+  const documents = [
+    "docs/ko/guides/cli-workflow.md",
+    "docs/ko/getting-started.md",
+  ];
+  const workflow = read(documents[0]);
+
+  for (const document of documents) {
+    assert.doesNotMatch(read(document), /node packages\/cli\/dist\/index\.js/, document);
+  }
+
+  assert.match(workflow, /pnpm add -D @lunatest\/cli/, documents[0]);
+  for (const command of [
+    "validate",
+    "run",
+    "watch",
+    "coverage",
+    "gen --ai",
+    "doctor",
+    "devtools --open",
+  ]) {
+    assert.match(
+      workflow,
+      new RegExp(`pnpm exec lunatest ${escapeRegExp(command)}`),
+      `${documents[0]}: ${command}`,
+    );
+  }
+
+  assert.match(read(documents[1]), /pnpm add -D @lunatest\/cli/, documents[1]);
+  assert.match(read(documents[1]), /pnpm exec lunatest validate/, documents[1]);
+  assert.match(read(documents[1]), /pnpm exec lunatest run/, documents[1]);
+});
+
+test("consumer CLI quick starts state scenario prerequisites before commands", () => {
+  const documents = [
+    [
+      "docs/getting-started.md",
+      "Before running these commands, create `lunatest.lua` and at least one Lua\nscenario source.",
+      "[CLI workflow](./guides/cli-workflow.md)",
+      "[Writing Scenarios](./guides/writing-scenarios.md)",
+    ],
+    [
+      "docs/ko/getting-started.md",
+      "아래 명령을 실행하기 전에 `lunatest.lua`와 하나 이상의 Lua scenario source를\n만드세요.",
+      "[CLI 워크플로](./guides/cli-workflow.md)",
+      "[scenario 작성](./guides/writing-scenarios.md)",
+    ],
+  ];
+
+  for (const [document, prerequisite, workflowLink, authoringLink] of documents) {
+    const source = read(document);
+    assert.match(source, new RegExp(escapeRegExp(prerequisite)), document);
+    assert.match(source, new RegExp(escapeRegExp(workflowLink)), document);
+    assert.match(source, new RegExp(escapeRegExp(authoringLink)), document);
+    assert.ok(
+      source.indexOf(prerequisite) < source.indexOf("pnpm exec lunatest validate"),
+      `${document}: prerequisite precedes validate`,
+    );
+  }
+});
+
+test("onboarding separates consumer entry points from repository contributor work", () => {
+  const englishDocuments = ["README.md", "docs/getting-started.md"];
+  const koreanDocuments = ["README.ko.md", "docs/ko/getting-started.md"];
+
+  for (const document of englishDocuments) {
+    const source = read(document);
+    assert.match(source, /## Start in an Existing App|## Use LunaTest in an Existing App/, document);
+    assert.match(source, /## Contribute to (?:(?:This|the) )?Repository/, document);
+    assert.match(source, /pnpm add -D @lunatest\/cli/, document);
+    assert.match(source, /pnpm exec lunatest (validate|run)/, document);
+    assert.doesNotMatch(source, /node packages\/cli\/dist\/index\.js/, document);
+    assert.match(source, /Node 24 and pnpm 10\.33\.4 as its baseline/, document);
+    assert.match(source, /not a claim that every published package\s+requires Node 24/, document);
+    assert.match(source, /corepack enable/, document);
+    assert.match(source, /npm install --global pnpm@10\.33\.4/, document);
+  }
+
+  for (const document of koreanDocuments) {
+    const source = read(document);
+    assert.match(source, /## 기존 앱에서 (시작하기|LunaTest 사용하기)/, document);
+    assert.match(source, /## (이 )?저장소에 기여하기/, document);
+    assert.match(source, /pnpm add -D @lunatest\/cli/, document);
+    assert.match(source, /pnpm exec lunatest (validate|run)/, document);
+    assert.doesNotMatch(source, /node packages\/cli\/dist\/index\.js/, document);
+    assert.match(source, /Node 24와 pnpm 10\.33\.4/, document);
+    assert.match(source, /모든 공개 패키지가 Node 24를 요구한다는 뜻은 아닙니다/, document);
+    assert.match(source, /corepack enable/, document);
+    assert.match(source, /npm install --global pnpm@10\.33\.4/, document);
+  }
+});
+
 test("Core references document project and deterministic runner helpers", () => {
   const names = [
     "loadLunaProjectConfig",
@@ -109,6 +229,25 @@ test("Core references document project and deterministic runner helpers", () => 
     for (const name of names) {
       assert.match(source, new RegExp(`\\\`${name}\\\``), `${document}: ${name}`);
     }
+  }
+});
+
+test("library guidance installs Playwright routing and includes the public Vitest matcher", () => {
+  for (const document of [
+    "docs/guides/library-consumption.md",
+    "docs/ko/guides/library-consumption.md",
+  ]) {
+    const source = read(document);
+    assert.match(source, /createLunaFixture/, document);
+    assert.match(source, /mode: "strict"/, document);
+    assert.match(source, /await fixture\.installRouting\(page\)/, document);
+    assert.match(source, /await page\.goto\(/, document);
+    assert.ok(
+      source.indexOf("await fixture.installRouting(page)") < source.indexOf("await page.goto("),
+      `${document}: routing must be installed before navigation`,
+    );
+    assert.match(source, /import \{ toLunaPass \} from "@lunatest\/vitest-plugin"/, document);
+    assert.match(source, /expect\.extend\(\{ toLunaPass \}\)/, document);
   }
 });
 
@@ -173,6 +312,21 @@ test("scenario authoring guides include explicit coverage metadata", () => {
   }
 });
 
+test("Korean scenario examples cover warning, absence, state, and stage assertions", () => {
+  const source = read("docs/ko/guides/scenario-examples.md");
+
+  for (const assertion of [
+    'name = "high-slippage-warning"',
+    'not_present = { "insufficient-balance-error" }',
+    'name = "approval-flow"',
+    'then_state = { allowanceUpdated = true, allowanceValue = "1000000" }',
+    '{ name = "approval_required" }',
+    '{ name = "approval_confirmed" }',
+  ]) {
+    assert.match(source, new RegExp(escapeRegExp(assertion)), assertion);
+  }
+});
+
 test("published documentation source excludes historical plans and the legacy PRD", () => {
   assert.equal(existsSync(path.join(ROOT, "docs/PRD.md")), false);
   assert.equal(existsSync(path.join(ROOT, "docs/plans")), false);
@@ -181,8 +335,9 @@ test("published documentation source excludes historical plans and the legacy PR
   assertExists("planning/archive/plans");
 });
 
-test("documentation navigation exposes bilingual API and guide coverage", () => {
+test("documentation navigation exposes bilingual API, guide, and concept coverage", () => {
   const config = read("docs/.vitepress/config.mts");
+  const koreanIndex = read("docs/ko/index.md");
   const requiredLinks = [
     "/api/contracts",
     "/api/core",
@@ -206,6 +361,7 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
     "/guides/react-integration",
     "/guides/scenario-examples",
     "/guides/wagmi-swap-quickstart",
+    "/ko/wagmi-integration",
     "/ko/guides/ci-integration",
     "/ko/guides/writing-scenarios",
     "/ko/guides/multi-stage",
@@ -213,6 +369,12 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
     "/ko/guides/ethers-setup",
     "/ko/guides/web3js-setup",
     "/ko/guides/wagmi-swap-quickstart",
+    "/ko/concepts/architecture",
+    "/ko/concepts/determinism",
+    "/ko/concepts/mock-provider",
+    "/ko/recipes/swap-testing",
+    "/ko/recipes/approval-flow",
+    "/ko/recipes/error-handling",
   ];
 
   for (const link of requiredLinks) {
@@ -221,6 +383,30 @@ test("documentation navigation exposes bilingual API and guide coverage", () => 
       new RegExp(`\\{\\s*text:\\s*"[^"]+"\\s*,\\s*link:\\s*"${escapeRegExp(link)}"\\s*\\}`),
       link,
     );
+  }
+
+  for (const document of [
+    "docs/ko/wagmi-integration.md",
+    "docs/ko/concepts/architecture.md",
+    "docs/ko/concepts/determinism.md",
+    "docs/ko/concepts/mock-provider.md",
+    "docs/ko/recipes/swap-testing.md",
+    "docs/ko/recipes/approval-flow.md",
+    "docs/ko/recipes/error-handling.md",
+  ]) {
+    assertExists(document);
+  }
+
+  for (const link of [
+    "./wagmi-integration.md",
+    "./concepts/architecture.md",
+    "./concepts/determinism.md",
+    "./concepts/mock-provider.md",
+    "./recipes/swap-testing.md",
+    "./recipes/approval-flow.md",
+    "./recipes/error-handling.md",
+  ]) {
+    assert.match(koreanIndex, new RegExp(escapeRegExp(link)), link);
   }
 });
 
@@ -278,4 +464,135 @@ test("validated wagmi quickstart stays aligned with packed and registry evidence
     }
     assert.doesNotMatch(source, /under 10 minutes|within 10 minutes|10분 (안에|이내)/i);
   }
+});
+
+test("public documentation does not promise participant research or recruitment", () => {
+  const documents = [
+    "README.md",
+    "README.ko.md",
+    ...markdownDocuments("docs"),
+  ];
+  const participantResearchPlans = [
+    /\bE3\b/i,
+    /\b(?:participant|target developer)\b.{0,80}\b(?:recruit(?:ment)?|session|user research|user stud(?:y|ies))\b/i,
+    /\b(?:recruit(?:ment)?|user research|user stud(?:y|ies))\b.{0,80}\b(?:participant|target developer)\b/i,
+    /(?:참가자 모집|사용자 연구|사용자 조사|리서치 세션|E3)/,
+  ];
+
+  for (const document of documents) {
+    const source = read(document);
+    for (const plan of participantResearchPlans) {
+      assert.doesNotMatch(source, plan, `${document}: ${plan}`);
+    }
+  }
+});
+
+test("public documentation does not make an unqualified runtime-size claim", () => {
+  const documents = [
+    "README.md",
+    "README.ko.md",
+    ...markdownDocuments("docs"),
+  ];
+
+  for (const document of documents) {
+    assert.doesNotMatch(
+      read(document),
+      /~\s*200\s*(?:KB|KiB)\s+runtime/i,
+      document,
+    );
+  }
+});
+
+test("public integration entry points distinguish verified and structural support", () => {
+  const englishDocuments = [
+    "README.md",
+    "docs/guides/library-consumption.md",
+    "docs/guides/react-integration.md",
+  ];
+  const koreanDocuments = [
+    "README.ko.md",
+    "docs/ko/guides/library-consumption.md",
+    "docs/ko/guides/react-integration.md",
+  ];
+
+  for (const document of englishDocuments) {
+    const source = read(document);
+    assert.match(source, /\*\*Verified integration:\*\* wagmi and viem/, document);
+    assert.match(source, /\*\*Structural adapters:\*\*[\s\S]*not ethers or\s+Web3\.js SDK integrations/, document);
+  }
+
+  for (const document of koreanDocuments) {
+    const source = read(document);
+    assert.match(source, /\*\*검증된 통합:\*\* wagmi와 viem/, document);
+    assert.match(source, /\*\*구조적 어댑터:\*\*[\s\S]*SDK 통합은 아니/, document);
+  }
+
+  const englishReadme = read("README.md");
+  assert.match(englishReadme, /complements Anvil, Foundry, and forked RPC tests/, "README.md");
+  assert.doesNotMatch(englishReadme, /replaces slow, non-deterministic Web3 test setups/, "README.md");
+  assert.doesNotMatch(read("README.ko.md"), /withLunaWagmiConfig/, "README.ko.md");
+});
+
+test("README positioning selects a bounded test layer instead of ranking competitors", () => {
+  const englishReadme = read("README.md");
+  const koreanReadme = read("README.ko.md");
+
+  assert.match(
+    englishReadme,
+    /No external chain or fork required for documented wallet\/RPC frontend flows\./,
+    "README.md",
+  );
+  assert.match(englishReadme, /## Choose the Right Test Layer/, "README.md");
+  assert.match(
+    englishReadme,
+    /\| Documented deterministic L3 wallet\/RPC frontend flow \| LunaTest \|/,
+    "README.md",
+  );
+  assert.match(
+    englishReadme,
+    /\| Exact EVM bytecode, gas, historical state, or protocol math \| Anvil, Foundry, or a forked RPC \|/,
+    "README.md",
+  );
+  assert.match(
+    englishReadme,
+    /\| Application HTTP boundary \| Application-specific HTTP mocks \|/,
+    "README.md",
+  );
+  assert.match(
+    englishReadme,
+    /\| Browser visual behavior or lifecycle \| The \[documented browser-runner path\]/,
+    "README.md",
+  );
+  assert.doesNotMatch(
+    englishReadme,
+    /Jest \/ Vitest|Cypress \/ Playwright|Anvil \/ Hardhat|Synpress|Non-dev participation/,
+    "README.md",
+  );
+
+  assert.match(
+    koreanReadme,
+    /문서화된 지갑·RPC 프론트엔드 흐름에는 외부 체인이나 포크가 필요 없습니다\./,
+    "README.ko.md",
+  );
+  assert.match(koreanReadme, /## 올바른 테스트 계층 선택/, "README.ko.md");
+  assert.match(
+    koreanReadme,
+    /\| 문서화된 결정론적 L3 지갑·RPC 프론트엔드 흐름 \| LunaTest \|/,
+    "README.ko.md",
+  );
+  assert.match(
+    koreanReadme,
+    /\| 정확한 EVM bytecode, gas, 과거 상태, protocol math \| Anvil, Foundry 또는 forked RPC \|/,
+    "README.ko.md",
+  );
+  assert.match(
+    koreanReadme,
+    /\| 애플리케이션 HTTP 경계 \| 애플리케이션별 HTTP mock \|/,
+    "README.ko.md",
+  );
+  assert.match(
+    koreanReadme,
+    /\| 브라우저의 시각적 동작 또는 lifecycle \| \[문서화된 browser-runner 경로\]/,
+    "README.ko.md",
+  );
 });

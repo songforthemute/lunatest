@@ -19,8 +19,7 @@ The packed-artifact lane remains the pre-release gate and therefore reports
 `certificationEligible: false`; it must not be presented as registry evidence.
 
 This is also not independent user validation. The repository authors built the
-reference consumer. The later E3 sessions will measure whether target
-developers can follow this page without author guidance.
+reference consumer.
 
 ## Supported reference stack
 
@@ -206,8 +205,8 @@ journey is five changed application files and 384 net non-test application LOC.
 Only two files are LunaTest integration boundaries, totaling 65 net non-test
 LOC. These are reference-fixture measurements, not a promise for every app.
 
-No “10-minute setup” claim is made. Time to first pass belongs to the E3 user
-study and excludes dependency download only after that protocol is run.
+No “10-minute setup” claim is made. The published evidence reports scenario
+runtime only; it does not measure time to first pass.
 
 ## Deliberate failure
 

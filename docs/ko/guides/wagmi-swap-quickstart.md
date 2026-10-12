@@ -20,8 +20,7 @@ packed-artifact lane은 계속 pre-release gate이므로
 안 됩니다.
 
 또한 이것은 독립 사용자 검증이 아닙니다. 저장소 작성자가 reference consumer를
-구현했습니다. 이후 E3 세션에서 대상 개발자가 작성자 도움 없이 이 문서를 따라갈
-수 있는지 측정합니다.
+구현했습니다.
 
 ## 지원 reference stack
 
@@ -199,8 +198,8 @@ non-test application LOC는 net 384입니다. LunaTest integration boundary는 �
 2개, net non-test LOC 65입니다. 이는 reference fixture 측정값이며 모든 앱에 대한
 약속이 아닙니다.
 
-“10분 설정” 주장은 하지 않습니다. first pass 시간은 dependency download 제외
-규칙을 포함한 E3 사용자 연구를 실제로 수행한 뒤 판단합니다.
+“10분 설정” 주장은 하지 않습니다. 공개된 증거는 scenario runtime만 보고하며,
+first pass 시간은 측정하지 않습니다.
 
 ## 의도적 실패
 

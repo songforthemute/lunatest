@@ -100,6 +100,19 @@ test("CI and Benchmark workflows call CI wrapper scripts", async () => {
   assert.match(benchmarkWorkflow, /pnpm run test:e2e:extended:ci/);
 });
 
+test("Benchmark workflow uses manual-dispatch job names", async () => {
+  const benchmarkWorkflow = await readFile(
+    new URL("../.github/workflows/benchmark.yml", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(benchmarkWorkflow, /^  workflow_dispatch:\s*$/m);
+  assert.match(benchmarkWorkflow, /^  benchmark-performance:\s*$/m);
+  assert.match(benchmarkWorkflow, /^  benchmark-e2e-extended:\s*$/m);
+  assert.doesNotMatch(benchmarkWorkflow, /^  nightly-performance:\s*$/m);
+  assert.doesNotMatch(benchmarkWorkflow, /^  nightly-e2e-extended:\s*$/m);
+});
+
 test("CI runs the Chromium scenario integration on Linux only", async () => {
   const ciWorkflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
   const browserJob = getWorkflowJob(ciWorkflow, "browser-scenario");

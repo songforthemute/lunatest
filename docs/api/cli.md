@@ -28,7 +28,7 @@ Release channel: `latest`
 ## Commands
 
 - `run` runs the configured Lua config and scenario directory, or an optional filter / `--scenario <fileOrGlob>` selection.
-- `validate` parses the selected source set without executing it. A parse failure makes the command fail.
+- `validate` evaluates the selected Lua sources, including their top-level code, to capture and schema-check the scenario configuration. It does not run the scenario adapter or execute the scenario action. Lua evaluation or schema validation failures make the command fail.
 - `watch` performs one `run` immediately, then reruns after a 300 ms debounce when `luaConfigPath` or a `scenarioDir/**/*.lua` file changes. It stays active until `SIGINT`.
 - `coverage` prints JSON with `total`, `covered`, `ratio`, `known`, `coveredTargets`, and `missing`.
 - `gen` requires `--ai`. The configured external command receives a JSON object on stdin with `scenarios`, `coverage`, `presetCatalog`, and `prompts`; it must return a JSON array of generated scenarios on stdout. Generated Lua is saved in `scenarioDir`, validated, then run. Invalid JSON, invalid Lua, and duplicate target filenames are explicit failures.

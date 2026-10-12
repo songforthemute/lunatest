@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  nightly-performance:
+  benchmark-performance:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
@@ -22,7 +22,7 @@ jobs:
           name: perf-current-absolute
           path: scripts/perf-current-absolute.json
 
-  nightly-e2e-extended:
+  benchmark-e2e-extended:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
