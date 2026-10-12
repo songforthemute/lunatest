@@ -23,11 +23,19 @@ Chromium에서 E2 인증을 마쳤습니다. 자세한 내용은
 pnpm add @lunatest/core
 ```
 
-프로젝트 scenario 명령을 사용하려면 공개 CLI를 설치하고 설치된 실행 파일을
-사용합니다.
+프로젝트 scenario 명령을 사용하려면 공개 CLI를 설치하세요.
 
 ```bash
 pnpm add -D @lunatest/cli
+```
+
+검증 전에 하나 이상의 Lua scenario source를 만드세요. 기본 설정에서는
+`lunatest.lua` 또는 `scenarios/` 아래의 `.lua` 파일을 사용하며, 둘 다 필요하지는
+않습니다. source 설정은 [CLI 워크플로](./docs/ko/guides/cli-workflow.md), 작성
+형식은 [scenario 작성](./docs/ko/guides/writing-scenarios.md)을 참고하세요. 그다음
+설치된 실행 파일을 사용합니다.
+
+```bash
 pnpm exec lunatest validate
 ```
 

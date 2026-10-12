@@ -36,11 +36,19 @@ provider-only setup is:
 pnpm add @lunatest/core
 ```
 
-For project scenario commands, install the public CLI and invoke its installed
-executable:
+For project scenario commands, install the public CLI:
 
 ```bash
 pnpm add -D @lunatest/cli
+```
+
+Before validating, create at least one Lua scenario source. With the default
+configuration, use `lunatest.lua` or a `.lua` file under `scenarios/`; both are
+not required. See the [CLI workflow](./docs/guides/cli-workflow.md) for source
+configuration and [Writing Scenarios](./docs/guides/writing-scenarios.md) for
+the source format. Then invoke the installed executable:
+
+```bash
 pnpm exec lunatest validate
 ```
 

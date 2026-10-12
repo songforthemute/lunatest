@@ -35,9 +35,11 @@ pnpm exec lunatest validate
 pnpm exec lunatest run
 ```
 
-`validate`는 선택된 Lua source를 실행하지 않고 parse합니다. `run`은 scenario를
-실행하며 실패가 있으면 non-zero로 종료합니다. 두 명령 모두
-`--scenario <file-or-glob>`으로 source set을 좁힐 수 있습니다.
+`validate`는 선택된 Lua source의 최상위 코드를 포함해 평가하여 scenario 설정을
+캡처하고 스키마를 검증합니다. scenario adapter를 실행하거나 scenario action을
+수행하지는 않습니다. `run`은 adapter를 통해 scenario 실행까지 수행하며,
+실패가 있으면 non-zero로 종료합니다. 두 명령 모두 `--scenario <file-or-glob>`으로
+source set을 좁힐 수 있습니다.
 
 `run`의 예상 출력:
 
