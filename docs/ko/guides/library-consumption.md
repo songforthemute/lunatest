@@ -221,36 +221,64 @@ await runStdioServer({
 
 ## Playwright 라우팅 예시
 
-`createLunaFixture`는 RPC와 HTTP endpoint의 라우팅 설정만 생성합니다. 실제 Playwright route를 설치하고 `strict` 모드를 활성화하려면 navigation 전에 `installRouting(page)`를 호출해야 합니다. `strict` 모드에서는 선언하지 않은 요청을 통과시키지 않으므로, 테스트가 실제 네트워크에 의존하지 않도록 유지합니다.
+`createLunaFixture`는 라우팅을 설정합니다. `strict` 모드를 활성화하려면 요청을 보내기
+전에 `installRouting(page)`를 호출하세요. 이 테스트는 Playwright의 빈 페이지에서
+요청을 보냅니다. 실제 앱을 테스트할 때는 `strict` 모드가 선언되지 않은 HTML과
+정적 리소스 요청도 차단한다는 점에 유의하세요.
 
 ```ts
+import { expect, test } from "@playwright/test";
 import { createLunaFixture } from "@lunatest/playwright-plugin";
 
-const fixture = createLunaFixture({
-  routing: {
-    mode: "strict",
-    rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
-    httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
-  },
-  mockResponses: {
-    eth_call: { result: "0x01" },
-    quote: { status: 200, body: { amountOut: "123.45" } },
-  },
-});
+test("mocks RPC and HTTP requests", async ({ page }) => {
+  const fixture = createLunaFixture({
+    routing: {
+      mode: "strict",
+      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
+      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+    },
+    mockResponses: {
+      eth_call: { result: "0x01" },
+      quote: { status: 200, body: { amountOut: "123.45" } },
+    },
+  });
+  await fixture.installRouting(page);
 
-await fixture.installRouting(page);
-await page.goto("http://localhost:3000");
+  const responses = await page.evaluate(async () => {
+    const rpc = await fetch("https://app.test/rpc", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [] }),
+    });
+    const quote = await fetch("https://app.test/api/quote");
+    return { rpc: await rpc.json(), quote: await quote.json() };
+  });
+
+  expect(responses.rpc).toEqual({ jsonrpc: "2.0", id: 1, result: "0x01" });
+  expect(responses.quote).toEqual({ amountOut: "123.45" });
+});
 ```
 
 ## Vitest matcher 예시
 
-`toLunaPass` matcher를 등록하면 LunaTest 실행 결과를 Vitest assertion으로 읽기 쉽게 검증할 수 있습니다.
+모듈 선언은 Vitest의 TypeScript 타입에 커스텀 matcher를 추가합니다.
+`expect.extend`는 런타임에 matcher를 등록합니다.
 
 ```ts
+import { expect, test } from "vitest";
 import { toLunaPass } from "@lunatest/vitest-plugin";
 
+declare module "vitest" {
+  interface Matchers<T = any> {
+    toLunaPass(): T;
+  }
+}
+
 expect.extend({ toLunaPass });
-expect({ pass: true }).toLunaPass();
+
+test("passes a LunaTest result", () => {
+  expect({ pass: true }).toLunaPass();
+});
 ```
 
 ## Scenario Runner 예시

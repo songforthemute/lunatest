@@ -156,13 +156,13 @@ test("consumer CLI quick starts state scenario prerequisites before commands", (
   const documents = [
     [
       "docs/getting-started.md",
-      "Before running these commands, create `lunatest.lua` and at least one Lua\nscenario source.",
+      /use `lunatest\.lua` or a `\.lua` file under\s+`scenarios\/`/,
       "[CLI workflow](./guides/cli-workflow.md)",
       "[Writing Scenarios](./guides/writing-scenarios.md)",
     ],
     [
       "docs/ko/getting-started.md",
-      "아래 명령을 실행하기 전에 `lunatest.lua`와 하나 이상의 Lua scenario source를\n만드세요.",
+      /`lunatest\.lua` 또는 `scenarios\/` 아래의 `\.lua` 파일/,
       "[CLI 워크플로](./guides/cli-workflow.md)",
       "[scenario 작성](./guides/writing-scenarios.md)",
     ],
@@ -170,11 +170,12 @@ test("consumer CLI quick starts state scenario prerequisites before commands", (
 
   for (const [document, prerequisite, workflowLink, authoringLink] of documents) {
     const source = read(document);
-    assert.match(source, new RegExp(escapeRegExp(prerequisite)), document);
+    const match = source.match(prerequisite);
+    assert.ok(match, document);
     assert.match(source, new RegExp(escapeRegExp(workflowLink)), document);
     assert.match(source, new RegExp(escapeRegExp(authoringLink)), document);
     assert.ok(
-      source.indexOf(prerequisite) < source.indexOf("pnpm exec lunatest validate"),
+      match.index < source.indexOf("pnpm exec lunatest validate"),
       `${document}: prerequisite precedes validate`,
     );
   }
@@ -232,21 +233,37 @@ test("Core references document project and deterministic runner helpers", () => 
   }
 });
 
-test("library guidance installs Playwright routing and includes the public Vitest matcher", () => {
+test("library guidance exercises strict Playwright routes from a blank page", () => {
   for (const document of [
     "docs/guides/library-consumption.md",
     "docs/ko/guides/library-consumption.md",
   ]) {
-    const source = read(document);
-    assert.match(source, /createLunaFixture/, document);
-    assert.match(source, /mode: "strict"/, document);
-    assert.match(source, /await fixture\.installRouting\(page\)/, document);
-    assert.match(source, /await page\.goto\(/, document);
+    const example = [...read(document).matchAll(/```ts\n([\s\S]*?)```/g)]
+      .map((match) => match[1])
+      .find((block) => block.includes("createLunaFixture"));
+    assert.ok(example, document);
+    assert.match(example, /mode: "strict"/, document);
+    assert.match(example, /await fixture\.installRouting\(page\)/, document);
+    assert.match(example, /await page\.evaluate\(/, document);
+    assert.doesNotMatch(example, /page\.goto\(/, document);
     assert.ok(
-      source.indexOf("await fixture.installRouting(page)") < source.indexOf("await page.goto("),
-      `${document}: routing must be installed before navigation`,
+      example.indexOf("await fixture.installRouting(page)") < example.indexOf("await page.evaluate("),
+      `${document}: routing must be installed before requests`,
     );
-    assert.match(source, /import \{ toLunaPass \} from "@lunatest\/vitest-plugin"/, document);
+  }
+});
+
+test("public Vitest matcher examples register the matcher and declare its type", () => {
+  for (const document of [
+    "docs/guides/library-consumption.md",
+    "docs/ko/guides/library-consumption.md",
+    "docs/api/vitest-plugin.md",
+    "docs/ko/api/vitest-plugin.md",
+  ]) {
+    const source = read(document);
+    assert.match(source, /import \{ expect, \w+ \} from "vitest"/, document);
+    assert.match(source, /import \{[^\n]*\btoLunaPass \} from "@lunatest\/vitest-plugin"/, document);
+    assert.match(source, /declare module "vitest"\s*{\s*interface Matchers<T = any>\s*{\s*toLunaPass\(\): T;/, document);
     assert.match(source, /expect\.extend\(\{ toLunaPass \}\)/, document);
   }
 });

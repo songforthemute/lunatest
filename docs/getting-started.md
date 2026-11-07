@@ -10,13 +10,13 @@ pnpm add -D @lunatest/vitest-plugin @lunatest/playwright-plugin
 
 All public LunaTest packages, including the Vitest and Playwright integrations, publish on `latest`.
 
-For scenario commands, use the installed public CLI rather than a repository
-build artifact:
+Install the public CLI in your app and run it with `pnpm exec`.
 
-Before running these commands, create `lunatest.lua` and at least one Lua
-scenario source. The [CLI workflow](./guides/cli-workflow.md) explains the
-project configuration, and [Writing Scenarios](./guides/writing-scenarios.md)
-shows how to create the source.
+Before running `validate` or `run`, create at least one Lua scenario source.
+With the default configuration, use `lunatest.lua` or a `.lua` file under
+`scenarios/`. The [CLI workflow](./guides/cli-workflow.md) explains the project
+configuration, and [Writing Scenarios](./guides/writing-scenarios.md) shows how
+to create the source.
 
 ```bash
 pnpm add -D @lunatest/cli

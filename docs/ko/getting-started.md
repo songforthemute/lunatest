@@ -10,10 +10,11 @@ pnpm add -D @lunatest/cli @lunatest/vitest-plugin @lunatest/playwright-plugin
 
 Vitest와 Playwright 연동을 포함한 모든 공개 LunaTest 패키지는 `latest` 채널로 배포됩니다.
 
-scenario 명령은 저장소 build 산출물이 아니라 설치된 공개 CLI로 실행합니다.
+앱에 설치한 공개 CLI는 `pnpm exec`로 실행합니다.
 
-아래 명령을 실행하기 전에 `lunatest.lua`와 하나 이상의 Lua scenario source를
-만드세요. [CLI 워크플로](./guides/cli-workflow.md)에서 프로젝트 설정을,
+`validate` 또는 `run`을 실행하기 전에 Lua 시나리오 소스를 하나 이상 만드세요.
+기본 설정에서는 `lunatest.lua` 또는 `scenarios/` 아래의 `.lua` 파일에 작성하면
+됩니다. [CLI 워크플로](./guides/cli-workflow.md)에서 프로젝트 설정을,
 [scenario 작성](./guides/writing-scenarios.md)에서 source 작성 방법을 확인할 수 있습니다.
 
 ```bash
