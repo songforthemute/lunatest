@@ -29,5 +29,13 @@ export function Root() {
 
 `useLunaTest` must run below `LunaTestProvider`. For use outside context,
 `useLunaProvider(options)` creates a stable provider for equivalent option
-values. See the focused adapter guides for [wagmi](./wagmi-setup.md),
-[ethers](./ethers-setup.md), and [Web3.js](./web3js-setup.md).
+values.
+
+**Verified integration:** wagmi and viem are verified through the real wagmi
+`createConfig` transport and connector boundaries with `@wagmi/core@3.6.4` and
+`viem@2.55.11`; see the [wagmi guide](./wagmi-setup.md).
+
+**Structural adapters:** the ethers and Web3.js helpers only forward their
+documented request surfaces to `LunaProvider.request`. They are not ethers or
+Web3.js SDK integrations; see the [ethers](./ethers-setup.md) and
+[Web3.js](./web3js-setup.md) guides for their boundaries.

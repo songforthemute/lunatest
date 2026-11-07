@@ -28,7 +28,7 @@
 ## Command
 
 - `run`은 구성된 Lua config와 scenario directory, 또는 optional filter / `--scenario <fileOrGlob>` 선택을 실행합니다.
-- `validate`는 선택된 source set을 실행하지 않고 parse합니다. parse failure가 있으면 command가 실패합니다.
+- `validate`는 선택된 Lua source의 최상위 코드를 포함해 평가하여 scenario 설정을 캡처하고 스키마를 검증합니다. scenario adapter를 실행하거나 scenario action을 수행하지는 않습니다. Lua 평가나 스키마 검증에 실패하면 command가 실패합니다.
 - `watch`는 시작 시 한 번 `run`한 뒤 `luaConfigPath` 또는 `scenarioDir/**/*.lua` 변경 후 300 ms debounce를 거쳐 재실행합니다. `SIGINT`까지 지속합니다.
 - `coverage`는 `total`, `covered`, `ratio`, `known`, `coveredTargets`, `missing` JSON을 출력합니다.
 - `gen`은 `--ai`가 필요합니다. 구성된 external command는 stdin으로 `scenarios`, `coverage`, `presetCatalog`, `prompts` JSON object를 받고 stdout으로 generated scenario JSON array를 반환해야 합니다. 생성된 Lua는 `scenarioDir`에 저장한 뒤 validate와 run을 수행합니다. invalid JSON, invalid Lua, duplicate target filename은 명시적으로 실패합니다.

@@ -31,9 +31,12 @@ pnpm exec lunatest run
 pnpm exec lunatest run swap
 ```
 
-`validate` parses the selected sources. `run` executes them and exits non-zero
-when its summary reports failures. Both commands accept
-`--scenario <file-or-glob>` to narrow the source set.
+`validate` evaluates the selected Lua sources, including their top-level code,
+to capture and schema-check the scenario configuration. It does not run the
+scenario adapter or execute the scenario action. `run` also executes the
+scenario through its adapter and exits non-zero when its summary reports
+failures. Both commands accept `--scenario <file-or-glob>` to narrow the source
+set.
 
 ## Watch
 

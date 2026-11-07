@@ -162,7 +162,15 @@ export function App() {
 }
 ```
 
-## 어댑터 예시 (wagmi / ethers / web3.js)
+## 통합 경계 (wagmi / ethers / web3.js)
+
+**검증된 통합:** wagmi와 viem은 실제 wagmi `createConfig` transport 및 connector
+경계에서 `@wagmi/core@3.6.4`, `viem@2.55.11` 조합으로 검증되었습니다. 독립 npm
+패키지 proof는 [검증된 wagmi 빠른 시작](./wagmi-swap-quickstart.md)을 보세요.
+
+**구조적 어댑터:** `createEthersAdapter`와 `createWeb3JsAdapter`는 문서화된 요청
+surface만 `LunaProvider.request`로 전달합니다. ethers나 Web3.js SDK 통합은 아니므로,
+버전별 wrapper는 소비 애플리케이션에서 만드세요.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -208,6 +216,68 @@ await runStdioServer({
   input: process.stdin,
   output: process.stdout,
   server,
+});
+```
+
+## Playwright 라우팅 예시
+
+`createLunaFixture`는 라우팅을 설정합니다. `strict` 모드를 활성화하려면 요청을 보내기
+전에 `installRouting(page)`를 호출하세요. 이 테스트는 Playwright의 빈 페이지에서
+요청을 보냅니다. 실제 앱을 테스트할 때는 `strict` 모드가 선언되지 않은 HTML과
+정적 리소스 요청도 차단한다는 점에 유의하세요.
+
+```ts
+import { expect, test } from "@playwright/test";
+import { createLunaFixture } from "@lunatest/playwright-plugin";
+
+test("mocks RPC and HTTP requests", async ({ page }) => {
+  const fixture = createLunaFixture({
+    routing: {
+      mode: "strict",
+      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
+      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+    },
+    mockResponses: {
+      eth_call: { result: "0x01" },
+      quote: { status: 200, body: { amountOut: "123.45" } },
+    },
+  });
+  await fixture.installRouting(page);
+
+  const responses = await page.evaluate(async () => {
+    const rpc = await fetch("https://app.test/rpc", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [] }),
+    });
+    const quote = await fetch("https://app.test/api/quote");
+    return { rpc: await rpc.json(), quote: await quote.json() };
+  });
+
+  expect(responses.rpc).toEqual({ jsonrpc: "2.0", id: 1, result: "0x01" });
+  expect(responses.quote).toEqual({ amountOut: "123.45" });
+});
+```
+
+## Vitest matcher 예시
+
+모듈 선언은 Vitest의 TypeScript 타입에 커스텀 matcher를 추가합니다.
+`expect.extend`는 런타임에 matcher를 등록합니다.
+
+```ts
+import { expect, test } from "vitest";
+import { toLunaPass } from "@lunatest/vitest-plugin";
+
+declare module "vitest" {
+  interface Matchers<T = any> {
+    toLunaPass(): T;
+  }
+}
+
+expect.extend({ toLunaPass });
+
+test("passes a LunaTest result", () => {
+  expect({ pass: true }).toLunaPass();
 });
 ```
 

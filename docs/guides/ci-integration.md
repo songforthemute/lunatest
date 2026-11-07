@@ -8,7 +8,7 @@ Use the direct commands during normal development:
 
 ```sh
 pnpm -r lint
-pnpm -r build
+pnpm run build
 pnpm -r test
 pnpm test:e2e:smoke
 pnpm test:e2e:extended
@@ -18,7 +18,7 @@ pnpm test:browser
 The direct E2E commands load workspace package entries and therefore require the preceding build. To investigate performance locally, build first and invoke the runner directly:
 
 ```sh
-pnpm -r build
+pnpm run build
 node scripts/check-performance.mjs --mode=regression --baseline=scripts/perf-baseline.json --output=scripts/perf-current.json
 node scripts/check-performance.mjs --mode=absolute --output=scripts/perf-current-absolute.json
 ```
@@ -68,8 +68,8 @@ Every job installs with `pnpm install --frozen-lockfile`. Packed-consumer jobs e
 
 `.github/workflows/benchmark.yml` runs only when manually dispatched. It has two Ubuntu jobs:
 
-1. `nightly-performance` runs `pnpm run perf:absolute:ci` and uploads `scripts/perf-current-absolute.json`.
-2. `nightly-e2e-extended` runs `pnpm run test:e2e:extended:ci`.
+1. `benchmark-performance` runs `pnpm run perf:absolute:ci` and uploads `scripts/perf-current-absolute.json`.
+2. `benchmark-e2e-extended` runs `pnpm run test:e2e:extended:ci`.
 
 ## Performance Contract
 

@@ -33,6 +33,12 @@ type LunaVitestRunner = {
 import { expect, it } from "vitest";
 import { createLunaVitestRunner, toLunaPass } from "@lunatest/vitest-plugin";
 
+declare module "vitest" {
+  interface Matchers<T = any> {
+    toLunaPass(): T;
+  }
+}
+
 expect.extend({ toLunaPass });
 
 const luna = createLunaVitestRunner({ cwd: process.cwd() });

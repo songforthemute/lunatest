@@ -154,7 +154,17 @@ export function App() {
 }
 ```
 
-## Adapter Example (wagmi / ethers / web3.js)
+## Integration Boundaries (wagmi / ethers / web3.js)
+
+**Verified integration:** wagmi and viem are verified through the real wagmi
+`createConfig` transport and connector boundaries with `@wagmi/core@3.6.4` and
+`viem@2.55.11`. The [validated wagmi quickstart](./wagmi-swap-quickstart.md)
+contains the independent npm-package proof.
+
+**Structural adapters:** `createEthersAdapter` and `createWeb3JsAdapter` only
+forward their documented request surfaces to `LunaProvider.request`. They are
+not ethers or Web3.js SDK integrations; create any version-specific wrapper in
+the consuming application.
 
 ```ts
 import { LunaProvider } from "@lunatest/core";
@@ -201,29 +211,64 @@ await runStdioServer({
 
 ## Playwright Routing Example
 
+`createLunaFixture` configures the fixture. Call `installRouting(page)` before
+making requests to activate `strict` mode. This test sends requests from
+Playwright's blank page. When testing a full app, remember that strict routing
+also blocks undeclared requests for the app's HTML and assets.
+
 ```ts
+import { expect, test } from "@playwright/test";
 import { createLunaFixture } from "@lunatest/playwright-plugin";
 
-const fixture = createLunaFixture({
-  routing: {
-    mode: "strict",
-    rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
-    httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
-  },
-  mockResponses: {
-    eth_call: { result: "0x01" },
-    quote: { status: 200, body: { amountOut: "123.45" } },
-  },
+test("mocks RPC and HTTP requests", async ({ page }) => {
+  const fixture = createLunaFixture({
+    routing: {
+      mode: "strict",
+      rpcEndpoints: [{ urlPattern: "**/rpc", methods: ["eth_call"], responseKey: "eth_call" }],
+      httpEndpoints: [{ urlPattern: "**/api/quote", method: "GET", responseKey: "quote" }],
+    },
+    mockResponses: {
+      eth_call: { result: "0x01" },
+      quote: { status: 200, body: { amountOut: "123.45" } },
+    },
+  });
+  await fixture.installRouting(page);
+
+  const responses = await page.evaluate(async () => {
+    const rpc = await fetch("https://app.test/rpc", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [] }),
+    });
+    const quote = await fetch("https://app.test/api/quote");
+    return { rpc: await rpc.json(), quote: await quote.json() };
+  });
+
+  expect(responses.rpc).toEqual({ jsonrpc: "2.0", id: 1, result: "0x01" });
+  expect(responses.quote).toEqual({ amountOut: "123.45" });
 });
 ```
 
 ## Vitest Matcher Example
 
+The module declaration adds the custom matcher to Vitest's TypeScript types.
+`expect.extend` registers it at runtime.
+
 ```ts
+import { expect, test } from "vitest";
 import { toLunaPass } from "@lunatest/vitest-plugin";
 
+declare module "vitest" {
+  interface Matchers<T = any> {
+    toLunaPass(): T;
+  }
+}
+
 expect.extend({ toLunaPass });
-expect({ pass: true }).toLunaPass();
+
+test("passes a LunaTest result", () => {
+  expect({ pass: true }).toLunaPass();
+});
 ```
 
 ## Scenario Runner Examples
